@@ -1,0 +1,153 @@
+{
+    "classes": [
+        {
+            "className": "UserModel",
+            "methods": [
+                {
+                    "access": "public",
+                    "name": "clear",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "isValid",
+                    "returnType": "bool"
+                }
+            ],
+            "object": true,
+            "properties": [
+                {
+                    "constant": false,
+                    "designable": true,
+                    "final": false,
+                    "index": 0,
+                    "name": "username",
+                    "notify": "usernameChanged",
+                    "read": "username",
+                    "required": false,
+                    "scriptable": true,
+                    "stored": true,
+                    "type": "QString",
+                    "user": false,
+                    "write": "setUsername"
+                },
+                {
+                    "constant": false,
+                    "designable": true,
+                    "final": false,
+                    "index": 1,
+                    "name": "email",
+                    "notify": "emailChanged",
+                    "read": "email",
+                    "required": false,
+                    "scriptable": true,
+                    "stored": true,
+                    "type": "QString",
+                    "user": false,
+                    "write": "setEmail"
+                },
+                {
+                    "constant": false,
+                    "designable": true,
+                    "final": false,
+                    "index": 2,
+                    "name": "password",
+                    "notify": "passwordChanged",
+                    "read": "password",
+                    "required": false,
+                    "scriptable": true,
+                    "stored": true,
+                    "type": "QString",
+                    "user": false,
+                    "write": "setPassword"
+                },
+                {
+                    "constant": false,
+                    "designable": true,
+                    "final": false,
+                    "index": 3,
+                    "name": "avatar",
+                    "notify": "avatarChanged",
+                    "read": "avatar",
+                    "required": false,
+                    "scriptable": true,
+                    "stored": true,
+                    "type": "QUrl",
+                    "user": false,
+                    "write": "setAvatar"
+                },
+                {
+                    "constant": false,
+                    "designable": true,
+                    "final": false,
+                    "index": 4,
+                    "name": "isLoggedIn",
+                    "notify": "isLoggedInChanged",
+                    "read": "isLoggedIn",
+                    "required": false,
+                    "scriptable": true,
+                    "stored": true,
+                    "type": "bool",
+                    "user": false,
+                    "write": "setIsLoggedIn"
+                },
+                {
+                    "constant": false,
+                    "designable": true,
+                    "final": false,
+                    "index": 5,
+                    "name": "token",
+                    "notify": "tokenChanged",
+                    "read": "token",
+                    "required": false,
+                    "scriptable": true,
+                    "stored": true,
+                    "type": "QString",
+                    "user": false,
+                    "write": "setToken"
+                }
+            ],
+            "qualifiedClassName": "UserModel",
+            "signals": [
+                {
+                    "access": "public",
+                    "name": "usernameChanged",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "emailChanged",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "passwordChanged",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "avatarChanged",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "isLoggedInChanged",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "tokenChanged",
+                    "returnType": "void"
+                }
+            ],
+            "superClasses": [
+                {
+                    "access": "public",
+                    "name": "QObject"
+                }
+            ]
+        }
+    ],
+    "inputFile": "UserModel.h",
+    "outputRevision": 68
+}

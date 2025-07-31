@@ -1,0 +1,6 @@
+/QKChatClient/qml/main.qml
+/QKChatClient/qml/LoginWindow.qml
+/QKChatClient/qml/RegisterWindow.qml
+/QKChatClient/qml/components/CustomButton.qml
+/QKChatClient/qml/components/CustomTextField.qml
+/QKChatClient/qml/components/AvatarSelector.qml

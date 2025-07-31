@@ -1,0 +1,68 @@
+# 基于Qt编码规范的基础配置
+BasedOnStyle: Qt
+
+# 语言选项
+Language: Cpp
+Standard: Cpp17
+
+# 基础格式设置
+AccessModifierOffset: -4    # 访问修饰符缩进
+AlignAfterOpenBracket: Align # 括号内对齐
+AlignConsecutiveAssignments: true # 连续赋值对齐
+AlignConsecutiveDeclarations: true # 连续声明对齐
+AlignEscapedNewlines: Right  # 续行符右对齐
+AlignOperands: Align         # 操作数对齐
+AlignTrailingComments: true  # 尾部注释对齐
+AllowAllArgumentsOnNextLine: false # 禁止参数换行
+AllowAllConstructorInitializersOnNextLine: false # 初始化列表不换行
+AllowShortBlocksOnASingleLine: Empty # 空块可单行
+AllowShortCaseLabelsOnASingleLine: true # case标签单行
+AllowShortFunctionsOnASingleLine: Inline # 内联函数单行
+AllowShortIfStatementsOnASingleLine: Never # if语句强制换行
+AllowShortLambdasOnASingleLine: Inline # 短lambda单行
+AlwaysBreakAfterReturnType: None # 返回类型后不换行
+AlwaysBreakTemplateDeclarations: Yes # 模板声明换行
+BinPackArguments: false      # 禁止参数打包
+BinPackParameters: false     # 禁止参数换行打包
+BreakBeforeBraces: Allman    # 大括号换行风格
+BreakConstructorInitializers: BeforeComma # 初始化列表逗号前换行
+ColumnLimit: 120             # 行宽限制
+CompactNamespaces: false     # 不压缩命名空间
+ConstructorInitializerIndentWidth: 4 # 初始化列表缩进
+ContinuationIndentWidth: 4   # 续行缩进
+Cpp11BracedListStyle: true   # C++11初始化列表风格
+DerivePointerAlignment: false # 不自动推导指针对齐
+FixNamespaceComments: true   # 修复命名空间注释
+IndentCaseLabels: true       # case标签缩进
+IndentWidth: 4               # 基本缩进宽度
+IndentWrappedFunctionNames: false # 不缩进被包装函数名
+KeepEmptyLinesAtTheStartOfBlocks: false # 块起始不留空行
+MaxEmptyLinesToKeep: 2       # 最大保留空行数
+NamespaceIndentation: None   # 命名空间不缩进
+PointerAlignment: Middle     # 指针符号居中: Type* ptr
+ReferenceAlignment: Middle   # 引用符号居中: Type& ref
+ReflowComments: true         # 重排注释
+SortIncludes: CaseSensitive  # 头文件排序
+SortUsingDeclarations: true  # using声明排序
+SpaceAfterCStyleCast: true   # C风格转换后空格
+SpaceAfterTemplateKeyword: false # template后不加空格
+SpaceBeforeAssignmentOperators: true # 赋值运算符前空格
+SpaceBeforeCpp11BracedList: false # 初始化列表前不加空格
+SpaceBeforeCtorInitializerColon: true # 初始化列表冒号前空格
+SpaceBeforeInheritanceColon: true # 继承冒号前空格
+SpaceBeforeParens: ControlStatements # 控制语句括号前空格
+SpaceBeforeRangeBasedForLoopColon: true # range-for冒号前空格
+SpaceInEmptyParentheses: false # 空括号内不加空格
+SpacesBeforeTrailingComments: 1 # 尾注前1空格
+SpacesInAngles: Never        # 模板尖括号内无空格
+SpacesInContainerLiterals: false # 容器字面量内无空格
+SpacesInCStyleCastParentheses: false # C风格转换括号内无空格
+SpacesInParentheses: false   # 圆括号内无空格
+SpacesInSquareBrackets: false # 方括号内无空格
+TabWidth: 4                  # Tab宽度
+UseTab: Never                # 禁止使用Tab
+
+# Qt特定扩展
+AllowShortEnumsOnASingleLine: false # 枚举不压缩单行
+BreakBeforeBinaryOperators: NonAssignment # 二元操作符前换行
+QualifierAlignment: Right    # 类型限定符右对齐: const Type

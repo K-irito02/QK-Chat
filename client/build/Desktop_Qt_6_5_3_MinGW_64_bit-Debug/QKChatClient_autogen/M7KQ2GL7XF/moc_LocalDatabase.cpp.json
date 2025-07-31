@@ -1,0 +1,35 @@
+{
+    "classes": [
+        {
+            "className": "LocalDatabase",
+            "object": true,
+            "qualifiedClassName": "LocalDatabase",
+            "signals": [
+                {
+                    "access": "public",
+                    "arguments": [
+                        {
+                            "name": "error",
+                            "type": "QString"
+                        }
+                    ],
+                    "name": "databaseError",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "databaseReady",
+                    "returnType": "void"
+                }
+            ],
+            "superClasses": [
+                {
+                    "access": "public",
+                    "name": "QObject"
+                }
+            ]
+        }
+    ],
+    "inputFile": "LocalDatabase.h",
+    "outputRevision": 68
+}

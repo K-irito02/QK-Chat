@@ -1,0 +1,11 @@
+<RCC>
+  <qresource prefix="/QKChatClient/">
+    <file alias="qml/main.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/main.qml</file>
+    <file alias="qml/LoginWindow.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/LoginWindow.qml</file>
+    <file alias="qml/RegisterWindow.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/RegisterWindow.qml</file>
+    <file alias="qml/components/CustomButton.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/CustomButton.qml</file>
+    <file alias="qml/components/CustomTextField.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/CustomTextField.qml</file>
+    <file alias="qml/components/AvatarSelector.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/AvatarSelector.qml</file>
+  </qresource>
+</RCC>
+

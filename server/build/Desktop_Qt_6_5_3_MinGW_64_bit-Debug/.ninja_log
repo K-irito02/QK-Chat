@@ -1,0 +1,19 @@
+# ninja log v6
+8805	15199	7756924766654462	CMakeFiles/QKChatServer.dir/src/core/SessionManager.cpp.obj	3e16efafce294418
+29	481	7756924683286804	.qt_plugins/Qt6_QmlPlugins_Imports_QKChatServer.cmake	af535566901f0c52
+29	481	7756924683286804	D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/.qt_plugins/Qt6_QmlPlugins_Imports_QKChatServer.cmake	af535566901f0c52
+482	7115	7756924746456360	QKChatServer_autogen/timestamp	8c4166354989184c
+482	7115	7756924746456360	QKChatServer_autogen/mocs_compilation.cpp	8c4166354989184c
+7910	14453	7756924757700448	CMakeFiles/QKChatServer.dir/src/admin/LoginDialog.cpp.obj	b9a53a029678f2e4
+482	7115	7756924746456360	D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/timestamp	8c4166354989184c
+9895	16234	7756924777551588	CMakeFiles/QKChatServer.dir/src/utils/AdminAuth.cpp.obj	14b1c75510c199c6
+482	7115	7756924746456360	D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/mocs_compilation.cpp	8c4166354989184c
+7152	14548	7756924750122599	CMakeFiles/QKChatServer.dir/QKChatServer_autogen/mocs_compilation.cpp.obj	cc3c74899a9ed823
+7370	14805	7756924752302013	CMakeFiles/QKChatServer.dir/src/main.cpp.obj	c6a97150691b8808
+7633	14866	7756924754953161	CMakeFiles/QKChatServer.dir/src/admin/AdminWindow.cpp.obj	c941f852dc932bcf
+8200	14880	7756924760600846	CMakeFiles/QKChatServer.dir/src/admin/DashboardWidget.cpp.obj	ac2c1067014e8928
+9501	16165	7756924773610121	CMakeFiles/QKChatServer.dir/src/network/ProtocolParser.cpp.obj	cdccb27b42d722f9
+8480	19213	7756924763400753	CMakeFiles/QKChatServer.dir/src/core/ChatServer.cpp.obj	6af7fdcc4c951f80
+9114	16768	7756924769753900	CMakeFiles/QKChatServer.dir/src/database/Database.cpp.obj	ff1c3193b2d59dae
+10278	17060	7756924781367939	CMakeFiles/QKChatServer.dir/src/config/ServerConfig.cpp.obj	a552c0d11b563af4
+19220	21841	7756924870805097	bin/QKChatServer.exe	54ef610588d30576

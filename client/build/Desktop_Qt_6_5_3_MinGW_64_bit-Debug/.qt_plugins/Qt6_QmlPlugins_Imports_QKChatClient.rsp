@@ -1,0 +1,14 @@
+-rootPath
+D:/QT_Learn/Projects/QKChatApp/client
+-cmake-output
+-output-file
+D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/.qt_plugins/Qt6_QmlPlugins_Imports_QKChatClient.cmake
+-importPath
+D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatClient
+-importPath
+D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug
+-importPath
+D:/Qt/6.5.3/mingw_64/./qml
+-qrcFiles
+D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/.rcc/qmake_QKChatClient.qrc
+D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/.rcc/QKChatClient_raw_qml_0.qrc

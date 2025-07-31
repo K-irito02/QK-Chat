@@ -1,0 +1,19 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/avatar1.png</file>
+        <file>icons/avatar2.png</file>
+        <file>icons/avatar3.png</file>
+        <file>icons/avatar4.png</file>
+        <file>icons/avatar5.png</file>
+        <file>icons/captcha.png</file>
+        <file>icons/edit.png</file>
+        <file>icons/email.png</file>
+        <file>icons/eye.png</file>
+        <file>icons/eye-off.png</file>
+        <file>icons/lock.png</file>
+        <file>icons/logo.png</file>
+        <file>icons/moon.png</file>
+        <file>icons/sun.png</file>
+        <file>icons/user.png</file>
+    </qresource>
+</RCC>

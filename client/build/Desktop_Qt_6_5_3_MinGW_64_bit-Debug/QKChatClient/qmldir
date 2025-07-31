@@ -1,0 +1,9 @@
+module QKChatClient
+typeinfo QKChatClient.qmltypes
+prefer :/QKChatClient/
+LoginWindow 1.0 qml/LoginWindow.qml
+RegisterWindow 1.0 qml/RegisterWindow.qml
+CustomButton 1.0 qml/components/CustomButton.qml
+CustomTextField 1.0 qml/components/CustomTextField.qml
+AvatarSelector 1.0 qml/components/AvatarSelector.qml
+

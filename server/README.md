@@ -52,6 +52,8 @@ QK Chat 服务器端是一个功能完整的即时通讯后端系统，采用现
 ```
 server/
 ├── CMakeLists.txt          # CMake构建配置
+├── CMakeLists.txt.user     # Qt Creator用户配置
+├── README.md               # 项目说明文档
 ├── src/                    # 源代码目录
 │   ├── main.cpp           # 应用程序入口
 │   ├── core/              # 核心服务层
@@ -79,23 +81,28 @@ server/
 │   │   └── CacheManager.cpp
 │   ├── network/           # 网络通信层
 │   │   ├── ProtocolParser.h
-│   │   └── ProtocolParser.cpp
+│   │   ├── ProtocolParser.cpp
+│   │   ├── QSslServer.h
+│   │   └── QSslServer.cpp
+│   ├── crypto/            # 加密模块
+│   │   ├── CryptoManager.h
+│   │   └── CryptoManager.cpp
 │   ├── utils/             # 工具类
 │   │   ├── AdminAuth.h
-│   │   └── AdminAuth.cpp
+│   │   ├── AdminAuth.cpp
+│   │   ├── AdminManager.h
+│   │   └── AdminManager.cpp
 │   └── config/            # 配置管理
 │       ├── ServerConfig.h
 │       └── ServerConfig.cpp
 ├── data/                  # 数据文件
 │   └── mysql_init.sql    # MySQL数据库初始化脚本
 ├── config/               # 配置文件
-│   └── dev.conf         # 开发环境配置
-├── certs/               # SSL证书目录
-│   ├── server.crt      # 服务器证书
-│   └── server.key      # 服务器私钥
-└── resources/           # 资源文件
-    ├── qml/            # QML管理界面组件
-    └── icons/          # 管理界面图标
+│   ├── dev.conf         # 开发环境配置
+│   ├── ssl_config.cnf   # SSL配置
+│   ├── redis.conf       # Redis配置
+│   └── database_config.sql # 数据库配置
+└── build/               # 构建输出目录
 ```
 
 ## 🚀 快速开始
@@ -111,11 +118,29 @@ server/
 ### 开发环境
 
 #### Qt Creator
-1. Qt Creator 16.0.2
-2. Qt Widgets Application
-3. MySQL 8.0
-4. Redis 6.0
-5. Qt_6_5_3_MinGW_64_bit
+1. **Qt Creator**: 16.0.2 或更高版本
+2. **Qt版本**: Qt 6.5.3 MinGW 64-bit
+3. **编译器**: MinGW 64-bit
+4. **构建系统**: CMake 3.16+
+5. **调试器**: GDB (MinGW)
+
+#### 必需模块
+- Qt6::Core
+- Qt6::Widgets
+- Qt6::Network
+- Qt6::Sql
+- Qt6::Qml
+- Qt6::Quick
+- Qt6::OpenSSL
+
+#### 数据库依赖
+- **MySQL**: 8.0+ (主数据库)
+- **Redis**: 6.0+ (缓存服务)
+- **SQLite**: 3.35+ (本地配置存储)
+
+#### 可选依赖
+- OpenSSL 1.1.1+ (SSL/TLS支持)
+- Zlib (数据压缩)
 
 
 ## 📊 系统配置
@@ -128,6 +153,8 @@ port=8443
 admin_port=8080
 max_connections=1000
 thread_pool_size=16
+heartbeat_interval=30000
+connection_timeout=10000
 
 [Database]
 type=mysql
@@ -137,6 +164,8 @@ database=qkchat
 username=qkchat_user
 password=qkchat_pass
 pool_size=10
+connection_timeout=5000
+max_retry_attempts=3
 
 [Security]
 ssl_enabled=true
@@ -145,18 +174,23 @@ key_file=certs/server.key
 admin_username=admin
 admin_password=QKchat2024!
 session_timeout=1800
+password_min_length=8
+max_login_attempts=5
 
 [Redis]
 host=localhost
 port=6379
 password=
 database=0
+connection_timeout=5000
+max_connections=20
 
 [Logging]
 level=info
 file=logs/server.log
 max_size=100MB
 backup_count=5
+enable_console_log=true
 ```
 
 ### SSL证书配置
@@ -165,102 +199,156 @@ backup_count=5
 openssl req -x509 -newkey rsa:4096 -keyout certs/server.key -out certs/server.crt -days 365 -nodes
 ```
 
+### 数据库配置 (`config/database_config.sql`)
+```sql
+-- 创建数据库用户和权限
+CREATE USER 'qkchat_user'@'localhost' IDENTIFIED BY 'qkchat_pass';
+GRANT ALL PRIVILEGES ON qkchat.* TO 'qkchat_user'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+### Redis配置 (`config/redis.conf`)
+```ini
+# Redis服务器配置
+port 6379
+bind 127.0.0.1
+maxmemory 256mb
+maxmemory-policy allkeys-lru
+save 900 1
+save 300 10
+save 60 10000
+```
+
 ## 🔧 管理界面使用
 
 ### 管理员登录
 1. 启动服务器后，自动显示登录对话框
 2. 输入管理员账号密码（默认：admin/QKchat2024!）
 3. 登录成功后进入主管理界面
+4. 首次登录后建议立即修改默认密码
+
+### 管理员账号管理
+- **默认账号**: admin
+- **默认密码**: QKchat2024!
+- **邮箱**: admin@qkchat.com
+- **显示名称**: 系统管理员
+- **权限级别**: 超级管理员
+
+### 安全策略
+- **密码策略**: 最少8位，包含大小写字母和数字
+- **登录限制**: 连续失败5次后锁定账户
+- **会话超时**: 30分钟无操作自动登出
+- **审计日志**: 记录所有管理员操作
 
 ### 功能模块
 
 #### 📊 仪表板
 - 实时服务器状态监控
-- 在线用户统计
-- 系统资源使用情况
-- 消息流量统计
+- 在线用户统计和趋势图
+- 系统资源使用情况（CPU、内存、磁盘）
+- 消息流量统计和图表
+- 数据库连接池状态
+- Redis缓存命中率
 
 #### 👥 用户管理
-- 用户列表查看
-- 用户信息编辑
-- 用户状态管理
-- 用户搜索和过滤
+- 用户列表查看和分页
+- 用户信息编辑和更新
+- 用户状态管理（启用/禁用）
+- 用户搜索和高级过滤
+- 用户权限管理
+- 用户活动日志查看
 
 #### ⚙️ 系统配置
-- 服务器参数配置
-- 数据库连接设置
-- 安全策略配置
-- 日志级别调整
+- 服务器参数动态配置
+- 数据库连接设置和测试
+- 安全策略配置和验证
+- 日志级别实时调整
+- SSL证书管理
+- 备份策略配置
 
 #### 📋 日志查看
-- 系统日志实时查看
-- 日志级别过滤
-- 日志搜索功能
-- 日志导出功能
+- 系统日志实时查看和过滤
+- 日志级别分类显示
+- 日志搜索和关键词高亮
+- 日志导出和归档
+- 错误日志统计和分析
+- 性能日志监控
 
 #### 📈 实时监控
-- 连接数监控
-- 消息流量监控
-- 系统性能监控
-- 异常告警功能
+- 连接数实时监控和告警
+- 消息流量监控和统计
+- 系统性能监控和趋势
+- 异常告警和通知
+- 资源使用率监控
+- 网络流量分析
 
 ## 🔒 安全特性
 
 ### 通信安全
 - **SSL/TLS 1.3**：端到端加密通信
-- **证书验证**：服务器证书验证
-- **会话管理**：基于令牌的安全会话
+- **证书验证**：服务器证书验证和客户端证书验证
+- **会话管理**：基于JWT令牌的安全会话
+- **密钥轮换**：定期密钥更新机制
 
 ### 数据安全
-- **密码哈希**：SHA-256密码存储
-- **数据加密**：敏感数据加密存储
-- **访问控制**：基于角色的权限管理
+- **密码哈希**：SHA-256 + 盐值密码存储
+- **数据加密**：敏感数据AES-256加密存储
+- **访问控制**：基于角色的权限管理（RBAC）
+- **数据备份**：自动加密备份和恢复
 
 ### 系统安全
-- **账户锁定**：管理员账户保护
-- **日志审计**：完整的操作日志记录
-- **防火墙**：网络访问控制
+- **账户锁定**：管理员账户智能锁定保护
+- **日志审计**：完整的操作日志记录和分析
+- **防火墙**：网络访问控制和IP白名单
+- **入侵检测**：异常行为监控和告警
+- **安全策略**：密码强度、会话超时等策略执行
 
 ## 📊 性能优化
 
 ### 数据库优化
-- 连接池管理
-- 查询优化和索引
-- 读写分离
-- 数据分片
+- **连接池管理**: 动态连接池大小调整
+- **查询优化**: 智能索引和查询计划优化
+- **读写分离**: 主从数据库架构
+- **数据分片**: 水平分片和垂直分片
+- **缓存策略**: 多级缓存和LRU淘汰
 
 ### 网络优化
-- 连接复用
-- 消息压缩
-- 负载均衡
-- 缓存策略
+- **连接复用**: HTTP/2连接复用机制
+- **消息压缩**: Gzip和LZ4压缩算法
+- **负载均衡**: 多服务器负载分发
+- **缓存策略**: Redis缓存热点数据
+- **流量控制**: 智能限流和熔断机制
 
 ### 内存优化
-- 对象池管理
-- 内存泄漏检测
-- 垃圾回收
-- 缓存清理
+- **对象池管理**: 连接和对象复用
+- **内存泄漏检测**: 自动内存泄漏监控
+- **垃圾回收**: 智能内存回收策略
+- **缓存清理**: 定期缓存清理和优化
+- **内存监控**: 实时内存使用监控
 
 
 ## 📈 监控和维护
 
 ### 系统监控
-- **CPU使用率**：实时CPU监控
-- **内存使用**：内存占用统计
-- **网络流量**：网络I/O监控
-- **磁盘使用**：存储空间监控
+- **CPU使用率**: 实时CPU监控和多核利用率
+- **内存使用**: 内存占用统计和趋势分析
+- **网络流量**: 网络I/O监控和带宽使用
+- **磁盘使用**: 存储空间监控和I/O性能
+- **进程监控**: 进程状态和资源使用
 
 ### 性能指标
-- **并发连接数**：当前活跃连接数
-- **消息吞吐量**：每秒处理消息数
-- **响应时间**：平均响应时间
-- **错误率**：系统错误统计
+- **并发连接数**: 当前活跃连接数和峰值统计
+- **消息吞吐量**: 每秒处理消息数和QPS监控
+- **响应时间**: 平均响应时间和P95/P99延迟
+- **错误率**: 系统错误统计和错误分类
+- **缓存命中率**: Redis缓存命中率统计
 
 ### 维护任务
-- **日志轮转**：自动日志文件轮转
-- **数据备份**：定期数据库备份
-- **证书更新**：SSL证书到期提醒
-- **系统更新**：安全补丁更新
+- **日志轮转**: 自动日志文件轮转和压缩
+- **数据备份**: 定期数据库备份和恢复测试
+- **证书更新**: SSL证书到期提醒和自动更新
+- **系统更新**: 安全补丁更新和版本管理
+- **性能调优**: 定期性能分析和优化建议
 
 ## 🔧 开发指南
 

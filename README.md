@@ -60,54 +60,126 @@ QKChat 是一个基于 Qt6 和 QML 开发的现代化端到端聊天应用。支
 
 ### 客户端架构
 ```
-QKChatClient/
-├── src/
-│   ├── controllers/     # 控制器层
+client/
+├── src/               # 源代码
+│   ├── main.cpp       # 程序入口
+│   ├── controllers/   # 控制器层
 │   │   ├── UserController.cpp
-│   │   └── ChatController.cpp
-│   ├── models/         # 数据模型
-│   │   └── UserModel.cpp
-│   ├── network/        # 网络通信
-│   │   └── NetworkClient.cpp
-│   ├── database/       # 本地数据库
-│   │   └── LocalDatabase.cpp
-│   ├── crypto/         # 加密模块
-│   │   └── CryptoManager.cpp
-│   ├── utils/          # 工具类
+│   │   ├── UserController.h
+│   │   ├── ChatController.cpp
+│   │   └── ChatController.h
+│   ├── models/        # 数据模型
+│   │   ├── UserModel.cpp
+│   │   └── UserModel.h
+│   ├── network/       # 网络通信
+│   │   ├── NetworkClient.cpp
+│   │   └── NetworkClient.h
+│   ├── database/      # 本地数据库
+│   │   ├── LocalDatabase.cpp
+│   │   └── LocalDatabase.h
+│   ├── crypto/        # 加密模块
+│   │   ├── CryptoManager.cpp
+│   │   └── CryptoManager.h
+│   ├── utils/         # 工具类
 │   │   ├── Validator.cpp
-│   │   └── FileTransferManager.cpp
-│   └── config/         # 配置管理
-│       └── ConfigManager.cpp
+│   │   ├── Validator.h
+│   │   ├── FileTransferManager.cpp
+│   │   └── FileTransferManager.h
+│   └── config/        # 配置管理
+│       ├── ConfigManager.cpp
+│       └── ConfigManager.h
 ├── qml/               # QML界面
-│   ├── main.qml
-│   ├── LoginWindow.qml
-│   ├── ChatMainWindow.qml
-│   └── components/
-└── icons/             # 图标资源
+│   ├── main.qml       # 主界面
+│   ├── LoginWindow.qml    # 登录窗口
+│   ├── RegisterWindow.qml # 注册窗口
+│   ├── ChatMainWindow.qml # 聊天主窗口
+│   └── components/    # 界面组件
+│       ├── ChatWindow.qml     # 聊天窗口
+│       ├── MessageBubble.qml  # 消息气泡
+│       ├── ProfilePage.qml    # 个人资料页
+│       ├── ContactsPage.qml   # 联系人页
+│       ├── GroupsPage.qml     # 群组页
+│       ├── SettingsPage.qml   # 设置页
+│       ├── AddPage.qml        # 添加页
+│       ├── DefaultPage.qml    # 默认页
+│       ├── AvatarSelector.qml # 头像选择器
+│       ├── EmojiPicker.qml    # 表情选择器
+│       ├── CustomButton.qml   # 自定义按钮
+│       ├── CustomTextField.qml # 自定义输入框
+│       └── SideBarButton.qml  # 侧边栏按钮
+├── icons/             # 图标资源
+│   ├── logo.png
+│   ├── avatar1.png
+│   ├── avatar2.png
+│   ├── avatar3.png
+│   ├── avatar4.png
+│   ├── avatar5.png
+│   ├── captcha.png
+│   ├── edit.png
+│   ├── email.png
+│   ├── eye-off.png
+│   ├── eye.png
+│   ├── lock.png
+│   ├── moon.png
+│   ├── sun.png
+│   └── user.png
+├── config/            # 配置文件
+│   └── dev.ini
+├── CMakeLists.txt     # CMake构建文件
+├── Resource.qrc       # Qt资源文件
+└── README.md          # 项目说明
 ```
 
 ### 服务器架构
 ```
-QKChatServer/
-├── src/
+server/
+├── src/               # 源代码
+│   ├── main.cpp       # 程序入口
 │   ├── core/          # 核心服务
 │   │   ├── ChatServer.cpp
+│   │   ├── ChatServer.h
 │   │   ├── SessionManager.cpp
-│   │   └── GroupManager.cpp
+│   │   ├── SessionManager.h
+│   │   ├── GroupManager.cpp
+│   │   └── GroupManager.h
 │   ├── database/      # 数据库层
 │   │   ├── Database.cpp
-│   │   └── DatabaseOptimizer.cpp
+│   │   ├── Database.h
+│   │   ├── DatabaseOptimizer.cpp
+│   │   └── DatabaseOptimizer.h
 │   ├── cache/         # 缓存系统
-│   │   └── CacheManager.cpp
+│   │   ├── CacheManager.cpp
+│   │   └── CacheManager.h
 │   ├── network/       # 网络协议
-│   │   └── ProtocolParser.cpp
+│   │   ├── ProtocolParser.cpp
+│   │   ├── ProtocolParser.h
+│   │   ├── QSslServer.cpp
+│   │   └── QSslServer.h
 │   ├── admin/         # 管理界面
 │   │   ├── AdminWindow.cpp
-│   │   └── DashboardWidget.cpp
-│   └── utils/         # 工具类
-│       └── AdminAuth.cpp
+│   │   ├── AdminWindow.h
+│   │   ├── LoginDialog.cpp
+│   │   ├── LoginDialog.h
+│   │   ├── LoginDialog.ui
+│   │   ├── DashboardWidget.cpp
+│   │   └── DashboardWidget.h
+│   ├── utils/         # 工具类
+│   │   ├── AdminAuth.cpp
+│   │   ├── AdminAuth.h
+│   │   ├── AdminManager.cpp
+│   │   └── AdminManager.h
+│   ├── crypto/        # 加密模块
+│   │   ├── CryptoManager.cpp
+│   │   └── CryptoManager.h
+│   └── config/        # 配置管理
+│       ├── ServerConfig.cpp
+│       └── ServerConfig.h
 ├── config/            # 配置文件
-└── data/              # 数据文件
+│   └── dev.conf
+├── data/              # 数据文件
+│   └── mysql_init.sql # 数据库初始化脚本
+├── CMakeLists.txt     # CMake构建文件
+└── README.md          # 项目说明
 ```
 
 ### 系统要求
@@ -170,7 +242,20 @@ password=your_password
 redis_host=localhost
 redis_port=6379
 max_memory=512MB
+
+[Security]
+admin_username=admin
+admin_password=QKchat2024!
 ```
+
+### 管理员账号
+服务器启动时会自动创建默认管理员账号：
+- **用户名**: `admin`
+- **密码**: `QKchat2024!`
+- **邮箱**: `admin@qkchat.com`
+- **显示名称**: `系统管理员`
+
+⚠️ **重要**: 首次登录后请立即修改默认密码！
 
 
 ## 📚 开发指南
@@ -208,3 +293,7 @@ max_memory=512MB
 - 前向保密防止密钥泄露
 - 安全随机数生成
 - 输入验证和SQL注入防护
+- 管理员账号安全策略
+- 密码强度检查和策略执行
+- 账号锁定机制防止暴力破解
+- 审计日志记录所有管理员操作

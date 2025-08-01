@@ -1,63 +1,73 @@
 #include "ChatServer.h"
-#include "SessionManager.h"
 #include "../database/Database.h"
+#include "../core/SessionManager.h"
 #include "../network/ProtocolParser.h"
 #include "../config/ServerConfig.h"
 #include <QSslCertificate>
 #include <QSslKey>
 #include <QSslConfiguration>
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QVariant>
+#include <QVariantMap>
+#include <QThreadPool>
 #include <QLoggingCategory>
-#include <QMutexLocker>
-#include <QUuid>
-#include <QFile>
-#include <QIODevice>
-#include <QSsl>
-#include <functional>
-#include <QtConcurrent>
-#include <QRandomGenerator>
+#include <QDebug>
+#include <QProcess>
+#include <QTcpServer>
+#include <QSslSocket>
 #include <QDateTime>
-#include <QHostAddress>
-#include <QChar>
-#include <QtAlgorithms>
+#include <QtEndian>
+#include <QCryptographicHash>
 
 Q_LOGGING_CATEGORY(chatServer, "qkchat.server.chatserver")
 
-const int ChatServer::HEARTBEAT_TIMEOUT;
-const int ChatServer::CLEANUP_INTERVAL;
-
 ChatServer::ChatServer(QObject *parent)
     : QObject(parent)
-    , _sslServer(nullptr)
+    , _sslServer(new CustomSslServer(this))
+    , _database(new Database(this))
+    , _sessionManager(new SessionManager(this))
+    , _protocolParser(new ProtocolParser(this))
+    , _threadPool(QThreadPool::globalInstance())
+    , _cleanupTimer(new QTimer(this))
+    , _host("0.0.0.0")
+    , _port(8888)
     , _isRunning(false)
+    , _startTime(QDateTime::currentDateTime())
     , _totalMessages(0)
 {
-    // 初始化组件
-    _database = new Database(this);
-    _sessionManager = new SessionManager(this);
-    _protocolParser = new ProtocolParser(this);
-    _threadPool = QThreadPool::globalInstance();
-    
-    // 从配置获取服务器参数
-    ServerConfig *config = ServerConfig::instance();
-    _host = config->getServerHost();
-    _port = config->getServerPort();
-    
-    // 设置线程池大小
-    _threadPool->setMaxThreadCount(config->getThreadPoolSize());
-    
     setupSslServer();
     setupCleanupTimer();
     
-    qCInfo(chatServer) << "ChatServer initialized";
+    qCInfo(chatServer) << "ChatServer created";
 }
 
 ChatServer::~ChatServer()
 {
     stopServer();
+    qCInfo(chatServer) << "ChatServer destroyed";
 }
 
+// 数据库初始化
+bool ChatServer::initializeDatabase()
+{
+    qCInfo(chatServer) << "Initializing database...";
+    
+    // 初始化数据库连接
+    if (!_database->initialize()) {
+        qCCritical(chatServer) << "Failed to initialize database connection";
+        return false;
+    }
+    
+    // 设置数据库（创建表和默认管理员账号）
+    _database->setupDatabase();
+    
+    qCInfo(chatServer) << "Database initialization completed successfully";
+    return true;
+}
+
+// 服务器控制
 bool ChatServer::startServer()
 {
     if (_isRunning) {
@@ -65,15 +75,15 @@ bool ChatServer::startServer()
         return true;
     }
     
-    // 初始化数据库连接
-    if (!_database->initialize()) {
-        emit serverError("无法连接到数据库");
-        return false;
-    }
+    // 从配置文件获取服务器设置
+    ServerConfig *config = ServerConfig::instance();
+    _host = config->getServerHost();
+    _port = config->getServerPort();
     
     // 启动SSL服务器
     if (!_sslServer->listen(QHostAddress(_host), _port)) {
-        QString error = QString("无法启动服务器: %1").arg(_sslServer->errorString());
+        QString error = QString("Failed to start server on %1:%2 - %3")
+                       .arg(_host).arg(_port).arg(_sslServer->errorString());
         qCCritical(chatServer) << error;
         emit serverError(error);
         return false;
@@ -81,9 +91,11 @@ bool ChatServer::startServer()
     
     _isRunning = true;
     _startTime = QDateTime::currentDateTime();
+    
+    // 启动清理定时器
     _cleanupTimer->start();
     
-    qCInfo(chatServer) << "Server started on" << _host << ":" << _port;
+    qCInfo(chatServer) << "Chat server started on" << _host << ":" << _port;
     emit serverStarted();
     
     return true;
@@ -95,38 +107,47 @@ void ChatServer::stopServer()
         return;
     }
     
-    _isRunning = false;
+    qCInfo(chatServer) << "Stopping chat server...";
+    
+    // 停止接受新连接
+    _sslServer->close();
+    
+    // 停止清理定时器
     _cleanupTimer->stop();
     
     // 断开所有客户端连接
     QMutexLocker locker(&_clientsMutex);
-    for (auto it = _clients.begin(); it != _clients.end(); ++it) {
-        ClientConnection *client = it.value();
-        client->socket->disconnectFromHost();
-        delete client;
-    }
-    _clients.clear();
-    _userConnections.clear();
+    QList<QSslSocket*> sockets = _clients.keys();
     locker.unlock();
     
-    // 停止SSL服务器
-    if (_sslServer && _sslServer->isListening()) {
-        _sslServer->close();
+    for (QSslSocket *socket : sockets) {
+        if (socket->state() == QAbstractSocket::ConnectedState) {
+            socket->disconnectFromHost();
+        }
     }
     
-    qCInfo(chatServer) << "Server stopped";
+    // 等待所有连接关闭
+    QTimer::singleShot(3000, this, [this]() {
+        QMutexLocker locker(&_clientsMutex);
+        for (auto it = _clients.begin(); it != _clients.end(); ++it) {
+            delete it.value();
+            it.key()->deleteLater();
+        }
+        _clients.clear();
+        _userConnections.clear();
+    });
+    
+    _isRunning = false;
+    
+    qCInfo(chatServer) << "Chat server stopped";
     emit serverStopped();
 }
 
 void ChatServer::restartServer()
 {
-    qCInfo(chatServer) << "Restarting server...";
+    qCInfo(chatServer) << "Restarting chat server...";
     stopServer();
-    
-    // 短暂延迟后重启
-    QTimer::singleShot(1000, this, [this]() {
-        startServer();
-    });
+    QTimer::singleShot(1000, this, &ChatServer::startServer);
 }
 
 bool ChatServer::isRunning() const
@@ -134,6 +155,7 @@ bool ChatServer::isRunning() const
     return _isRunning;
 }
 
+// 状态查询
 int ChatServer::getOnlineUserCount() const
 {
     QMutexLocker locker(&_clientsMutex);
@@ -153,20 +175,64 @@ QStringList ChatServer::getConnectedUsers() const
     
     for (auto it = _userConnections.begin(); it != _userConnections.end(); ++it) {
         qint64 userId = it.key();
-        // 这里可以通过数据库查询用户名，为简化直接返回用户ID
-        users << QString::number(userId);
+        if (_database) {
+            Database::UserInfo userInfo = _database->getUserById(userId);
+            if (!userInfo.username.isEmpty()) {
+                users.append(userInfo.username);
+            }
+        }
     }
     
     return users;
 }
 
+// Dashboard统计方法
+int ChatServer::getTotalUserCount() const
+{
+    if (_database) {
+        return _database->getTotalUserCount();
+    }
+    return 0;
+}
+
+QString ChatServer::getUptime() const
+{
+    qint64 seconds = _startTime.secsTo(QDateTime::currentDateTime());
+    int days = seconds / 86400;
+    int hours = (seconds % 86400) / 3600;
+    int minutes = (seconds % 3600) / 60;
+    
+    if (days > 0) {
+        return QString("%1天 %2小时 %3分钟").arg(days).arg(hours).arg(minutes);
+    } else if (hours > 0) {
+        return QString("%1小时 %2分钟").arg(hours).arg(minutes);
+    } else {
+        return QString("%1分钟").arg(minutes);
+    }
+}
+
+int ChatServer::getCpuUsage() const
+{
+    // TODO: 实现CPU使用率获取
+    // 这里可以使用系统命令或者第三方库获取CPU使用率
+    return 0;
+}
+
+int ChatServer::getMemoryUsage() const
+{
+    // TODO: 实现内存使用率获取
+    // 这里可以使用QProcess调用系统命令获取内存使用情况
+    return 0;
+}
+
+// 消息发送
 bool ChatServer::sendMessageToUser(qint64 userId, const QByteArray &message)
 {
     QMutexLocker locker(&_clientsMutex);
     
     ClientConnection *client = getClientByUserId(userId);
-    if (!client) {
-        qCWarning(chatServer) << "User not found or offline:" << userId;
+    if (!client || !client->socket) {
+        qCWarning(chatServer) << "User not connected:" << userId;
         return false;
     }
     
@@ -177,6 +243,9 @@ bool ChatServer::sendMessageToUser(qint64 userId, const QByteArray &message)
     }
     
     client->socket->flush();
+    client->lastActivity = QDateTime::currentDateTime();
+    
+    qCDebug(chatServer) << "Message sent to user:" << userId << "bytes:" << bytesWritten;
     return true;
 }
 
@@ -184,57 +253,22 @@ void ChatServer::broadcastMessage(const QByteArray &message)
 {
     QMutexLocker locker(&_clientsMutex);
     
+    int sentCount = 0;
     for (auto it = _clients.begin(); it != _clients.end(); ++it) {
         ClientConnection *client = it.value();
-        client->socket->write(message);
-        client->socket->flush();
-    }
-    
-    qCInfo(chatServer) << "Broadcast message to" << _clients.size() << "clients";
-}
-
-void ChatServer::setupSslServer()
-{
-    _sslServer = new QSslServer(this);
-    
-    // 配置SSL证书
-    ServerConfig *config = ServerConfig::instance();
-    if (config->isSslEnabled()) {
-        QString certFile = config->getCertificateFile();
-        QString keyFile = config->getPrivateKeyFile();
-        
-        QList<QSslCertificate> certs = QSslCertificate::fromPath(certFile);
-        QSslCertificate certificate = certs.isEmpty() ? QSslCertificate() : certs.first();
-        
-        QSslKey privateKey;
-        QFile keyFileObj(keyFile);
-        if (keyFileObj.open(QIODevice::ReadOnly)) {
-            privateKey = QSslKey(keyFileObj.readAll(), QSsl::Rsa);
-            keyFileObj.close();
-        }
-        
-        if (certificate.isNull() || privateKey.isNull()) {
-            qCWarning(chatServer) << "Failed to load SSL certificate or key";
-        } else {
-            QSslConfiguration sslConfig = QSslConfiguration::defaultConfiguration();
-            sslConfig.setLocalCertificate(certificate);
-            sslConfig.setPrivateKey(privateKey);
-            _sslServer->setSslConfiguration(sslConfig);
-            qCInfo(chatServer) << "SSL configuration loaded";
+        if (client && client->socket && client->userId > 0) {
+            if (client->socket->write(message) != -1) {
+                client->socket->flush();
+                client->lastActivity = QDateTime::currentDateTime();
+                sentCount++;
+            }
         }
     }
     
-    // 连接信号
-    connect(_sslServer, &QSslServer::newConnection, this, &ChatServer::onNewConnection);
+    qCInfo(chatServer) << "Broadcast message sent to" << sentCount << "clients";
 }
 
-void ChatServer::setupCleanupTimer()
-{
-    _cleanupTimer = new QTimer(this);
-    _cleanupTimer->setInterval(CLEANUP_INTERVAL);
-    connect(_cleanupTimer, &QTimer::timeout, this, &ChatServer::cleanupConnections);
-}
-
+// 私有槽函数
 void ChatServer::onNewConnection()
 {
     while (_sslServer->hasPendingConnections()) {
@@ -244,28 +278,33 @@ void ChatServer::onNewConnection()
         }
         
         // 创建客户端连接对象
-        ClientConnection *client = new ClientConnection;
+        ClientConnection *client = new ClientConnection();
         client->socket = socket;
-        client->userId = -1; // 未认证
+        client->userId = 0; // 未认证用户
+        client->sessionToken = "";
         client->lastActivity = QDateTime::currentDateTime();
-        
-        // 设置SSL配置
-        socket->setPeerVerifyMode(QSslSocket::VerifyNone);
-        socket->startServerEncryption();
         
         // 连接信号
         connect(socket, &QSslSocket::disconnected, this, &ChatServer::onClientDisconnected);
         connect(socket, &QSslSocket::readyRead, this, &ChatServer::onClientDataReceived);
-        connect(socket, QOverload<const QList<QSslError>&>::of(&QSslSocket::sslErrors),
+        connect(socket, QOverload<const QList<QSslError> &>::of(&QSslSocket::sslErrors),
                 this, &ChatServer::onSslErrors);
         
-        // 添加到连接列表
+        // 添加到客户端列表
         QMutexLocker locker(&_clientsMutex);
         _clients[socket] = client;
         locker.unlock();
         
-        qCInfo(chatServer) << "New client connected from" << socket->peerAddress().toString();
+        QString clientAddress = QString("%1:%2").arg(socket->peerAddress().toString()).arg(socket->peerPort());
+        qCInfo(chatServer) << "New client connected from:" << clientAddress;
         emit clientConnected(reinterpret_cast<qint64>(socket));
+        
+        // 记录连接日志
+        if (_database) {
+            _database->logEvent(Database::Info, "connection", "Client connected", 
+                              -1, socket->peerAddress().toString(), "", 
+                              QVariantMap{{"socket_id", reinterpret_cast<qint64>(socket)}});
+        }
     }
 }
 
@@ -276,10 +315,7 @@ void ChatServer::onClientDisconnected()
         return;
     }
     
-    qCInfo(chatServer) << "Client disconnected from" << socket->peerAddress().toString();
-    
     removeClient(socket);
-    emit clientDisconnected(reinterpret_cast<qint64>(socket));
 }
 
 void ChatServer::onClientDataReceived()
@@ -293,22 +329,18 @@ void ChatServer::onClientDataReceived()
     ClientConnection *client = getClientBySocket(socket);
     if (!client) {
         locker.unlock();
-        socket->disconnectFromHost();
+        qCWarning(chatServer) << "Data received from unknown client";
         return;
     }
+    locker.unlock();
     
     // 读取数据
     QByteArray data = socket->readAll();
     client->readBuffer.append(data);
     client->lastActivity = QDateTime::currentDateTime();
     
-    locker.unlock();
-    
-    // 处理消息（在工作线程中）
-    Q_UNUSED(QtConcurrent::run(_threadPool, [this, client]() {
-        processClientMessage(client, client->readBuffer);
-        client->readBuffer.clear();
-    }));
+    // 处理数据包
+    processClientMessage(client, client->readBuffer);
 }
 
 void ChatServer::onSslErrors(const QList<QSslError> &errors)
@@ -318,128 +350,302 @@ void ChatServer::onSslErrors(const QList<QSslError> &errors)
         return;
     }
     
-    // 在开发环境中忽略SSL错误
-    qCWarning(chatServer) << "SSL errors for" << socket->peerAddress().toString();
+    qCWarning(chatServer) << "SSL errors from client" << socket->peerAddress().toString() << ":";
     for (const QSslError &error : errors) {
-        qCWarning(chatServer) << error.errorString();
+        qCWarning(chatServer) << "  -" << error.errorString();
     }
     
+    // 在开发环境中忽略SSL错误
     socket->ignoreSslErrors();
 }
 
 void ChatServer::cleanupConnections()
 {
-    QMutexLocker locker(&_clientsMutex);
-    QDateTime cutoffTime = QDateTime::currentDateTime().addMSecs(-HEARTBEAT_TIMEOUT);
+    QDateTime now = QDateTime::currentDateTime();
+    QList<QSslSocket*> timeoutSockets;
     
-    auto it = _clients.begin();
-    while (it != _clients.end()) {
+    // 查找超时的连接
+    QMutexLocker locker(&_clientsMutex);
+    for (auto it = _clients.begin(); it != _clients.end(); ++it) {
         ClientConnection *client = it.value();
-        
-        if (client->lastActivity < cutoffTime) {
-            qCInfo(chatServer) << "Removing inactive client:" << client->socket->peerAddress().toString();
-            
-            // 从用户连接映射中移除
-            if (client->userId > 0) {
-                _userConnections.remove(client->userId);
-                emit userOffline(client->userId);
-            }
-            
-            // 断开连接并删除对象
-            client->socket->disconnectFromHost();
-            delete client;
-            
-            it = _clients.erase(it);
-        } else {
-            ++it;
+        if (client && client->lastActivity.secsTo(now) > HEARTBEAT_TIMEOUT / 1000) {
+            timeoutSockets.append(it.key());
         }
     }
+    locker.unlock();
+    
+    // 移除超时的连接
+    for (QSslSocket *socket : timeoutSockets) {
+        qCInfo(chatServer) << "Removing timeout connection:" << socket->peerAddress().toString();
+        removeClient(socket);
+    }
+    
+    // 清理过期会话
+    if (_sessionManager) {
+        _sessionManager->cleanExpiredSessions();
+    }
+    
+    if (_database) {
+        _database->cleanExpiredSessions();
+    }
+}
+
+// 私有方法
+void ChatServer::setupSslServer()
+{
+    // 连接新连接信号
+    connect(_sslServer, &CustomSslServer::newConnection, this, &ChatServer::onNewConnection);
+    
+    // 加载SSL证书和私钥
+    ServerConfig *config = ServerConfig::instance();
+    QString certPath = config->getSslCertificateFile();
+    QString keyPath = config->getSslPrivateKeyFile();
+    
+    if (!certPath.isEmpty() && !keyPath.isEmpty()) {
+        QFile certFile(certPath);
+        QFile keyFile(keyPath);
+        
+        if (certFile.open(QIODevice::ReadOnly) && keyFile.open(QIODevice::ReadOnly)) {
+            QSslCertificate certificate(&certFile);
+            QSslKey privateKey(&keyFile, QSsl::Rsa);
+            
+            if (!certificate.isNull() && !privateKey.isNull()) {
+                _sslServer->setSslConfiguration(QSslConfiguration::defaultConfiguration());
+                
+                QSslConfiguration sslConfig = _sslServer->sslConfiguration();
+                sslConfig.setLocalCertificate(certificate);
+                sslConfig.setPrivateKey(privateKey);
+                sslConfig.setProtocol(QSsl::TlsV1_2OrLater);
+                _sslServer->setSslConfiguration(sslConfig);
+                
+                qCInfo(chatServer) << "SSL certificate loaded from:" << certPath;
+            } else {
+                qCWarning(chatServer) << "Failed to load SSL certificate or private key";
+            }
+        } else {
+            qCWarning(chatServer) << "Failed to open SSL certificate or key files";
+        }
+    } else {
+        qCWarning(chatServer) << "SSL certificate paths not configured, using default configuration";
+    }
+}
+
+void ChatServer::setupCleanupTimer()
+{
+    _cleanupTimer->setInterval(CLEANUP_INTERVAL);
+    _cleanupTimer->setSingleShot(false);
+    connect(_cleanupTimer, &QTimer::timeout, this, &ChatServer::cleanupConnections);
 }
 
 void ChatServer::processClientMessage(ClientConnection *client, const QByteArray &data)
 {
-    try {
-        QVariantMap message = _protocolParser->parseMessage(data);
-        QString type = message["type"].toString();
+    Q_UNUSED(data) // 数据通过 client->readBuffer 处理
+    
+    if (!client || !_protocolParser) {
+        return;
+    }
+    
+    // 解析数据包
+    while (client->readBuffer.size() >= 4) {
+        // 协议格式：4字节长度 + JSON数据
+        QByteArray lengthBytes = client->readBuffer.left(4);
+        qint32 packetLength = qFromBigEndian<qint32>(lengthBytes.data());
         
-        if (type == "login") {
-            handleLoginRequest(client, message);
-        } else if (type == "logout") {
-            handleLogoutRequest(client);
-        } else if (type == "send_message") {
-            handleMessageRequest(client, message);
+        if (packetLength <= 0 || packetLength > 1024 * 1024) { // 最大1MB
+            qCWarning(chatServer) << "Invalid packet length from client:" << packetLength;
+            client->readBuffer.clear();
+            return;
+        }
+        
+        if (client->readBuffer.size() < 4 + packetLength) {
+            // 数据还不完整，等待更多数据
+            break;
+        }
+        
+        // 提取完整的数据包
+        QByteArray packetData = client->readBuffer.mid(4, packetLength);
+        client->readBuffer.remove(0, 4 + packetLength);
+        
+        // 解析JSON数据包
+        QJsonParseError parseError;
+        QJsonDocument doc = QJsonDocument::fromJson(packetData, &parseError);
+        
+        if (parseError.error != QJsonParseError::NoError) {
+            qCWarning(chatServer) << "JSON parse error from client:" << parseError.errorString();
+            continue;
+        }
+        
+        if (!doc.isObject()) {
+            qCWarning(chatServer) << "Invalid packet format from client";
+            continue;
+        }
+        
+        QVariantMap packetMap = doc.toVariant().toMap();
+        QString type = packetMap["type"].toString();
+        QVariantMap data = packetMap["data"].toMap();
+        
+        qCDebug(chatServer) << "Packet received from client, type:" << type;
+        
+        // 处理不同类型的请求
+        if (type == "auth") {
+            handleLoginRequest(client, data);
+        } else if (type == "message") {
+            handleMessageRequest(client, data);
         } else if (type == "heartbeat") {
             handleHeartbeat(client);
         } else {
-            qCWarning(chatServer) << "Unknown message type:" << type;
+            qCWarning(chatServer) << "Unknown packet type from client:" << type;
         }
-        
-    } catch (const std::exception &e) {
-        qCWarning(chatServer) << "Error processing message:" << e.what();
     }
 }
 
 void ChatServer::handleLoginRequest(ClientConnection *client, const QVariantMap &data)
 {
-    QString usernameOrEmail = data["username_or_email"].toString();
-    QString password = data["password"].toString();
+    if (!client || !_database) {
+        return;
+    }
     
-    // 验证用户身份
-    Database::UserInfo userInfo = _database->authenticateUser(usernameOrEmail, password);
-    
+    QString authType = data["type"].toString();
     QVariantMap response;
-    response["type"] = "login_response";
+    response["type"] = "auth";
     
-    if (userInfo.id > 0) {
-        // 创建会话
-        QString sessionToken = _sessionManager->createSession(userInfo.id, 
-                                                             client->socket->peerAddress().toString());
+    if (authType == "login") {
+        QString usernameOrEmail = data["usernameOrEmail"].toString();
+        QString password = data["password"].toString();
         
-        if (!sessionToken.isEmpty()) {
-            client->userId = userInfo.id;
-            client->sessionToken = sessionToken;
+        // 验证用户凭据
+        Database::UserInfo userInfo = _database->authenticateUser(usernameOrEmail, password);
+        
+        if (userInfo.id > 0) {
+            // 登录成功
+            QString sessionToken = _database->createUserSession(userInfo.id, 
+                                                               client->socket->peerAddress().toString(),
+                                                               client->socket->peerAddress().toString());
             
-            // 添加到用户连接映射
-            QMutexLocker locker(&_clientsMutex);
-            _userConnections[userInfo.id] = client;
-            locker.unlock();
-            
-            // 更新用户最后在线时间
-            _database->updateUserLastOnline(userInfo.id);
-            
-            response["success"] = true;
-            response["message"] = "登录成功";
-            response["token"] = sessionToken;
-            response["user_info"] = QVariantMap{
-                {"id", userInfo.id},
-                {"username", userInfo.username},
-                {"email", userInfo.email},
-                {"display_name", userInfo.displayName},
-                {"avatar_url", userInfo.avatarUrl}
-            };
-            
-            emit userOnline(userInfo.id);
-            qCInfo(chatServer) << "User logged in:" << userInfo.username;
+            if (!sessionToken.isEmpty()) {
+                client->userId = userInfo.id;
+                client->sessionToken = sessionToken;
+                
+                // 添加到用户连接映射
+                QMutexLocker locker(&_clientsMutex);
+                _userConnections[userInfo.id] = client;
+                locker.unlock();
+                
+                // 更新用户最后在线时间
+                _database->updateUserLastOnline(userInfo.id);
+                
+                QVariantMap responseData;
+                responseData["type"] = "login";
+                responseData["success"] = true;
+                responseData["message"] = "登录成功";
+                responseData["token"] = sessionToken;
+                responseData["userInfo"] = QVariantMap{
+                    {"id", userInfo.id},
+                    {"username", userInfo.username},
+                    {"email", userInfo.email},
+                    {"displayName", userInfo.displayName},
+                    {"avatarUrl", userInfo.avatarUrl}
+                };
+                response["data"] = responseData;
+                
+                emit userOnline(userInfo.id);
+                qCInfo(chatServer) << "User logged in:" << userInfo.username;
+                
+                // 记录登录日志
+                _database->logEvent(Database::Info, "auth", "User logged in", 
+                                  userInfo.id, client->socket->peerAddress().toString());
+            } else {
+                QVariantMap responseData;
+                responseData["type"] = "login";
+                responseData["success"] = false;
+                responseData["message"] = "会话创建失败";
+                response["data"] = responseData;
+            }
         } else {
-            response["success"] = false;
-            response["message"] = "会话创建失败";
+            QVariantMap responseData;
+            responseData["type"] = "login";
+            responseData["success"] = false;
+            responseData["message"] = "用户名或密码错误";
+            response["data"] = responseData;
+            
+            qCWarning(chatServer) << "Login failed for:" << usernameOrEmail;
         }
-    } else {
-        response["success"] = false;
-        response["message"] = "用户名或密码错误";
+    } else if (authType == "register") {
+        QString username = data["username"].toString();
+        QString email = data["email"].toString();
+        QString password = data["password"].toString();
+        QString avatarUrl = data["avatar"].toString();
+        
+        // 检查用户名和邮箱是否可用
+        if (!_database->isUsernameAvailable(username)) {
+            QVariantMap responseData;
+            responseData["type"] = "register";
+            responseData["success"] = false;
+            responseData["message"] = "用户名已被使用";
+            response["data"] = responseData;
+        } else if (!_database->isEmailAvailable(email)) {
+            QVariantMap responseData;
+            responseData["type"] = "register";
+            responseData["success"] = false;
+            responseData["message"] = "邮箱已被使用";
+            response["data"] = responseData;
+        } else {
+            // 创建用户
+            if (_database->createUser(username, email, password, avatarUrl)) {
+                QVariantMap responseData;
+                responseData["type"] = "register";
+                responseData["success"] = true;
+                responseData["message"] = "注册成功";
+                response["data"] = responseData;
+                
+                qCInfo(chatServer) << "User registered:" << username;
+                
+                // 记录注册日志
+                _database->logEvent(Database::Info, "auth", "User registered", 
+                                  -1, client->socket->peerAddress().toString(), "", 
+                                  QVariantMap{{"username", username}, {"email", email}});
+            } else {
+                QVariantMap responseData;
+                responseData["type"] = "register";
+                responseData["success"] = false;
+                responseData["message"] = "注册失败";
+                response["data"] = responseData;
+            }
+        }
+    } else if (authType == "logout") {
+        handleLogoutRequest(client);
+        return;
     }
     
     // 发送响应
-    QByteArray responseData = _protocolParser->createMessage(response);
-    client->socket->write(responseData);
+    QJsonDocument doc = QJsonDocument::fromVariant(response);
+    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+    
+    // 添加长度前缀
+    QByteArray lengthBytes(4, 0);
+    qToBigEndian<qint32>(jsonData.size(), lengthBytes.data());
+    QByteArray packet = lengthBytes + jsonData;
+    
+    client->socket->write(packet);
     client->socket->flush();
 }
 
 void ChatServer::handleLogoutRequest(ClientConnection *client)
 {
+    if (!client) {
+        return;
+    }
+    
     if (client->userId > 0) {
         // 删除会话
-        _sessionManager->removeSession(client->sessionToken);
+        if (!client->sessionToken.isEmpty() && _database) {
+            _database->deleteSession(client->sessionToken);
+        }
+        
+        // 更新用户最后在线时间
+        if (_database) {
+            _database->updateUserLastOnline(client->userId);
+        }
         
         // 从用户连接映射中移除
         QMutexLocker locker(&_clientsMutex);
@@ -449,174 +655,199 @@ void ChatServer::handleLogoutRequest(ClientConnection *client)
         emit userOffline(client->userId);
         qCInfo(chatServer) << "User logged out:" << client->userId;
         
-        client->userId = -1;
+        client->userId = 0;
         client->sessionToken.clear();
     }
     
-    // 发送响应
+    // 发送登出响应
     QVariantMap response;
-    response["type"] = "logout_response";
-    response["success"] = true;
+    response["type"] = "auth";
+    QVariantMap responseData;
+    responseData["type"] = "logout";
+    responseData["success"] = true;
+    response["data"] = responseData;
     
-    QByteArray responseData = _protocolParser->createMessage(response);
-    client->socket->write(responseData);
+    QJsonDocument doc = QJsonDocument::fromVariant(response);
+    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+    
+    QByteArray lengthBytes(4, 0);
+    qToBigEndian<qint32>(jsonData.size(), lengthBytes.data());
+    QByteArray packet = lengthBytes + jsonData;
+    
+    client->socket->write(packet);
     client->socket->flush();
 }
 
 void ChatServer::handleMessageRequest(ClientConnection *client, const QVariantMap &data)
 {
-    if (client->userId <= 0) {
-        // 未认证用户不能发送消息
+    if (!client || client->userId <= 0 || !_database) {
         return;
     }
     
-    QString messageId = data["message_id"].toString();
-    QString receiver = data["receiver"].toString();
-    QString content = data["content"].toString();
-    QString messageType = data["message_type"].toString();
-    qint64 timestamp = data["timestamp"].toLongLong();
+    QString msgType = data["type"].toString();
     
-    // 查找接收者
-    Database::UserInfo receiverInfo = _database->getUserByUsername(receiver);
-    if (receiverInfo.id <= 0) {
-        // 接收者不存在
-        QVariantMap response;
-        response["type"] = "message_error";
-        response["message_id"] = messageId;
-        response["error"] = "接收者不存在";
+    if (msgType == "send_message") {
+        QString receiverStr = data["receiver"].toString();
+        QString content = data["content"].toString();
+        QString messageType = data["messageType"].toString();
         
-        QByteArray responseData = _protocolParser->createMessage(response);
-        client->socket->write(responseData);
-        return;
-    }
-    
-    // 保存消息到数据库
-    bool saved = _database->saveMessage(messageId, client->userId, receiverInfo.id, 
-                                       messageType, content);
-    
-    if (saved) {
-        // 尝试转发给在线用户
-        QMutexLocker locker(&_clientsMutex);
-        ClientConnection *receiverClient = getClientByUserId(receiverInfo.id);
-        
-        if (receiverClient) {
-            // 用户在线，直接转发
-            QVariantMap forwardMessage;
-            forwardMessage["type"] = "message_received";
-            forwardMessage["message_id"] = messageId;
-            forwardMessage["sender"] = data["sender"];
-            forwardMessage["content"] = content;
-            forwardMessage["message_type"] = messageType;
-            forwardMessage["timestamp"] = timestamp;
-            
-            QByteArray forwardData = _protocolParser->createMessage(forwardMessage);
-            receiverClient->socket->write(forwardData);
-            receiverClient->socket->flush();
-            
-            // 更新消息状态为已投递
-            _database->updateMessageStatus(messageId, "delivered");
+        qint64 receiverId = receiverStr.toLongLong();
+        if (receiverId <= 0) {
+            qCWarning(chatServer) << "Invalid receiver ID:" << receiverStr;
+            return;
         }
-        locker.unlock();
         
-        // 发送确认响应
-        QVariantMap response;
-        response["type"] = "message_sent";
-        response["message_id"] = messageId;
+        // 生成消息ID
+        QString messageId = QUuid::createUuid().toString(QUuid::WithoutBraces);
         
-        QByteArray responseData = _protocolParser->createMessage(response);
-        client->socket->write(responseData);
-        client->socket->flush();
-        
-        {
-            QMutexLocker locker(&_statsMutex);
+        // 保存消息到数据库
+        if (_database->saveMessage(messageId, client->userId, receiverId, messageType, content)) {
+            // 尝试发送给接收者
+            QMutexLocker locker(&_clientsMutex);
+            ClientConnection *receiverClient = getClientByUserId(receiverId);
+            locker.unlock();
+            
+            if (receiverClient) {
+                // 构造消息数据包
+                QVariantMap messagePacket;
+                messagePacket["type"] = "message";
+                QVariantMap messageData;
+                messageData["type"] = "message_received";
+                messageData["sender"] = QString::number(client->userId);
+                messageData["content"] = content;
+                messageData["messageType"] = messageType;
+                messageData["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+                messagePacket["data"] = messageData;
+                
+                QJsonDocument doc = QJsonDocument::fromVariant(messagePacket);
+                QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+                
+                QByteArray lengthBytes(4, 0);
+                qToBigEndian<qint32>(jsonData.size(), lengthBytes.data());
+                QByteArray packet = lengthBytes + jsonData;
+                
+                receiverClient->socket->write(packet);
+                receiverClient->socket->flush();
+                
+                // 更新消息状态为已发送
+                _database->updateMessageStatus(messageId, "delivered");
+                
+                qCInfo(chatServer) << "Message delivered from" << client->userId << "to" << receiverId;
+            } else {
+                qCInfo(chatServer) << "Receiver not online, message saved:" << receiverId;
+            }
+            
+            // 发送确认给发送者
+            QVariantMap confirmPacket;
+            confirmPacket["type"] = "message";
+            QVariantMap confirmData;
+            confirmData["type"] = "message_sent";
+            confirmData["messageId"] = messageId;
+            confirmPacket["data"] = confirmData;
+            
+            QJsonDocument doc = QJsonDocument::fromVariant(confirmPacket);
+            QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+            
+            QByteArray lengthBytes(4, 0);
+            qToBigEndian<qint32>(jsonData.size(), lengthBytes.data());
+            QByteArray packet = lengthBytes + jsonData;
+            
+            client->socket->write(packet);
+            client->socket->flush();
+            
+            // 增加消息计数
+            QMutexLocker statsLocker(&_statsMutex);
             _totalMessages++;
+            statsLocker.unlock();
+            
+            emit messageReceived(client->userId, receiverId, content);
+        } else {
+            qCWarning(chatServer) << "Failed to save message to database";
         }
-        emit messageReceived(client->userId, receiverInfo.id, content);
     }
 }
 
 void ChatServer::handleHeartbeat(ClientConnection *client)
 {
+    if (!client) {
+        return;
+    }
+    
+    // 更新活动时间
     client->lastActivity = QDateTime::currentDateTime();
     
     // 发送心跳响应
     QVariantMap response;
-    response["type"] = "heartbeat_response";
-    response["timestamp"] = QDateTime::currentSecsSinceEpoch();
+    response["type"] = "heartbeat";
+    QVariantMap responseData;
+    responseData["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+    response["data"] = responseData;
     
-    QByteArray responseData = _protocolParser->createMessage(response);
-    client->socket->write(responseData);
+    QJsonDocument doc = QJsonDocument::fromVariant(response);
+    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+    
+    QByteArray lengthBytes(4, 0);
+    qToBigEndian<qint32>(jsonData.size(), lengthBytes.data());
+    QByteArray packet = lengthBytes + jsonData;
+    
+    client->socket->write(packet);
     client->socket->flush();
+    
+    qCDebug(chatServer) << "Heartbeat response sent to user:" << client->userId;
 }
 
 void ChatServer::removeClient(QSslSocket *socket)
 {
+    if (!socket) {
+        return;
+    }
+    
     QMutexLocker locker(&_clientsMutex);
-    
-    ClientConnection *client = _clients.value(socket);
-    if (client) {
-        // 从用户连接映射中移除
-        if (client->userId > 0) {
-            _userConnections.remove(client->userId);
-            emit userOffline(client->userId);
-        }
-        
-        // 删除会话
-        if (!client->sessionToken.isEmpty()) {
-            _sessionManager->removeSession(client->sessionToken);
-        }
-        
-        delete client;
-        _clients.remove(socket);
+    ClientConnection *client = _clients.value(socket, nullptr);
+    if (!client) {
+        locker.unlock();
+        return;
     }
     
+    // 从用户连接映射中移除
+    if (client->userId > 0) {
+        _userConnections.remove(client->userId);
+        emit userOffline(client->userId);
+        
+        // 更新用户最后在线时间
+        if (_database) {
+            _database->updateUserLastOnline(client->userId);
+        }
+    }
+    
+    // 从客户端列表中移除
+    _clients.remove(socket);
+    delete client;
+    locker.unlock();
+    
+    // 断开并删除socket
+    socket->disconnectFromHost();
     socket->deleteLater();
-}
-
-ChatServer::ClientConnection *ChatServer::getClientBySocket(QSslSocket *socket)
-{
-    return _clients.value(socket);
-}
-
-QString ChatServer::getUptime() const
-{
-    if (_startTime.isNull()) {
-        return "00:00:00";
-    }
     
-    qint64 seconds = _startTime.secsTo(QDateTime::currentDateTime());
-    int hours = seconds / 3600;
-    int minutes = (seconds % 3600) / 60;
-    int secs = seconds % 60;
+    QString clientAddress = QString("%1:%2").arg(socket->peerAddress().toString()).arg(socket->peerPort());
+    qCInfo(chatServer) << "Client disconnected:" << clientAddress;
+    emit clientDisconnected(reinterpret_cast<qint64>(socket));
     
-    return QString("%1:%2:%3")
-           .arg(hours, 2, 10, QChar('0'))
-           .arg(minutes, 2, 10, QChar('0'))
-           .arg(secs, 2, 10, QChar('0'));
-}
-
-int ChatServer::getCpuUsage() const
-{
-    // 简单的CPU使用率模拟，实际项目中应该使用系统API
-    return QRandomGenerator::global()->bounded(20) + 10; // 10-30%
-}
-
-int ChatServer::getMemoryUsage() const
-{
-    // 简单的内存使用率模拟，实际项目中应该使用系统API
-    return QRandomGenerator::global()->bounded(30) + 20; // 20-50%
-}
-
-ChatServer::ClientConnection *ChatServer::getClientByUserId(qint64 userId)
-{
-    return _userConnections.value(userId);
-}
-
-int ChatServer::getTotalUserCount() const
-{
+    // 记录断开连接日志
     if (_database) {
-        return _database->getTotalUserCount();
+        _database->logEvent(Database::Info, "connection", "Client disconnected", 
+                          client ? client->userId : -1, socket->peerAddress().toString(), "", 
+                          QVariantMap{{"socket_id", reinterpret_cast<qint64>(socket)}});
     }
-    return 0;
+}
+
+ChatServer::ClientConnection* ChatServer::getClientBySocket(QSslSocket *socket)
+{
+    return _clients.value(socket, nullptr);
+}
+
+ChatServer::ClientConnection* ChatServer::getClientByUserId(qint64 userId)
+{
+    return _userConnections.value(userId, nullptr);
 }
 

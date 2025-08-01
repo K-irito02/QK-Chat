@@ -51,7 +51,6 @@ set(__QT_DEPLOY_PATCHELF_EXECUTABLE "")
 # Define the CMake commands to be made available during deployment.
 set(__qt_deploy_support_files
     "D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Core/Qt6CoreDeploySupport.cmake"
-    "D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Qml/Qt6QmlDeploySupport.cmake"
 )
 foreach(__qt_deploy_support_file IN LISTS __qt_deploy_support_files)
     include("${__qt_deploy_support_file}")

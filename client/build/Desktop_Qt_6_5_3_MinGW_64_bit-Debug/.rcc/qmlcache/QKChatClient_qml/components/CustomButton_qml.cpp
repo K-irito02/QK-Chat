@@ -1,4 +1,4 @@
-// /QKChatClient/qml/components/CustomButton.qml
+// /QKChatClient/QKChatClient/qml/components/CustomButton.qml
 #include <QtQml/qqmlprivate.h>
 #include <QtCore/qdatetime.h>
 #include <QtCore/qobject.h>
@@ -20,7 +20,7 @@
 #include <qrandom.h>
 #include <type_traits>
 namespace QmlCacheGeneratedCode {
-namespace _0x5f_QKChatClient_qml_components_CustomButton_qml {
+namespace _0x5f_QKChatClient_QKChatClient_qml_components_CustomButton_qml {
 extern const unsigned char qmlData alignas(16) [];
 extern const unsigned char qmlData alignas(16) [] = {
 

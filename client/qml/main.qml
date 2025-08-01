@@ -3,6 +3,7 @@ import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
 import QtQuick.Window 2.15
 import QKChatClient 1.0
+import "."
 
 ApplicationWindow {
     id: mainWindow
@@ -21,6 +22,7 @@ ApplicationWindow {
     Material.accent: configManager.accentColor
     
     property bool showLogin: true
+    property bool isLoggedIn: false
     property alias userController: userController
     
     // 监听全局configManager的主题变化
@@ -37,8 +39,16 @@ ApplicationWindow {
         
         onLoginSuccess: {
             console.log("登录成功")
-            // TODO: 跳转到聊天主界面
-            Qt.quit() // 临时退出，后续替换为跳转到聊天界面
+            isLoggedIn = true
+            // 调整窗口大小用于聊天界面
+            width = 1200
+            height = 800
+            minimumWidth = 800
+            minimumHeight = 600
+            
+            // 居中显示
+            x = (Screen.width - width) / 2
+            y = (Screen.height - height) / 2
         }
         
         onLoginFailed: {
@@ -60,18 +70,39 @@ ApplicationWindow {
         id: stackView
         anchors.fill: parent
         
-        initialItem: showLogin ? loginComponent : registerComponent
+        initialItem: isLoggedIn ? chatMainComponent : (showLogin ? loginComponent : registerComponent)
         
-        // 监听showLogin变化，切换界面
+        // 监听登录状态变化
         Connections {
             target: mainWindow
-            function onShowLoginChanged() {
-                if (showLogin) {
+            function onIsLoggedInChanged() {
+                if (isLoggedIn) {
+                    stackView.replace(chatMainComponent)
+                } else if (showLogin) {
                     stackView.replace(loginComponent)
                 } else {
                     stackView.replace(registerComponent)
                 }
             }
+            
+            function onShowLoginChanged() {
+                if (!isLoggedIn) {
+                    if (showLogin) {
+                        stackView.replace(loginComponent)
+                    } else {
+                        stackView.replace(registerComponent)
+                    }
+                }
+            }
+        }
+    }
+    
+    // 聊天主界面组件
+    Component {
+        id: chatMainComponent
+        
+        ChatMainWindow {
+            // 聊天主界面会自动从userModel获取当前用户信息
         }
     }
     

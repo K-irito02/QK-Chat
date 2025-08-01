@@ -1,6 +1,7 @@
 D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/M7KQ2GL7XF/moc_Database.cpp: D:/QT_Learn/Projects/QKChatApp/server/src/database/Database.h \
   D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/moc_predefs.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QList \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMutex \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QObject \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QString \

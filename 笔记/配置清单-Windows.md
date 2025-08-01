@@ -31,7 +31,7 @@ mysql -u root -p
 CREATE DATABASE IF NOT EXISTS qkchat CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 创建用户
-CREATE USER 'qkchat_user'@'localhost' IDENTIFIED BY 'QKchat2024!';
+CREATE USER 'qkchat_user'@'localhost' IDENTIFIED BY 'QKchat2025!';
 GRANT ALL PRIVILEGES ON qkchat.* TO 'qkchat_user'@'localhost';
 FLUSH PRIVILEGES;
 

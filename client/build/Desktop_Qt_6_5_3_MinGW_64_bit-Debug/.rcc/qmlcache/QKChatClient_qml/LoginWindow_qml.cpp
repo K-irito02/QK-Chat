@@ -1,4 +1,4 @@
-// /QKChatClient/qml/LoginWindow.qml
+// /QKChatClient/QKChatClient/qml/LoginWindow.qml
 #include <QtQml/qqmlprivate.h>
 #include <QtCore/qdatetime.h>
 #include <QtCore/qobject.h>
@@ -16,7 +16,7 @@
 #include <qloggingcategory.h>
 #include <type_traits>
 namespace QmlCacheGeneratedCode {
-namespace _0x5f_QKChatClient_qml_LoginWindow_qml {
+namespace _0x5f_QKChatClient_QKChatClient_qml_LoginWindow_qml {
 extern const unsigned char qmlData alignas(16) [];
 extern const unsigned char qmlData alignas(16) [] = {
 

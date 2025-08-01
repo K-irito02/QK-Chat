@@ -43,6 +43,13 @@ int main(int argc, char *argv[])
     
     // 启动聊天服务器
     ChatServer *chatServer = new ChatServer(&app);
+    
+    // 确保数据库已正确初始化
+    if (!chatServer->initializeDatabase()) {
+        QMessageBox::critical(&adminWindow, "数据库错误", "无法初始化数据库，请检查数据库连接配置");
+        return -1;
+    }
+    
     if (!chatServer->startServer()) {
         QMessageBox::critical(&adminWindow, "服务器错误", "无法启动聊天服务器");
         return -1;

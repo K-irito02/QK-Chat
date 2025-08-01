@@ -17,6 +17,7 @@ class Validator : public QObject
     
 public:
     explicit Validator(QObject *parent = nullptr);
+    ~Validator();
     
     // 用户名验证规则
     Q_INVOKABLE bool isValidUsername(const QString &username) const;

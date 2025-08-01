@@ -236,6 +236,22 @@
                         "access": "public",
                         "name": "isValid",
                         "returnType": "bool"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "userInfo",
+                                "type": "QVariantMap"
+                            }
+                        ],
+                        "name": "updateUserInfo",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "toVariantMap",
+                        "returnType": "QVariantMap"
                     }
                 ],
                 "object": true,
@@ -245,6 +261,21 @@
                         "designable": true,
                         "final": false,
                         "index": 0,
+                        "name": "userId",
+                        "notify": "userIdChanged",
+                        "read": "userId",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "qint64",
+                        "user": false,
+                        "write": "setUserId"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "index": 1,
                         "name": "username",
                         "notify": "usernameChanged",
                         "read": "username",
@@ -259,7 +290,7 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 1,
+                        "index": 2,
                         "name": "email",
                         "notify": "emailChanged",
                         "read": "email",
@@ -274,7 +305,7 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 2,
+                        "index": 3,
                         "name": "password",
                         "notify": "passwordChanged",
                         "read": "password",
@@ -289,7 +320,22 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 3,
+                        "index": 4,
+                        "name": "displayName",
+                        "notify": "displayNameChanged",
+                        "read": "displayName",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QString",
+                        "user": false,
+                        "write": "setDisplayName"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "index": 5,
                         "name": "avatar",
                         "notify": "avatarChanged",
                         "read": "avatar",
@@ -304,7 +350,37 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 4,
+                        "index": 6,
+                        "name": "status",
+                        "notify": "statusChanged",
+                        "read": "status",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QString",
+                        "user": false,
+                        "write": "setStatus"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "index": 7,
+                        "name": "token",
+                        "notify": "tokenChanged",
+                        "read": "token",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QString",
+                        "user": false,
+                        "write": "setToken"
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "index": 8,
                         "name": "isLoggedIn",
                         "notify": "isLoggedInChanged",
                         "read": "isLoggedIn",
@@ -319,20 +395,25 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 5,
-                        "name": "token",
-                        "notify": "tokenChanged",
-                        "read": "token",
+                        "index": 9,
+                        "name": "lastOnline",
+                        "notify": "lastOnlineChanged",
+                        "read": "lastOnline",
                         "required": false,
                         "scriptable": true,
                         "stored": true,
-                        "type": "QString",
+                        "type": "QDateTime",
                         "user": false,
-                        "write": "setToken"
+                        "write": "setLastOnline"
                     }
                 ],
                 "qualifiedClassName": "UserModel",
                 "signals": [
+                    {
+                        "access": "public",
+                        "name": "userIdChanged",
+                        "returnType": "void"
+                    },
                     {
                         "access": "public",
                         "name": "usernameChanged",
@@ -350,7 +431,17 @@
                     },
                     {
                         "access": "public",
+                        "name": "displayNameChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
                         "name": "avatarChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "statusChanged",
                         "returnType": "void"
                     },
                     {
@@ -361,6 +452,16 @@
                     {
                         "access": "public",
                         "name": "tokenChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "lastOnlineChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "userInfoChanged",
                         "returnType": "void"
                     }
                 ],
@@ -408,6 +509,1115 @@
             }
         ],
         "inputFile": "LocalDatabase.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
+                "className": "ChatController",
+                "methods": [
+                    {
+                        "access": "public",
+                        "name": "initialize",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "connectToServer",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "disconnectFromServer",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "receiverId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "messageType",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "sendMessage",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "receiverId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "sendMessage",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "messageType",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "sendGroupMessage",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "sendGroupMessage",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "messageId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "markMessageAsRead",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "userId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "limit",
+                                "type": "int"
+                            },
+                            {
+                                "name": "offset",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "getMessageHistory",
+                        "returnType": "QVariantList"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "userId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "limit",
+                                "type": "int"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "getMessageHistory",
+                        "returnType": "QVariantList"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "userId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "getMessageHistory",
+                        "returnType": "QVariantList"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "limit",
+                                "type": "int"
+                            },
+                            {
+                                "name": "offset",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "getGroupMessageHistory",
+                        "returnType": "QVariantList"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "limit",
+                                "type": "int"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "getGroupMessageHistory",
+                        "returnType": "QVariantList"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "getGroupMessageHistory",
+                        "returnType": "QVariantList"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "username",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "remark",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "group",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "addContact",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "username",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "remark",
+                                "type": "QString"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "addContact",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "username",
+                                "type": "QString"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "addContact",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "contactId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "removeContact",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "contactId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "remark",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "group",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "updateContact",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "contactId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "getContactInfo",
+                        "returnType": "QVariantMap"
+                    },
+                    {
+                        "access": "public",
+                        "name": "refreshContacts",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupName",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "description",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "avatarUrl",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "createGroup",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupName",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "description",
+                                "type": "QString"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "createGroup",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupName",
+                                "type": "QString"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "createGroup",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "joinGroup",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "leaveGroup",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "userId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "inviteToGroup",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "userId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "removeFromGroup",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "userId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "role",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "updateGroupMemberRole",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "getGroupInfo",
+                        "returnType": "QVariantMap"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "getGroupMembers",
+                        "returnType": "QVariantList"
+                    },
+                    {
+                        "access": "public",
+                        "name": "refreshGroups",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "receiverId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "filePath",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "sendFile",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "filePath",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "sendFileToGroup",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "fileUrl",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "savePath",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "downloadFile",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "status",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "updateOnlineStatus",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "isCloned": true,
+                        "name": "updateOnlineStatus",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "getOnlineContacts",
+                        "returnType": "QVariantList"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "dateTime",
+                                "type": "QDateTime"
+                            }
+                        ],
+                        "name": "formatTime",
+                        "returnType": "QString"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "dateTime",
+                                "type": "QDateTime"
+                            }
+                        ],
+                        "name": "isToday",
+                        "returnType": "bool"
+                    },
+                    {
+                        "access": "public",
+                        "name": "generateMessageId",
+                        "returnType": "QString"
+                    }
+                ],
+                "object": true,
+                "properties": [
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "index": 0,
+                        "name": "isConnected",
+                        "notify": "connectionStatusChanged",
+                        "read": "isConnected",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "bool",
+                        "user": false
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "index": 1,
+                        "name": "connectionStatus",
+                        "notify": "connectionStatusChanged",
+                        "read": "connectionStatus",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QString",
+                        "user": false
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "index": 2,
+                        "name": "recentChats",
+                        "notify": "recentChatsChanged",
+                        "read": "recentChats",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QVariantList",
+                        "user": false
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "index": 3,
+                        "name": "contacts",
+                        "notify": "contactsChanged",
+                        "read": "contacts",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QVariantList",
+                        "user": false
+                    },
+                    {
+                        "constant": false,
+                        "designable": true,
+                        "final": false,
+                        "index": 4,
+                        "name": "groups",
+                        "notify": "groupsChanged",
+                        "read": "groups",
+                        "required": false,
+                        "scriptable": true,
+                        "stored": true,
+                        "type": "QVariantList",
+                        "user": false
+                    }
+                ],
+                "qualifiedClassName": "ChatController",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "connectionStatusChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "connected",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "disconnected",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "connectionError",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "senderId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "messageType",
+                                "type": "int"
+                            },
+                            {
+                                "name": "timestamp",
+                                "type": "QDateTime"
+                            }
+                        ],
+                        "name": "messageReceived",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "senderId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "messageType",
+                                "type": "int"
+                            },
+                            {
+                                "name": "timestamp",
+                                "type": "QDateTime"
+                            }
+                        ],
+                        "name": "groupMessageReceived",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "messageId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "messageSent",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "messageId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "messageDelivered",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "messageId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "messageRead",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "messageId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "error",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "messageFailed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "contactsChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "contact",
+                                "type": "QVariantMap"
+                            }
+                        ],
+                        "name": "contactAdded",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "contactId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "contactRemoved",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "contact",
+                                "type": "QVariantMap"
+                            }
+                        ],
+                        "name": "contactUpdated",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "contactId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "isOnline",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "contactOnlineStatusChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "groupsChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "group",
+                                "type": "QVariantMap"
+                            }
+                        ],
+                        "name": "groupCreated",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "groupJoined",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "groupLeft",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "member",
+                                "type": "QVariantMap"
+                            }
+                        ],
+                        "name": "groupMemberAdded",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "userId",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "groupMemberRemoved",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "groupId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "userId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "role",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "groupMemberRoleChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "fileId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "progress",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "fileUploadProgress",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "fileId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "fileUrl",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "fileUploadCompleted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "fileId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "error",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "fileUploadFailed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "fileId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "progress",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "fileDownloadProgress",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "fileId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "filePath",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "fileDownloadCompleted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "fileId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "error",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "fileDownloadFailed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "recentChatsChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "chatId",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "isGroup",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "messageHistoryUpdated",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "error",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "warning",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "info",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "userModel",
+                                "type": "UserModel*"
+                            }
+                        ],
+                        "name": "setUserModel",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "networkClient",
+                                "type": "NetworkClient*"
+                            }
+                        ],
+                        "name": "setNetworkClient",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "localDatabase",
+                                "type": "LocalDatabase*"
+                            }
+                        ],
+                        "name": "setLocalDatabase",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "messageType",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "data",
+                                "type": "QVariantMap"
+                            }
+                        ],
+                        "name": "onNetworkMessageReceived",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "connected",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "onNetworkConnectionChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "onNetworkError",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onHeartbeatTimer",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onReconnectTimer",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onStatusUpdateTimer",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "ChatController.h",
         "outputRevision": 68
     },
     {
@@ -850,6 +2060,71 @@
     {
         "classes": [
             {
+                "className": "CryptoManager",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "EncryptionType",
+                        "values": [
+                            "None",
+                            "AES256",
+                            "RSA2048",
+                            "ECC_P256"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "CryptoManager",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "keyId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "keyPairGenerated",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "keyId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "keyPairDeleted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "encryptionError",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "CryptoManager.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
                 "className": "NetworkClient",
                 "object": true,
                 "qualifiedClassName": "NetworkClient",
@@ -1083,6 +2358,208 @@
             }
         ],
         "inputFile": "NetworkClient.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
+                "className": "FileTransferManager",
+                "object": true,
+                "qualifiedClassName": "FileTransferManager",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "taskId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "transferStarted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "taskId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "progress",
+                                "type": "int"
+                            },
+                            {
+                                "name": "bytesTransferred",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "bytesTotal",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "transferProgress",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "taskId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "resultUrl",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "transferCompleted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "taskId",
+                                "type": "QString"
+                            }
+                        ],
+                        "isCloned": true,
+                        "name": "transferCompleted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "taskId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "error",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "transferFailed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "taskId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "transferPaused",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "taskId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "transferResumed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "taskId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "transferCancelled",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "queueChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "activeCount",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "activeTransfersChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "bytesSent",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "bytesTotal",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "onUploadProgress",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onUploadFinished",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "bytesReceived",
+                                "type": "qint64"
+                            },
+                            {
+                                "name": "bytesTotal",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "onDownloadProgress",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onDownloadFinished",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "QNetworkReply::NetworkError"
+                            }
+                        ],
+                        "name": "onNetworkError",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "processQueue",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "FileTransferManager.h",
         "outputRevision": 68
     },
     {

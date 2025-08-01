@@ -2,8 +2,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
 import QtQuick.Layouts 1.15
-import QtQuick.Dialogs
-import QtCore
+import Qt.labs.platform 1.1
 
 Item {
     id: root
@@ -117,7 +116,7 @@ Item {
     FileDialog {
         id: fileDialog
         title: "选择头像图片"
-        currentFolder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
+        folder: StandardPaths.standardLocations(StandardPaths.PicturesLocation)[0]
         nameFilters: ["图片文件 (*.png *.jpg *.jpeg)"]
         
         onAccepted: {
@@ -146,18 +145,41 @@ Item {
     }
     
     // 错误提示对话框
-    Dialog {
+    Popup {
         id: errorDialog
-        title: "头像上传错误"
+        
+        anchors.centerIn: parent
+        width: 300
+        height: 150
+        modal: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        
+        background: Rectangle {
+            color: Material.dialogColor
+            radius: 8
+            border.width: 1
+            border.color: Material.theme === Material.Dark ? "#505050" : "#e0e0e0"
+        }
         
         property alias text: errorText.text
         
-        Text {
-            id: errorText
-            wrapMode: Text.WordWrap
-            color: Material.foreground
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 16
+            spacing: 16
+            
+            Text {
+                id: errorText
+                Layout.fillWidth: true
+                wrapMode: Text.WordWrap
+                color: Material.foreground
+            }
+            
+            Button {
+                text: "确定"
+                Layout.alignment: Qt.AlignRight
+                onClicked: errorDialog.close()
+            }
         }
-        
-        standardButtons: Dialog.Ok
     }
 }

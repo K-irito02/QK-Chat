@@ -1,18 +1,20 @@
 #include "Validator.h"
+#include <QRegularExpression>
 #include <QFileInfo>
 #include <QImageReader>
+#include <QLoggingCategory>
+
+Q_LOGGING_CATEGORY(validator, "qkchat.client.validator")
 
 Validator::Validator(QObject *parent)
     : QObject(parent)
 {
-    // 用户名正则：支持中英文、数字、下划线，不允许空格
-    _usernameRegex.setPattern("^[\\u4e00-\\u9fa5a-zA-Z0-9_]+$");
-    
-    // 邮箱正则：标准邮箱格式
-    _emailRegex.setPattern("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    
-    // 密码正则：至少包含一个大写字母、一个小写字母、一个数字，支持常见符号
-    _passwordRegex.setPattern("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z\\d@$!%*?&_-]+$");
+    qCInfo(validator) << "Validator created";
+}
+
+Validator::~Validator()
+{
+    qCInfo(validator) << "Validator destroyed";
 }
 
 bool Validator::isValidUsername(const QString &username) const
@@ -21,12 +23,9 @@ bool Validator::isValidUsername(const QString &username) const
         return false;
     }
     
-    // 检查是否包含空格
-    if (username.contains(' ')) {
-        return false;
-    }
-    
-    return _usernameRegex.match(username).hasMatch();
+    // 只允许字母、数字、下划线，不能以数字开头
+    QRegularExpression regex("^[a-zA-Z_][a-zA-Z0-9_]*$");
+    return regex.match(username).hasMatch();
 }
 
 QString Validator::getUsernameError(const QString &username) const
@@ -43,20 +42,19 @@ QString Validator::getUsernameError(const QString &username) const
         return QString("用户名长度不能超过%1个字符").arg(MAX_USERNAME_LENGTH);
     }
     
-    if (username.contains(' ')) {
-        return "用户名不能包含空格";
+    QRegularExpression regex("^[a-zA-Z_][a-zA-Z0-9_]*$");
+    if (!regex.match(username).hasMatch()) {
+        return "用户名只能包含字母、数字和下划线，且不能以数字开头";
     }
     
-    if (!_usernameRegex.match(username).hasMatch()) {
-        return "用户名只能包含中文、英文、数字和下划线";
-    }
-    
-    return "";
+    return QString();
 }
 
 bool Validator::isValidEmail(const QString &email) const
 {
-    return _emailRegex.match(email).hasMatch();
+    // 简单的邮箱验证正则表达式
+    QRegularExpression regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    return regex.match(email).hasMatch();
 }
 
 QString Validator::getEmailError(const QString &email) const
@@ -65,11 +63,12 @@ QString Validator::getEmailError(const QString &email) const
         return "邮箱不能为空";
     }
     
-    if (!_emailRegex.match(email).hasMatch()) {
-        return "请输入有效的邮箱地址";
+    QRegularExpression regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    if (!regex.match(email).hasMatch()) {
+        return "邮箱格式不正确";
     }
     
-    return "";
+    return QString();
 }
 
 bool Validator::isValidPassword(const QString &password) const
@@ -78,12 +77,11 @@ bool Validator::isValidPassword(const QString &password) const
         return false;
     }
     
-    // 检查是否包含空格
-    if (password.contains(' ')) {
-        return false;
-    }
+    // 检查是否包含字母和数字
+    QRegularExpression hasLetter("[a-zA-Z]");
+    QRegularExpression hasNumber("[0-9]");
     
-    return _passwordRegex.match(password).hasMatch();
+    return hasLetter.match(password).hasMatch() && hasNumber.match(password).hasMatch();
 }
 
 QString Validator::getPasswordError(const QString &password) const
@@ -100,50 +98,45 @@ QString Validator::getPasswordError(const QString &password) const
         return QString("密码长度不能超过%1个字符").arg(MAX_PASSWORD_LENGTH);
     }
     
-    if (password.contains(' ')) {
-        return "密码不能包含空格";
+    QRegularExpression hasLetter("[a-zA-Z]");
+    QRegularExpression hasNumber("[0-9]");
+    
+    if (!hasLetter.match(password).hasMatch()) {
+        return "密码必须包含至少一个字母";
     }
     
-    if (!password.contains(QRegularExpression("[a-z]"))) {
-        return "密码必须包含至少一个小写字母";
-    }
-    
-    if (!password.contains(QRegularExpression("[A-Z]"))) {
-        return "密码必须包含至少一个大写字母";
-    }
-    
-    if (!password.contains(QRegularExpression("\\d"))) {
+    if (!hasNumber.match(password).hasMatch()) {
         return "密码必须包含至少一个数字";
     }
     
-    if (!_passwordRegex.match(password).hasMatch()) {
-        return "密码只能包含英文、数字和常见符号(@$!%*?&_-)";
-    }
-    
-    return "";
+    return QString();
 }
 
 bool Validator::isPasswordMatched(const QString &password, const QString &confirmPassword) const
 {
-    return password == confirmPassword && !password.isEmpty();
+    return password == confirmPassword;
 }
 
 bool Validator::isValidVerificationCode(const QString &code) const
 {
-    // 验证码通常是4-6位数字
-    QRegularExpression codeRegex("^\\d{4,6}$");
-    return codeRegex.match(code).hasMatch();
+    // 简单验证码验证（4-6位数字或字母）
+    if (code.length() < 4 || code.length() > 6) {
+        return false;
+    }
+    
+    QRegularExpression regex("^[a-zA-Z0-9]+$");
+    return regex.match(code).hasMatch();
 }
 
 bool Validator::isValidImageFile(const QString &filePath) const
 {
     QFileInfo fileInfo(filePath);
-    if (!fileInfo.exists()) {
+    if (!fileInfo.exists() || !fileInfo.isFile()) {
         return false;
     }
     
-    QString suffix = fileInfo.suffix().toLower();
-    return (suffix == "jpg" || suffix == "jpeg" || suffix == "png");
+    QImageReader reader(filePath);
+    return reader.canRead();
 }
 
 bool Validator::isValidImageSize(const QString &filePath, int maxSizeMB) const

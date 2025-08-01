@@ -1,11 +1,22 @@
 <RCC>
-  <qresource prefix="/QKChatClient/">
+  <qresource prefix="/QKChatClient/QKChatClient/">
     <file alias="qml/main.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/main.qml</file>
     <file alias="qml/LoginWindow.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/LoginWindow.qml</file>
     <file alias="qml/RegisterWindow.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/RegisterWindow.qml</file>
+    <file alias="qml/ChatMainWindow.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/ChatMainWindow.qml</file>
     <file alias="qml/components/CustomButton.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/CustomButton.qml</file>
     <file alias="qml/components/CustomTextField.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/CustomTextField.qml</file>
     <file alias="qml/components/AvatarSelector.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/AvatarSelector.qml</file>
+    <file alias="qml/components/SideBarButton.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/SideBarButton.qml</file>
+    <file alias="qml/components/ChatWindow.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/ChatWindow.qml</file>
+    <file alias="qml/components/MessageBubble.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/MessageBubble.qml</file>
+    <file alias="qml/components/DefaultPage.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/DefaultPage.qml</file>
+    <file alias="qml/components/ContactsPage.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/ContactsPage.qml</file>
+    <file alias="qml/components/GroupsPage.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/GroupsPage.qml</file>
+    <file alias="qml/components/AddPage.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/AddPage.qml</file>
+    <file alias="qml/components/ProfilePage.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/ProfilePage.qml</file>
+    <file alias="qml/components/SettingsPage.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/SettingsPage.qml</file>
+    <file alias="qml/components/EmojiPicker.qml">D:/QT_Learn/Projects/QKChatApp/client/qml/components/EmojiPicker.qml</file>
   </qresource>
 </RCC>
 

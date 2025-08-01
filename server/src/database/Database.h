@@ -1,14 +1,15 @@
 #ifndef DATABASE_H
 #define DATABASE_H
 
+#include <QDateTime>
 #include <QObject>
 #include <QSqlDatabase>
 #include <QSqlQuery>
 #include <QSqlError>
 #include <QString>
 #include <QVariant>
-#include <QDateTime>
 #include <QMutex>
+#include <QList>
 
 /**
  * @brief 数据库操作类
@@ -39,6 +40,7 @@ public:
         QString username;
         QString email;
         QString passwordHash;
+        QString salt;
         QString avatarUrl;
         QString displayName;
         QString status;
@@ -58,6 +60,8 @@ public:
     QList<UserInfo> getActiveUsers(int limit = 100);
     bool updateUserLastOnline(qint64 userId, const QDateTime &lastOnline = QDateTime::currentDateTime());
     int getTotalUserCount() const;
+    int getOnlineUserCount() const;
+    qint64 getTotalMessageCount() const;
     
     // 用户认证
     UserInfo authenticateUser(const QString &usernameOrEmail, const QString &passwordHash);
@@ -106,20 +110,77 @@ public:
     QList<MessageInfo> getRecentMessages(int limit = 100);
     
     // 好友关系
-    struct FriendshipInfo {
-        qint64 id;
+    struct FriendInfo {
         qint64 userId;
-        qint64 friendId;
+        QString username;
+        QString displayName;
+        QString avatarUrl;
         QString status;
-        QDateTime requestedAt;
-        QDateTime acceptedAt;
+        QDateTime lastOnline;
+        QString remark;
+        QDateTime createdAt;
     };
     
-    bool addFriendRequest(qint64 userId, qint64 friendId);
-    bool acceptFriendRequest(qint64 userId, qint64 friendId);
-    bool deleteFriendship(qint64 userId, qint64 friendId);
-    QList<FriendshipInfo> getUserFriends(qint64 userId);
-    QList<FriendshipInfo> getPendingFriendRequests(qint64 userId);
+    bool addFriendship(qint64 userId1, qint64 userId2, const QString &remark = "");
+    bool removeFriendship(qint64 userId1, qint64 userId2);
+    QList<FriendInfo> getUserFriends(qint64 userId);
+    bool updateFriendRemark(qint64 userId, qint64 friendId, const QString &remark);
+    
+    // 群组管理
+    struct GroupInfo {
+        qint64 id;
+        QString name;
+        QString description;
+        qint64 creatorId;
+        QString avatarUrl;
+        int memberCount;
+        QDateTime createdAt;
+        QDateTime updatedAt;
+    };
+    
+    struct GroupMemberInfo {
+        qint64 userId;
+        QString username;
+        QString displayName;
+        QString avatarUrl;
+        QString status;
+        QDateTime lastOnline;
+        QString role; // owner, admin, member
+        QDateTime joinedAt;
+        bool isOnline = false;
+    };
+    
+    qint64 createGroup(const QString &groupName, const QString &description, 
+                      qint64 creatorId, const QString &avatarUrl = "");
+    bool deleteGroup(qint64 groupId);
+    GroupInfo getGroupById(qint64 groupId);
+    QList<GroupInfo> getUserGroups(qint64 userId);
+    bool addGroupMember(qint64 groupId, qint64 userId, const QString &role = "member");
+    bool removeGroupMember(qint64 groupId, qint64 userId);
+    QList<GroupMemberInfo> getGroupMembers(qint64 groupId);
+    bool updateGroupMemberRole(qint64 groupId, qint64 userId, const QString &role);
+    bool updateGroupInfo(qint64 groupId, const QVariantMap &info);
+    
+    // 群组消息
+    struct GroupMessageInfo {
+        qint64 id;
+        QString messageId;
+        qint64 senderId;
+        qint64 groupId;
+        QString messageType;
+        QString content;
+        QString fileUrl;
+        qint64 fileSize;
+        QDateTime createdAt;
+        QString senderUsername;
+        QString senderDisplayName;
+        QString senderAvatarUrl;
+    };
+    
+    bool saveGroupMessage(const QString &messageId, qint64 senderId, qint64 groupId,
+                         const QString &messageType, const QString &content,
+                         const QString &fileUrl = "", qint64 fileSize = 0);
+    QList<GroupMessageInfo> getGroupMessages(qint64 groupId, int limit = 50, int offset = 0);
     
     // 统计数据
     struct ServerStats {
@@ -152,16 +213,22 @@ public:
                  const QString &userAgent = "", const QVariantMap &extraData = QVariantMap());
     QList<QVariantMap> getSystemLogs(LogLevel minLevel = Info, int limit = 1000, int offset = 0);
     
+    // 数据库管理
+    bool executeQuery(QSqlQuery &query);
+    QString getConnectionName() const;
+    bool createTables();
+    void setupDatabase();
+    bool createDefaultAdminAccount();
+    
+    // 获取数据库连接
+    QSqlDatabase getDatabase() const;
+    
 signals:
     void databaseError(const QString &error);
     void connectionLost();
     void connectionRestored();
     
 private:
-    bool executeQuery(QSqlQuery &query);
-    QString getConnectionName() const;
-    bool createTables();
-    void setupDatabase();
     
     QSqlDatabase _database;
     QString _connectionName;
@@ -178,4 +245,4 @@ private:
     int _readTimeout;
 };
 
-#endif // DATABASE_H 
+#endif // DATABASE_H

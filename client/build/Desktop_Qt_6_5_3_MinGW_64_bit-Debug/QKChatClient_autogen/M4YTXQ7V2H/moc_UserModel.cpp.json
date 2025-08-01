@@ -12,6 +12,22 @@
                     "access": "public",
                     "name": "isValid",
                     "returnType": "bool"
+                },
+                {
+                    "access": "public",
+                    "arguments": [
+                        {
+                            "name": "userInfo",
+                            "type": "QVariantMap"
+                        }
+                    ],
+                    "name": "updateUserInfo",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "toVariantMap",
+                    "returnType": "QVariantMap"
                 }
             ],
             "object": true,
@@ -21,6 +37,21 @@
                     "designable": true,
                     "final": false,
                     "index": 0,
+                    "name": "userId",
+                    "notify": "userIdChanged",
+                    "read": "userId",
+                    "required": false,
+                    "scriptable": true,
+                    "stored": true,
+                    "type": "qint64",
+                    "user": false,
+                    "write": "setUserId"
+                },
+                {
+                    "constant": false,
+                    "designable": true,
+                    "final": false,
+                    "index": 1,
                     "name": "username",
                     "notify": "usernameChanged",
                     "read": "username",
@@ -35,7 +66,7 @@
                     "constant": false,
                     "designable": true,
                     "final": false,
-                    "index": 1,
+                    "index": 2,
                     "name": "email",
                     "notify": "emailChanged",
                     "read": "email",
@@ -50,7 +81,7 @@
                     "constant": false,
                     "designable": true,
                     "final": false,
-                    "index": 2,
+                    "index": 3,
                     "name": "password",
                     "notify": "passwordChanged",
                     "read": "password",
@@ -65,7 +96,22 @@
                     "constant": false,
                     "designable": true,
                     "final": false,
-                    "index": 3,
+                    "index": 4,
+                    "name": "displayName",
+                    "notify": "displayNameChanged",
+                    "read": "displayName",
+                    "required": false,
+                    "scriptable": true,
+                    "stored": true,
+                    "type": "QString",
+                    "user": false,
+                    "write": "setDisplayName"
+                },
+                {
+                    "constant": false,
+                    "designable": true,
+                    "final": false,
+                    "index": 5,
                     "name": "avatar",
                     "notify": "avatarChanged",
                     "read": "avatar",
@@ -80,7 +126,37 @@
                     "constant": false,
                     "designable": true,
                     "final": false,
-                    "index": 4,
+                    "index": 6,
+                    "name": "status",
+                    "notify": "statusChanged",
+                    "read": "status",
+                    "required": false,
+                    "scriptable": true,
+                    "stored": true,
+                    "type": "QString",
+                    "user": false,
+                    "write": "setStatus"
+                },
+                {
+                    "constant": false,
+                    "designable": true,
+                    "final": false,
+                    "index": 7,
+                    "name": "token",
+                    "notify": "tokenChanged",
+                    "read": "token",
+                    "required": false,
+                    "scriptable": true,
+                    "stored": true,
+                    "type": "QString",
+                    "user": false,
+                    "write": "setToken"
+                },
+                {
+                    "constant": false,
+                    "designable": true,
+                    "final": false,
+                    "index": 8,
                     "name": "isLoggedIn",
                     "notify": "isLoggedInChanged",
                     "read": "isLoggedIn",
@@ -95,20 +171,25 @@
                     "constant": false,
                     "designable": true,
                     "final": false,
-                    "index": 5,
-                    "name": "token",
-                    "notify": "tokenChanged",
-                    "read": "token",
+                    "index": 9,
+                    "name": "lastOnline",
+                    "notify": "lastOnlineChanged",
+                    "read": "lastOnline",
                     "required": false,
                     "scriptable": true,
                     "stored": true,
-                    "type": "QString",
+                    "type": "QDateTime",
                     "user": false,
-                    "write": "setToken"
+                    "write": "setLastOnline"
                 }
             ],
             "qualifiedClassName": "UserModel",
             "signals": [
+                {
+                    "access": "public",
+                    "name": "userIdChanged",
+                    "returnType": "void"
+                },
                 {
                     "access": "public",
                     "name": "usernameChanged",
@@ -126,7 +207,17 @@
                 },
                 {
                     "access": "public",
+                    "name": "displayNameChanged",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
                     "name": "avatarChanged",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "statusChanged",
                     "returnType": "void"
                 },
                 {
@@ -137,6 +228,16 @@
                 {
                     "access": "public",
                     "name": "tokenChanged",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "lastOnlineChanged",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "name": "userInfoChanged",
                     "returnType": "void"
                 }
             ],

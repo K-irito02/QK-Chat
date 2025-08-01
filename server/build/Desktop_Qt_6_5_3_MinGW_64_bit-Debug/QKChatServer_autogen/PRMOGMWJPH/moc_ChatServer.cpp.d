@@ -1,16 +1,15 @@
 D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/PRMOGMWJPH/moc_ChatServer.cpp: D:/QT_Learn/Projects/QKChatApp/server/src/core/ChatServer.h \
   D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/moc_predefs.h \
+  D:/QT_Learn/Projects/QKChatApp/server/src/network/QSslServer.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QByteArray \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QFlags \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QHash \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QList \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMap \
-  D:/Qt/6.5.3/mingw_64/include/QtCore/QMetaType \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMutex \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMutexLocker \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QObject \
-  D:/Qt/6.5.3/mingw_64/include/QtCore/QSharedDataPointer \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QString \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QStringList \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QThreadPool \
@@ -138,8 +137,6 @@ D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QHostAddress \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslConfiguration \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslError \
-  D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslPreSharedKeyAuthenticator \
-  D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslServer \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslSocket \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QTcpServer \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qabstractsocket.h \
@@ -148,8 +145,6 @@ D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslcertificate.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslconfiguration.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslerror.h \
-  D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslpresharedkeyauthenticator.h \
-  D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslserver.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslsocket.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qtcpserver.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qtcpsocket.h \

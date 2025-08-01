@@ -17,6 +17,7 @@
 #define _WIN64 1
 #define __WINT_MAX__ 0xffff
 #define __FLT32_MIN_EXP__ (-125)
+#define LOG_LEVEL_DEBUG 1
 #define __cpp_static_assert 201411L
 #define QT_GUI_LIB 1
 #define __ORDER_LITTLE_ENDIAN__ 1234
@@ -49,10 +50,10 @@
 #define _stdcall __attribute__((__stdcall__))
 #define __DEC64_MAX_EXP__ 385
 #define __INT8_C(c) c
+#define QKCHAT_SERVER_VERSION "1.0.0"
 #define __INT_LEAST8_WIDTH__ 8
 #define __cpp_variadic_using 201611L
 #define __UINT_LEAST64_MAX__ 0xffffffffffffffffULL
-#define QT_OPENGL_LIB 1
 #define __INT_LEAST8_MAX__ 0x7f
 #define __cpp_capture_star_this 201603L
 #define __SHRT_MAX__ 0x7fff
@@ -60,14 +61,12 @@
 #define __FLT64X_MAX_10_EXP__ 4932
 #define __cpp_if_constexpr 201606L
 #define __LDBL_IS_IEC_60559__ 2
-#define QT_QMLINTEGRATION_LIB 1
 #define __FLT64X_HAS_QUIET_NAN__ 1
 #define __UINT_LEAST8_MAX__ 0xff
 #define __GCC_ATOMIC_BOOL_LOCK_FREE 2
 #define __FLT128_DENORM_MIN__ 6.47517511943802511092443895822764655e-4966F128
 #define __UINTMAX_TYPE__ long long unsigned int
 #define __DEC32_EPSILON__ 1E-6DF
-#define QT_QMLMODELS_LIB 1
 #define __FLT_EVAL_METHOD_TS_18661_3__ 0
 #define __UINT32_MAX__ 0xffffffffU
 #define __GXX_EXPERIMENTAL_CXX0X__ 1
@@ -109,6 +108,7 @@
 #define __INT32_MAX__ 0x7fffffff
 #define __INT_WIDTH__ 32
 #define __SIZEOF_LONG__ 4
+#define DEBUG_MODE 1
 #define __UINT16_C(c) c
 #define UNICODE 1
 #define __DECIMAL_DIG__ 21
@@ -217,7 +217,6 @@
 #define __SEH__ 1
 #define __INT_LEAST32_MAX__ 0x7fffffff
 #define __GCC_ATOMIC_INT_LOCK_FREE 2
-#define QT_QUICK_LIB 1
 #define __FLT128_MAX_EXP__ 16384
 #define __FLT32_MANT_DIG__ 24
 #define __FLOAT_WORD_ORDER__ __ORDER_LITTLE_ENDIAN__
@@ -432,7 +431,6 @@
 #define __PTRDIFF_TYPE__ long long int
 #define __ATOMIC_SEQ_CST 5
 #define __GCC_HAVE_SYNC_COMPARE_AND_SWAP_16 1
-#define QT_QML_LIB 1
 #define __FLT32X_MIN_10_EXP__ (-307)
 #define __UINTPTR_TYPE__ long long unsigned int
 #define __DEC64_SUBNORMAL_MIN__ 0.000000000000001E-383DD

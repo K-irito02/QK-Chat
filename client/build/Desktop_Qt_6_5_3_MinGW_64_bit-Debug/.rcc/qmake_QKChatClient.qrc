@@ -1,5 +1,5 @@
 <RCC>
-  <qresource prefix="/QKChatClient">
+  <qresource prefix="/QKChatClient/QKChatClient">
     <file alias="qmldir">D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatClient/qmldir</file>
   </qresource>
 </RCC>

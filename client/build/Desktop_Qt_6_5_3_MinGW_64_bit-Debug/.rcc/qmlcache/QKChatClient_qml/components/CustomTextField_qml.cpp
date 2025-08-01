@@ -1,4 +1,4 @@
-// /QKChatClient/qml/components/CustomTextField.qml
+// /QKChatClient/QKChatClient/qml/components/CustomTextField.qml
 #include <QtQml/qqmlprivate.h>
 #include <QtCore/qdatetime.h>
 #include <QtCore/qobject.h>
@@ -15,7 +15,7 @@
 #include <QtQml/qqmllist.h>
 #include <type_traits>
 namespace QmlCacheGeneratedCode {
-namespace _0x5f_QKChatClient_qml_components_CustomTextField_qml {
+namespace _0x5f_QKChatClient_QKChatClient_qml_components_CustomTextField_qml {
 extern const unsigned char qmlData alignas(16) [];
 extern const unsigned char qmlData alignas(16) [] = {
 

@@ -37,6 +37,15 @@ public:
     bool needCaptcha() const { return _needCaptcha; }
     QString captchaImage() const { return _captchaImage; }
     
+    // Model访问器
+    UserModel* userModel() const { return _userModel; }
+    
+    // 依赖注入方法
+    void setUserModel(UserModel *userModel);
+    void setDatabase(LocalDatabase *database);
+    void setNetworkClient(NetworkClient *networkClient);
+    void setValidator(Validator *validator);
+    
     // 用户操作方法
     Q_INVOKABLE void login(const QString &usernameOrEmail, const QString &password, const QString &captcha = "");
     Q_INVOKABLE void registerUser(const QString &username, const QString &email, const QString &password, const QUrl &avatar);
@@ -99,11 +108,7 @@ private:
     int _loginAttempts;
     bool _needCaptcha;
     QString _captchaImage;
-    
-    QTimer *_attemptResetTimer;
-    
-    static const int MAX_LOGIN_ATTEMPTS = 3;
-    static const int ATTEMPT_RESET_TIMEOUT = 300000; // 5分钟
+    QTimer *_resetTimer;
 };
 
 #endif // USERCONTROLLER_H 

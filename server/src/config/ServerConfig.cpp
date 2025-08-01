@@ -4,6 +4,8 @@
 #include <QCoreApplication>
 #include <QLoggingCategory>
 #include <QThread>
+#include <QFileInfo>
+#include <QFile>
 
 Q_LOGGING_CATEGORY(serverConfig, "qkchat.server.config")
 
@@ -166,6 +168,16 @@ QString ServerConfig::getCaFile() const
     return getValue("Security/ca_file", "").toString();
 }
 
+QString ServerConfig::getSslCertificateFile() const
+{
+    return getCertificateFile();
+}
+
+QString ServerConfig::getSslPrivateKeyFile() const
+{
+    return getPrivateKeyFile();
+}
+
 QString ServerConfig::getDatabaseType() const
 {
     return getValue("Database/type", "mysql").toString();
@@ -324,4 +336,4 @@ QString ServerConfig::getDefaultConfigPath() const
     // 如果程序目录下没有，使用标准配置目录
     QString configDir = QStandardPaths::writableLocation(QStandardPaths::AppConfigLocation);
     return configDir + "/server.conf";
-} 
+}

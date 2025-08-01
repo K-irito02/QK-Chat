@@ -1,8 +1,13 @@
 D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatClient_autogen/M4YTXQ7V2H/moc_UserModel.cpp: D:/QT_Learn/Projects/QKChatApp/client/src/models/UserModel.h \
   D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatClient_autogen/moc_predefs.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QMap \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QObject \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QString \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QUrl \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QVariant \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QVariantMap \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/q20memory.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/q20type_traits.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qalgorithms.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qanystringview.h \
@@ -18,6 +23,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qbytearrayalgorithms.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qbytearraylist.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qbytearrayview.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qcalendar.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qchar.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcompare.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcompare_impl.h \
@@ -27,8 +33,11 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcontainerfwd.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcontainerinfo.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcontainertools_impl.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qcontiguouscache.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdarwinhelpers.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdatastream.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qdatetime.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qdebug.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qexceptionhandling.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qflags.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qfloat16.h \
@@ -37,13 +46,16 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qgenericatomic.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qglobal.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qglobalstatic.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qhash.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qhashfunctions.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qiodevicebase.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qiterable.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qiterator.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlist.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qlocale.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlogging.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmalloc.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qmap.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmath.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmetacontainer.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmetatype.h \
@@ -60,9 +72,15 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qrefcount.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qscopedpointer.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qscopeguard.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qset.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qshareddata.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qshareddata_impl.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qsharedpointer.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qsharedpointer_impl.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qstring.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qstringalgorithms.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qstringbuilder.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qstringconverter_base.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qstringfwd.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qstringlist.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qstringliteral.h \
@@ -79,6 +97,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtcoreexports.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtdeprecationmarkers.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtenvironmentvariables.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qtextstream.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtmetamacros.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtnoop.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtpreprocessorsupport.h \
@@ -91,6 +110,9 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtypes.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qurl.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qutf8stringview.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qvariant.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qvariantmap.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qvarlengtharray.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qversiontagging.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qxptype_traits.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include-fixed/limits.h \

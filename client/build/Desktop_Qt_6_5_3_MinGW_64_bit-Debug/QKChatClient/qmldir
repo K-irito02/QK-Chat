@@ -1,9 +1,20 @@
 module QKChatClient
 typeinfo QKChatClient.qmltypes
-prefer :/QKChatClient/
+prefer :/QKChatClient/QKChatClient/
 LoginWindow 1.0 qml/LoginWindow.qml
 RegisterWindow 1.0 qml/RegisterWindow.qml
+ChatMainWindow 1.0 qml/ChatMainWindow.qml
 CustomButton 1.0 qml/components/CustomButton.qml
 CustomTextField 1.0 qml/components/CustomTextField.qml
 AvatarSelector 1.0 qml/components/AvatarSelector.qml
+SideBarButton 1.0 qml/components/SideBarButton.qml
+ChatWindow 1.0 qml/components/ChatWindow.qml
+MessageBubble 1.0 qml/components/MessageBubble.qml
+DefaultPage 1.0 qml/components/DefaultPage.qml
+ContactsPage 1.0 qml/components/ContactsPage.qml
+GroupsPage 1.0 qml/components/GroupsPage.qml
+AddPage 1.0 qml/components/AddPage.qml
+ProfilePage 1.0 qml/components/ProfilePage.qml
+SettingsPage 1.0 qml/components/SettingsPage.qml
+EmojiPicker 1.0 qml/components/EmojiPicker.qml
 

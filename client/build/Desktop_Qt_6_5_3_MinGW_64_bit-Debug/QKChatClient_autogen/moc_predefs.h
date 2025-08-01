@@ -17,6 +17,7 @@
 #define _WIN64 1
 #define __WINT_MAX__ 0xffff
 #define __FLT32_MIN_EXP__ (-125)
+#define LOG_LEVEL_DEBUG 1
 #define __cpp_static_assert 201411L
 #define QT_GUI_LIB 1
 #define __ORDER_LITTLE_ENDIAN__ 1234
@@ -40,7 +41,6 @@
 #define __SIG_ATOMIC_TYPE__ int
 #define __DBL_MIN_10_EXP__ (-307)
 #define __FINITE_MATH_ONLY__ 0
-#define QT_QUICKCONTROLS2IMPL_LIB 1
 #define __cpp_variable_templates 201304L
 #define __FLT32X_MAX_EXP__ 1024
 #define __FLT32_HAS_DENORM__ 1
@@ -110,6 +110,7 @@
 #define __INT32_MAX__ 0x7fffffff
 #define __INT_WIDTH__ 32
 #define __SIZEOF_LONG__ 4
+#define DEBUG_MODE 1
 #define __UINT16_C(c) c
 #define UNICODE 1
 #define __DECIMAL_DIG__ 21
@@ -138,6 +139,7 @@
 #define __INT_FAST32_MAX__ 0x7fffffff
 #define __WINNT 1
 #define __DBL_HAS_INFINITY__ 1
+#define QKCHAT_CLIENT_VERSION "1.0.0"
 #define __SIZEOF_FLOAT__ 4
 #define __WINNT__ 1
 #define __HAVE_SPECULATION_SAFE_VALUE 1
@@ -155,6 +157,7 @@
 #define __cpp_ref_qualifiers 200710L
 #define __DEC32_MIN__ 1E-95DF
 #define __DEPRECATED 1
+#define NO_OPENSSL 1
 #define __cpp_rvalue_references 200610L
 #define __DBL_MAX_EXP__ 1024
 #define __WCHAR_WIDTH__ 16
@@ -231,6 +234,7 @@
 #define __ORDER_PDP_ENDIAN__ 3412
 #define __DEC128_MIN_EXP__ (-6142)
 #define __INT_FAST32_TYPE__ int
+#define QT_CONCURRENT_LIB 1
 #define __UINT_LEAST16_TYPE__ short unsigned int
 #define __DBL_HAS_DENORM__ 1
 #define __cpp_rtti 199711L
@@ -247,6 +251,7 @@
 #define __LDBL_EPSILON__ 1.08420217248550443400745280086994171e-19L
 #define __UINTMAX_C(c) c ## ULL
 #define __GLIBCXX_BITSIZE_INT_N_0 128
+#define QT_MULTIMEDIA_LIB 1
 #define __FLT32X_MIN__ 2.22507385850720138309023271733240406e-308F32x
 #define __SIG_ATOMIC_MAX__ 0x7fffffff
 #define __GCC_ATOMIC_WCHAR_T_LOCK_FREE 2
@@ -334,6 +339,7 @@
 #define __FLT_MAX_EXP__ 128
 #define WIN64 1
 #define __ORDER_BIG_ENDIAN__ 4321
+#define QT_DEPRECATED_WARNINGS 1
 #define __DBL_MANT_DIG__ 53
 #define __cpp_inheriting_constructors 201511L
 #define QT_CORE_LIB 1

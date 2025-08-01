@@ -2,7 +2,7 @@
 #define CHATSERVER_H
 
 #include <QObject>
-#include <QSslServer>
+#include "../network/QSslServer.h"
 #include <QSslSocket>
 #include <QTimer>
 #include <QThreadPool>
@@ -44,6 +44,7 @@ public:
     void stopServer();
     void restartServer();
     bool isRunning() const;
+    bool initializeDatabase();
     
     // 状态查询
     int getOnlineUserCount() const;
@@ -101,7 +102,7 @@ private:
     ClientConnection *getClientBySocket(QSslSocket *socket);
     ClientConnection *getClientByUserId(qint64 userId);
     
-    QSslServer *_sslServer;
+    CustomSslServer *_sslServer;
     Database *_database;
     SessionManager *_sessionManager;
     ProtocolParser *_protocolParser;

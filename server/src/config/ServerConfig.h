@@ -45,6 +45,8 @@ public:
     QString getCertificateFile() const;
     QString getPrivateKeyFile() const;
     QString getCaFile() const;
+    QString getSslCertificateFile() const;
+    QString getSslPrivateKeyFile() const;
     
     // 数据库配置
     QString getDatabaseType() const;
@@ -96,4 +98,4 @@ private:
     Q_DISABLE_COPY(ServerConfig)
 };
 
-#endif // SERVERCONFIG_H 
+#endif // SERVERCONFIG_H

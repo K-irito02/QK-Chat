@@ -3,6 +3,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/QFlags \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QIODevice \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QList \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QMap \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMetaType \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QObject \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QSharedDataPointer \
@@ -10,6 +11,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/QTimer \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QUrl \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QVariant \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QVariantMap \
   D:/Qt/6.5.3/mingw_64/include/QtCore/q20memory.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/q20type_traits.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qalgorithms.h \
@@ -118,6 +120,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qurl.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qutf8stringview.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qvariant.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qvariantmap.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qvarlengtharray.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qversiontagging.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qxptype_traits.h \

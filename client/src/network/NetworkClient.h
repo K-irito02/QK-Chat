@@ -7,6 +7,7 @@
 #include <QUrl>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QVariantMap>
 
 /**
  * @brief 网络客户端类
@@ -91,6 +92,13 @@ private:
     QByteArray createPacket(const QString &type, const QVariantMap &data);
     void parsePacket(const QByteArray &packet);
     
+    // 响应处理函数
+    void handleAuthResponse(const QVariantMap &data);
+    void handleMessageResponse(const QVariantMap &data);
+    void handleValidationResponse(const QVariantMap &data);
+    void handleHeartbeatResponse(const QVariantMap &data);
+    void handleErrorResponse(const QVariantMap &data);
+    
     QSslSocket *_sslSocket;
     QTimer *_heartbeatTimer;
     QNetworkAccessManager *_networkManager;
@@ -98,8 +106,8 @@ private:
     QString _serverHost;
     int _serverPort;
     bool _isConnected;
-    
     QByteArray _readBuffer;
+    QString _authToken;
     
     static const int HEARTBEAT_INTERVAL = 30000; // 30 seconds
     static const int CONNECTION_TIMEOUT = 10000; // 10 seconds

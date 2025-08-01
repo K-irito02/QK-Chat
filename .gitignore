@@ -1,0 +1,65 @@
+# 忽略指定目录
+笔记/
+草稿文档/
+设计文档/
+CluadeCode-API脚本/
+配置脚本/
+logs/
+certs/
+downloads/
+uploads/
+backups/
+
+# 忽略所有 .xx 文件
+.*
+
+# 不忽略 .gitignore 文件
+!.gitignore
+
+# 忽略编译生成的目录
+build/
+
+# Qt 相关忽略
+*.pro.user
+*.pro.user.*
+*.qmake.stash
+*.qmlc
+*.jsc
+*.qmlproject.user
+*.qmlproject.user.*
+
+# CMake 相关忽略
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+Testing/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CPackConfig.cmake
+CPackSourceConfig.cmake
+_deps/
+
+# C++ 相关忽略
+*.o
+*.obj
+*.dll
+*.so
+*.dylib
+*.exe
+*.out
+*.app
+*.lib
+*.a
+*.la
+*.lo
+
+# IDE 相关忽略
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统相关忽略
+.DS_Store
+Thumbs.db

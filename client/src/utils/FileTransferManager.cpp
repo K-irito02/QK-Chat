@@ -586,8 +586,7 @@ void FileTransferManager::startUploadTask(const QString &taskId)
         // 连接信号
         connect(reply, &QNetworkReply::uploadProgress, this, &FileTransferManager::onUploadProgress);
         connect(reply, &QNetworkReply::finished, this, &FileTransferManager::onUploadFinished);
-        connect(reply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::errorOccurred),
-                this, &FileTransferManager::onNetworkError);
+        connect(reply, &QNetworkReply::errorOccurred, this, &FileTransferManager::onNetworkError);
         
         locker.relock();
         m_replyToTaskMap[reply] = taskId;
@@ -611,8 +610,7 @@ void FileTransferManager::startDownloadTask(const QString &taskId)
     // 连接信号
     connect(reply, &QNetworkReply::downloadProgress, this, &FileTransferManager::onDownloadProgress);
     connect(reply, &QNetworkReply::finished, this, &FileTransferManager::onDownloadFinished);
-    connect(reply, QOverload<QNetworkReply::NetworkError>::of(&QNetworkReply::errorOccurred),
-            this, &FileTransferManager::onNetworkError);
+    connect(reply, &QNetworkReply::errorOccurred, this, &FileTransferManager::onNetworkError);
     
     locker.relock();
     m_replyToTaskMap[reply] = taskId;

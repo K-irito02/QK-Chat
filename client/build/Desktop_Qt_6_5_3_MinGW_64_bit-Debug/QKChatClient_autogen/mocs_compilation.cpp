@@ -7,4 +7,5 @@
 #include "M4YTXQ7V2H/moc_UserModel.cpp"
 #include "UFQQIFJZKK/moc_NetworkClient.cpp"
 #include "VSCBVMNR7M/moc_FileTransferManager.cpp"
+#include "VSCBVMNR7M/moc_ThreadPool.cpp"
 #include "VSCBVMNR7M/moc_Validator.cpp"

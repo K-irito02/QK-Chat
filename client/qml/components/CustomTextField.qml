@@ -13,6 +13,7 @@ Item {
     property bool isPassword: false
     property string errorMessage: ""
     property bool hasError: errorMessage.length > 0
+    property int inputMethodHints: Qt.ImhNone
     
     signal customTextChanged()
     signal customAccepted()
@@ -82,6 +83,7 @@ Item {
                     placeholderTextColor: Material.hintTextColor
                     selectByMouse: true
                     verticalAlignment: TextInput.AlignVCenter
+                    inputMethodHints: root.inputMethodHints
                     
                     echoMode: isPassword ? TextInput.Password : TextInput.Normal
                     

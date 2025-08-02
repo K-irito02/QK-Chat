@@ -35,6 +35,7 @@ set(SOURCES
     src/network/NetworkClient.cpp
     src/utils/Validator.cpp
     src/utils/FileTransferManager.cpp
+    src/utils/ThreadPool.cpp
     src/crypto/CryptoManager.cpp
     src/config/ConfigManager.cpp
 )
@@ -48,6 +49,7 @@ set(HEADERS
     src/network/NetworkClient.h
     src/utils/Validator.h
     src/utils/FileTransferManager.h
+    src/utils/ThreadPool.h
     src/crypto/CryptoManager.h
     src/config/ConfigManager.h
 )

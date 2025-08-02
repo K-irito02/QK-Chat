@@ -1,4 +1,4 @@
-set(qml_import_scanner_imports_count 42)
+set(qml_import_scanner_imports_count 43)
 set(qml_import_scanner_import_0 "CLASSNAME;QtQuick2Plugin;LINKTARGET;Qt6::qtquick2plugin;NAME;QtQuick;PATH;D:/Qt/6.5.3/mingw_64/qml/QtQuick;PLUGIN;qtquick2plugin;PLUGINISOPTIONAL;;PREFER;:/qt-project.org/imports/QtQuick/;RELATIVEPATH;QtQuick;TYPE;module;")
 set(qml_import_scanner_import_1 "CLASSNAME;QtQmlMetaPlugin;LINKTARGET;Qt6::QmlMeta;NAME;QtQml;PATH;D:/Qt/6.5.3/mingw_64/qml/QtQml;PLUGIN;qmlmetaplugin;PLUGINISOPTIONAL;;PREFER;:/qt-project.org/imports/QtQml/;RELATIVEPATH;QtQml;TYPE;module;")
 set(qml_import_scanner_import_2 "CLASSNAME;QtQmlPlugin;LINKTARGET;Qt6::qmlplugin;NAME;QtQml.Base;PATH;D:/Qt/6.5.3/mingw_64/qml/QtQml/Base;PLUGIN;qmlplugin;PLUGINISOPTIONAL;;PREFER;:/qt-project.org/imports/QtQml/Base/;RELATIVEPATH;QtQml/Base;TYPE;module;")
@@ -38,7 +38,8 @@ set(qml_import_scanner_import_35 "CLASSNAME;QtQuickDialogs2QuickImplPlugin;COMPO
 set(qml_import_scanner_import_36 "CLASSNAME;QmlFolderListModelPlugin;LINKTARGET;Qt6::qmlfolderlistmodelplugin;NAME;Qt.labs.folderlistmodel;PATH;D:/Qt/6.5.3/mingw_64/qml/Qt/labs/folderlistmodel;PLUGIN;qmlfolderlistmodelplugin;PLUGINISOPTIONAL;;PREFER;:/qt-project.org/imports/Qt/labs/folderlistmodel/;RELATIVEPATH;Qt/labs/folderlistmodel;TYPE;module;")
 set(qml_import_scanner_import_37 "CLASSNAME;QtQmlCorePlugin;LINKTARGET;Qt6::qtqmlcoreplugin;NAME;QtCore;PATH;D:/Qt/6.5.3/mingw_64/qml/QtCore;PLUGIN;qtqmlcoreplugin;PLUGINISOPTIONAL;;PREFER;:/qt-project.org/imports/QtCore/;RELATIVEPATH;QtCore;TYPE;module;")
 set(qml_import_scanner_import_38 "NAME;components;PATH;D:/QT_Learn/Projects/QKChatApp/client/qml/ChatMainWindow.qml/components;TYPE;directory;")
-set(qml_import_scanner_import_39 "NAME;components;PATH;D:/QT_Learn/Projects/QKChatApp/client/qml/LoginWindow.qml/components;TYPE;directory;")
-set(qml_import_scanner_import_40 "NAME;.;PATH;D:/QT_Learn/Projects/QKChatApp/client/qml/main.qml;TYPE;directory;")
-set(qml_import_scanner_import_41 "NAME;components;PATH;D:/QT_Learn/Projects/QKChatApp/client/qml/RegisterWindow.qml/components;TYPE;directory;")
+set(qml_import_scanner_import_39 "NAME;com.qkchat.network;TYPE;module;")
+set(qml_import_scanner_import_40 "NAME;components;PATH;D:/QT_Learn/Projects/QKChatApp/client/qml/LoginWindow.qml/components;TYPE;directory;")
+set(qml_import_scanner_import_41 "NAME;.;PATH;D:/QT_Learn/Projects/QKChatApp/client/qml/main.qml;TYPE;directory;")
+set(qml_import_scanner_import_42 "NAME;components;PATH;D:/QT_Learn/Projects/QKChatApp/client/qml/RegisterWindow.qml/components;TYPE;directory;")
 

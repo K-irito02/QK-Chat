@@ -1,8 +1,10 @@
 D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/PRMOGMWJPH/moc_ChatServer.cpp: D:/QT_Learn/Projects/QKChatApp/server/src/core/ChatServer.h \
   D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/moc_predefs.h \
   D:/QT_Learn/Projects/QKChatApp/server/src/network/QSslServer.h \
+  D:/QT_Learn/Projects/QKChatApp/server/src/utils/ThreadPool.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QByteArray \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QDeadlineTimer \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QFlags \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QHash \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QList \
@@ -10,12 +12,15 @@ D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMutex \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMutexLocker \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QObject \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QQueue \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QRunnable \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QString \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QStringList \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QThreadPool \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QTimer \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QVariant \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QVariantMap \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QWaitCondition \
   D:/Qt/6.5.3/mingw_64/include/QtCore/q20memory.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/q20type_traits.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qalgorithms.h \
@@ -84,6 +89,7 @@ D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qoverload.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qpair.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qprocessordetection.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qqueue.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qrefcount.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qrunnable.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qscopedpointer.h \
@@ -133,8 +139,10 @@ D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qvariantmap.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qvarlengtharray.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qversiontagging.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qwaitcondition.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qxptype_traits.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QHostAddress \
+  D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslCipher \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslConfiguration \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslError \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslSocket \
@@ -143,6 +151,7 @@ D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qhostaddress.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qssl.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslcertificate.h \
+  D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslcipher.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslconfiguration.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslerror.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslsocket.h \

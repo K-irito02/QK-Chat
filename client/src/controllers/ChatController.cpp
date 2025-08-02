@@ -3,6 +3,7 @@
 #include "../models/UserModel.h"
 #include "../network/NetworkClient.h"
 #include "../database/LocalDatabase.h"
+#include "../utils/ThreadPool.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
@@ -21,6 +22,7 @@ ChatController::ChatController(QObject *parent)
     , m_userModel(nullptr)
     , m_networkClient(nullptr)
     , m_localDatabase(nullptr)
+    , m_threadPool(nullptr)
     , m_networkManager(new QNetworkAccessManager(this))
     , m_isConnected(false)
     , m_connectionStatus("disconnected")
@@ -86,10 +88,17 @@ void ChatController::initialize()
     
     setupConnections();
     
-    // 加载本地数据
-    loadRecentChats();
-    loadContacts();
-    loadGroups();
+    // 异步加载本地数据
+    if (m_threadPool) {
+        m_threadPool->enqueue([this]() { loadRecentChats(); });
+        m_threadPool->enqueue([this]() { loadContacts(); });
+        m_threadPool->enqueue([this]() { loadGroups(); });
+    } else {
+        // Fallback to synchronous loading if thread pool is not available
+        loadRecentChats();
+        loadContacts();
+        loadGroups();
+    }
     
     // 启动状态更新定时器
     m_statusUpdateTimer->start();
@@ -109,7 +118,7 @@ void ChatController::connectToServer()
     emit connectionStatusChanged();
     
     // 这里应该从配置中获取服务器地址和端口
-    if (m_networkClient->connectToServer("localhost", 8888)) {
+    if (m_networkClient->connectToServer("localhost", 8443)) {
         qCInfo(chatController) << "Connection request sent";
     } else {
         qCWarning(chatController) << "Failed to initiate connection";
@@ -157,8 +166,12 @@ void ChatController::sendMessage(qint64 receiverId, const QString &message, int 
     QVariantMap messageData = createMessageObject(receiverId, message, messageType);
     messageData["messageId"] = messageId;
     
-    // 保存到本地数据库
-    saveMessageToLocal(messageData);
+    // 异步保存到本地数据库
+    if (m_threadPool) {
+        m_threadPool->enqueue([this, messageData]() { saveMessageToLocal(messageData); });
+    } else {
+        saveMessageToLocal(messageData);
+    }
     
     // 发送到服务器
     m_networkClient->sendMessage(QString::number(receiverId), message, 
@@ -184,8 +197,12 @@ void ChatController::sendGroupMessage(qint64 groupId, const QString &message, in
     QVariantMap messageData = createMessageObject(0, message, messageType, true, groupId);
     messageData["messageId"] = messageId;
     
-    // 保存到本地数据库
-    saveMessageToLocal(messageData);
+    // 异步保存到本地数据库
+    if (m_threadPool) {
+        m_threadPool->enqueue([this, messageData]() { saveMessageToLocal(messageData); });
+    } else {
+        saveMessageToLocal(messageData);
+    }
     
     // 发送到服务器 (这里需要扩展NetworkClient支持群组消息)
     // TODO: 实现群组消息发送协议
@@ -545,6 +562,12 @@ void ChatController::setLocalDatabase(LocalDatabase *localDatabase)
 {
     m_localDatabase = localDatabase;
     qCInfo(chatController) << "LocalDatabase set";
+}
+
+void ChatController::setThreadPool(ThreadPool *threadPool)
+{
+    m_threadPool = threadPool;
+    qCInfo(chatController) << "ThreadPool set";
 }
 
 // 网络消息处理槽函数

@@ -1,5 +1,9 @@
+# OpenSSL配置文件 - 用于生成SSL证书
+# 基于配置清单-0.1V.md创建
+
 [req]
 default_bits = 4096
+default_keyfile = server.key
 distinguished_name = req_distinguished_name
 req_extensions = v3_req
 prompt = no
@@ -8,16 +12,19 @@ prompt = no
 C = CN
 ST = Beijing
 L = Beijing
-O = QKChat
+O = QK Chat
 OU = Development
 CN = localhost
+emailAddress = admin@qkchat.com
 
 [v3_req]
-keyUsage = keyEncipherment, dataEncipherment
-extendedKeyUsage = serverAuth
+basicConstraints = CA:FALSE
+keyUsage = nonRepudiation, digitalSignature, keyEncipherment
 subjectAltName = @alt_names
 
 [alt_names]
 DNS.1 = localhost
 DNS.2 = 127.0.0.1
+DNS.3 = qkchat.local
 IP.1 = 127.0.0.1
+IP.2 = ::1

@@ -36,6 +36,11 @@ public:
     void registerUser(const QString &username, const QString &email, const QString &password, const QUrl &avatar);
     void logout();
     
+    // 邮箱验证
+    void verifyEmail(const QString &token);
+    void sendEmailVerification(const QString &email);
+    void resendVerification(const QString &email);
+    
     // 验证码
     void requestCaptcha();
     
@@ -54,13 +59,17 @@ public:
     void stopHeartbeat();
     void sendHeartbeat();
     
+    void verifyEmailCode(const QString &email, const QString &code);
+    
 signals:
     void connected();
     void disconnected();
     void connectionError(const QString &error);
     
     void loginResponse(bool success, const QString &message, const QString &token);
-    void registerResponse(bool success, const QString &message);
+    void registerResponse(bool success, const QString &message, const QString &username, const QString &email, qint64 userId);
+    void verifyEmailResponse(bool success, const QString &message);
+    void resendVerificationResponse(bool success, const QString &message);
     void logoutResponse(bool success);
     
     void captchaReceived(const QString &captchaImage);
@@ -75,6 +84,7 @@ signals:
     void messageDelivered(const QString &messageId);
     
     void networkError(const QString &error);
+    void emailCodeVerified(bool success, const QString &message);
     
 private slots:
     void onConnected();

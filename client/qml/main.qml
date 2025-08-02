@@ -24,6 +24,7 @@ ApplicationWindow {
     property bool showLogin: true
     property bool isLoggedIn: false
     property alias userController: userController
+    property string prefillEmail: ""
     
     // 监听全局configManager的主题变化
     Connections {
@@ -57,6 +58,7 @@ ApplicationWindow {
         
         onRegisterSuccess: {
             console.log("注册成功")
+            prefillEmail = email
             showLogin = true
         }
         
@@ -143,6 +145,9 @@ ApplicationWindow {
     Component.onCompleted: {
         // 尝试自动登录
         userController.tryAutoLogin()
+        
+        // 连接到服务器
+        userController.connectToServer("localhost", 8443)
         
         // 设置窗口居中
         x = (Screen.width - width) / 2

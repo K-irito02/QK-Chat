@@ -1,8 +1,11 @@
 #include <QApplication>
 #include <QMessageBox>
+#include <QDialog>
 #include <QDir>
-#include <QStandardPaths>
 #include <QLoggingCategory>
+#include <QSslSocket>
+#include <QLibraryInfo>
+#include <QCoreApplication>
 
 #include "admin/AdminWindow.h"
 #include "admin/LoginDialog.h"
@@ -10,6 +13,7 @@
 #include "config/ServerConfig.h"
 
 Q_LOGGING_CATEGORY(server, "qkchat.server")
+
 
 int main(int argc, char *argv[])
 {
@@ -42,7 +46,8 @@ int main(int argc, char *argv[])
     adminWindow.show();
     
     // 启动聊天服务器
-    ChatServer *chatServer = new ChatServer(&app);
+    // 将 chatServer 的父对象设置为 nullptr，手动管理其生命周期
+    ChatServer *chatServer = new ChatServer(nullptr);
     
     // 确保数据库已正确初始化
     if (!chatServer->initializeDatabase()) {
@@ -58,6 +63,21 @@ int main(int argc, char *argv[])
     qCInfo(server) << "QK Chat Server 启动成功";
     qCInfo(server) << "管理界面端口:" << config->getAdminPort();
     qCInfo(server) << "聊天服务器端口:" << config->getServerPort();
+
+    // 连接 AdminWindow 的关闭事件来安全地停止服务器
+    QObject::connect(&adminWindow, &AdminWindow::destroyed,
+                     chatServer, &ChatServer::stopServer);
+
+    // 连接服务器停止信号到 chatServer 的删除
+    QObject::connect(chatServer, &ChatServer::serverStopped,
+                     chatServer, &QObject::deleteLater);
+
+    // 连接服务器停止信号到应用程序的退出
+    QObject::connect(chatServer, &ChatServer::serverStopped, &app, &QCoreApplication::quit);
     
-    return app.exec();
-} 
+    int result = app.exec();
+
+    qCInfo(server) << "Application finished with exit code:" << result;
+
+    return result;
+}

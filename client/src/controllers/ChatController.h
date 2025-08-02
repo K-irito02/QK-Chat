@@ -16,6 +16,7 @@
 class NetworkClient;
 class LocalDatabase;
 class UserModel;
+class ThreadPool;
 
 /**
  * @brief 聊天控制器类
@@ -96,6 +97,7 @@ public slots:
     void setUserModel(UserModel *userModel);
     void setNetworkClient(NetworkClient *networkClient);
     void setLocalDatabase(LocalDatabase *localDatabase);
+    void setThreadPool(ThreadPool *threadPool);
     
 signals:
     // 连接状态信号
@@ -177,6 +179,7 @@ private:
     UserModel *m_userModel;
     NetworkClient *m_networkClient;
     LocalDatabase *m_localDatabase;
+    ThreadPool *m_threadPool;
     QNetworkAccessManager *m_networkManager;
     
     bool m_isConnected;

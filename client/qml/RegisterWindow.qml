@@ -9,8 +9,14 @@ Page {
     id: registerPage
     
     signal switchToLogin()
+    signal registrationSuccess(string username, string email, int userId)
     
     property alias userController: userController
+    property bool isVerificationMode: false
+    property string registeredEmail: ""
+    property int countdown: 0
+    property string feedbackMessage: ""
+    property color feedbackColor: "black"
     
     UserController {
         id: userController
@@ -148,32 +154,50 @@ Page {
                 }
                 
                 // 邮箱输入
-                CustomTextField {
-                    id: emailField
-                    Layout.fillWidth: true
-                    placeholderText: "邮箱地址"
-                    iconSource: "qrc:/icons/email.png"
-                    
-                    property string validationError: ""
-                    
-                    onCustomTextChanged: {
-                        if (text.length > 0) {
-                            var validator = Qt.createQmlObject("import QKChatClient 1.0; Validator {}", registerPage);
-                            if (validator) {
-                                validationError = validator.getEmailError(text);
-                                errorMessage = validationError;
+                RowLayout {
+                    spacing: 8
+                    CustomTextField {
+                        id: emailField
+                        Layout.fillWidth: true
+                        placeholderText: isVerificationMode ? "验证码" : "邮箱地址"
+                        iconSource: isVerificationMode ? "qrc:/icons/lock.png" : "qrc:/icons/email.png"
+                        maximumLength: isVerificationMode ? 6 : -1
+                        inputMethodHints: Qt.ImhNone
+                        
+                        property string validationError: ""
+                        
+                        onCustomTextChanged: {
+                            if (text.length > 0) {
+                                var validator = Qt.createQmlObject("import QKChatClient 1.0; Validator {}", registerPage);
+                                if (validator) {
+                                    validationError = isVerificationMode ? "" : validator.getEmailError(text);
+                                    errorMessage = validationError;
+                                }
+                            } else {
+                                errorMessage = "";
+                                validationError = "";
                             }
-                        } else {
-                            errorMessage = "";
-                            validationError = "";
+                        }
+                        
+                        onCustomEditingFinished: {
+                            if (!isVerificationMode && text.length > 0 && validationError === "") {
+                                userController.checkEmailAvailability(text);
+                            }
                         }
                     }
-                    
-                    onCustomEditingFinished: {
-                        if (text.length > 0 && validationError === "") {
-                            // 检查邮箱可用性
-                            userController.checkEmailAvailability(text);
-                        }
+                    ComboBox {
+                        id: actionButton
+                        Layout.preferredWidth: 100
+                        model: isVerificationMode ? ["确认", "返回", "发送"] : ["发送", "清空"]
+                        currentIndex: 0
+                        enabled: countdown <= 0
+                        displayText: currentText + (countdown > 0 ? " (" + countdown + "s)" : "")
+                        onActivated: handleAction(currentText)
+                    }
+                    Text {
+                        text: feedbackMessage
+                        color: feedbackColor
+                        font.pixelSize: 12
                     }
                 }
                 
@@ -271,7 +295,6 @@ Page {
                         passwordField.text.length > 0 && 
                         confirmPasswordField.text.length > 0 &&
                         usernameField.validationError === "" &&
-                        emailField.validationError === "" &&
                         passwordField.validationError === "" &&
                         confirmPasswordField.errorMessage === ""
                 isPrimary: true
@@ -331,10 +354,88 @@ Page {
                 emailField.errorMessage = "邮箱已被注册";
             }
         }
+        
+        function onEmailVerificationSent(success, message) {
+            if (success) {
+                feedbackMessage = "发送成功"
+                feedbackColor = "green"
+                if (!isVerificationMode) {
+                    isVerificationMode = true
+                    emailField.text = ""
+                    actionButton.currentIndex = 0
+                } else {
+                    startCountdown(50)
+                }
+            } else {
+                feedbackMessage = "发送失败"
+                feedbackColor = "red"
+            }
+        }
+        
+        function onEmailCodeVerified() {
+            feedbackMessage = "验证成功"
+            feedbackColor = "green"
+            performRegister()
+        }
+        
+        function onEmailCodeVerificationFailed(error) {
+            feedbackMessage = "验证失败"
+            feedbackColor = "red"
+            emailField.errorMessage = "验证码错误，请重试"
+            actionButton.currentIndex = 2  // "发送"
+        }
     }
     
     // 页面激活时的处理
     Component.onCompleted: {
         usernameField.forceActiveFocus();
+    }
+
+    Timer {
+        id: countdownTimer
+        interval: 1000
+        repeat: true
+        onTriggered: {
+            countdown--
+            if (countdown <= 0) {
+                stop()
+                actionButton.enabled = true
+            }
+        }
+    }
+
+    function startCountdown(seconds) {
+        countdown = seconds
+        actionButton.enabled = false
+        countdownTimer.start()
+    }
+
+    function handleAction(action) {
+        feedbackMessage = ""
+        emailField.errorMessage = ""
+        
+        if (!isVerificationMode) {
+            if (action === "发送") {
+                if (emailField.text.length > 0 && emailField.validationError === "") {
+                    registeredEmail = emailField.text
+                    userController.sendEmailVerification(registeredEmail)
+                }
+            } else if (action === "清空") {
+                emailField.text = ""
+            }
+        } else {
+            if (action === "确认") {
+                if (emailField.text.length > 0) {
+                    userController.verifyEmailCode(registeredEmail, emailField.text)
+                    startCountdown(50)
+                }
+            } else if (action === "返回") {
+                isVerificationMode = false
+                emailField.text = registeredEmail
+                actionButton.currentIndex = 0
+            } else if (action === "发送") {
+                userController.resendEmailVerification(registeredEmail)
+            }
+        }
     }
 }

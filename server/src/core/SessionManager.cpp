@@ -19,6 +19,7 @@ SessionManager::~SessionManager()
     if (_cleanupTimer) {
         _cleanupTimer->stop();
         delete _cleanupTimer;
+        _cleanupTimer = nullptr;
     }
 }
 
@@ -40,6 +41,7 @@ QString SessionManager::createSession(qint64 userId, const QString &deviceInfo, 
     session.deviceInfo = deviceInfo;
     session.ipAddress = ipAddress;
     session.createdAt = now;
+    session.lastActive = now;
     session.expiresAt = expiresAt;
     session.isValid = true;
     
@@ -74,6 +76,7 @@ bool SessionManager::validateSession(const QString &sessionToken, qint64 &userId
     }
     
     userId = session.userId;
+    session.lastActive = QDateTime::currentDateTime();
     return true;
 }
 
@@ -192,6 +195,18 @@ QString SessionManager::getDeviceInfo(const QString &sessionToken)
     }
     
     return _sessions[sessionToken].deviceInfo;
+}
+
+bool SessionManager::updateSessionLastActive(const QString &sessionToken)
+{
+    QMutexLocker locker(&_mutex);
+    
+    if (!_sessions.contains(sessionToken)) {
+        return false;
+    }
+    
+    _sessions[sessionToken].lastActive = QDateTime::currentDateTime();
+    return true;
 }
 
 QString SessionManager::getIpAddress(const QString &sessionToken)

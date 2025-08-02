@@ -42,6 +42,17 @@ bool Database::initialize()
         return true;
     }
     
+    // 检查可用的数据库驱动
+    QStringList availableDrivers = QSqlDatabase::drivers();
+    qCInfo(database) << "Available database drivers:" << availableDrivers;
+    
+    if (!availableDrivers.contains("QMYSQL")) {
+        QString error = "QMYSQL driver not available. Available drivers: " + availableDrivers.join(", ");
+        qCCritical(database) << error;
+        emit databaseError(error);
+        return false;
+    }
+    
     // 从配置中获取数据库连接参数
     ServerConfig *config = ServerConfig::instance();
     _host = config->getDatabaseHost();
@@ -49,6 +60,8 @@ bool Database::initialize()
     _databaseName = config->getDatabaseName();
     _username = config->getDatabaseUsername();
     _password = config->getDatabasePassword();
+    
+    qCInfo(database) << "Attempting to connect to database:" << _host << ":" << _port << "/" << _databaseName;
     
     // 创建数据库连接
     _database = QSqlDatabase::addDatabase("QMYSQL", _connectionName);
@@ -116,19 +129,230 @@ bool Database::reconnect()
 bool Database::createUser(const QString &username, const QString &email, const QString &passwordHash, const QString &avatarUrl)
 {
     QMutexLocker locker(&_mutex);
+
+    if (!isConnected() && !initialize()) {
+        return false;
+    }
+
+    // 生成盐值和哈希密码
+    QString salt = QUuid::createUuid().toString().remove('{').remove('}').left(64);
+    QString hashedPassword = QString(QCryptographicHash::hash((passwordHash + salt).toUtf8(), QCryptographicHash::Sha256).toHex());
+
+    QSqlQuery query(_database);
+    query.prepare("INSERT INTO users (username, email, password_hash, salt, avatar_url, display_name, bio, status, email_verified) "
+                  "VALUES (?, ?, ?, ?, ?, ?, '', 'inactive', FALSE)");
+    query.addBindValue(username);
+    query.addBindValue(email);
+    query.addBindValue(hashedPassword);
+    query.addBindValue(salt);
+    query.addBindValue(avatarUrl.isEmpty() ? QVariant() : avatarUrl);
+    query.addBindValue(username); // 默认显示名为用户名
+
+    return executeQuery(query);
+}
+
+// 邮箱验证相关方法
+bool Database::createEmailVerification(qint64 userId, const QString &email, const QString &token, const QString &tokenType, int expiryHours)
+{
+    QMutexLocker locker(&_mutex);
     
     if (!isConnected() && !initialize()) {
         return false;
     }
     
     QSqlQuery query(_database);
-    query.prepare("INSERT INTO users (username, email, password_hash, avatar_url, display_name, created_at) "
-                  "VALUES (?, ?, ?, ?, ?, NOW())");
-    query.addBindValue(username);
+    query.prepare("INSERT INTO email_verifications (user_id, email, verification_token, token_type, expires_at) "
+                  "VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR))");
+    query.addBindValue(userId);
     query.addBindValue(email);
-    query.addBindValue(passwordHash);
-    query.addBindValue(avatarUrl.isEmpty() ? QVariant() : avatarUrl);
-    query.addBindValue(username); // 默认显示名为用户名
+    query.addBindValue(token);
+    query.addBindValue(tokenType);
+    query.addBindValue(expiryHours);
+    
+    return executeQuery(query);
+}
+
+bool Database::verifyEmailToken(const QString &token, QString *email)
+{
+    QMutexLocker locker(&_mutex);
+    
+    if (!isConnected() && !initialize()) {
+        return false;
+    }
+    
+    QSqlQuery query(_database);
+    query.prepare("SELECT user_id, email FROM email_verifications "
+                  "WHERE verification_token = ? AND expires_at > NOW() AND used = FALSE");
+    query.addBindValue(token);
+    
+    if (executeQuery(query) && query.next()) {
+        if (email) {
+            *email = query.value("email").toString();
+        }
+        return true;
+    }
+    
+    return false;
+}
+
+bool Database::verifyEmailCode(const QString &email, const QString &code)
+{
+    QMutexLocker locker(&_mutex);
+    
+    if (!isConnected() && !initialize()) {
+        return false;
+    }
+    
+    QSqlQuery query(_database);
+    query.prepare("SELECT user_id FROM email_verification_codes "
+                  "WHERE email = ? AND verification_code = ? AND expires_at > NOW() AND used = FALSE");
+    query.addBindValue(email);
+    query.addBindValue(code);
+    
+    if (executeQuery(query) && query.next()) {
+        // 标记验证码为已使用
+        QSqlQuery updateQuery(_database);
+        updateQuery.prepare("UPDATE email_verification_codes SET used = TRUE, used_at = NOW() "
+                           "WHERE email = ? AND verification_code = ?");
+        updateQuery.addBindValue(email);
+        updateQuery.addBindValue(code);
+        executeQuery(updateQuery);
+        
+        return true;
+    }
+    
+    return false;
+}
+
+bool Database::saveEmailVerificationCode(const QString &email, const QString &code)
+{
+    QMutexLocker locker(&_mutex);
+    
+    if (!isConnected() && !initialize()) {
+        return false;
+    }
+    
+    // 先删除该邮箱的旧验证码
+    QSqlQuery deleteQuery(_database);
+    deleteQuery.prepare("DELETE FROM email_verification_codes WHERE email = ?");
+    deleteQuery.addBindValue(email);
+    executeQuery(deleteQuery);
+    
+    // 插入新的验证码
+    QSqlQuery query(_database);
+    query.prepare("INSERT INTO email_verification_codes (email, verification_code, expires_at, created_at) "
+                  "VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE), NOW())");
+    query.addBindValue(email);
+    query.addBindValue(code);
+    
+    return executeQuery(query);
+}
+
+bool Database::markEmailVerificationUsed(const QString &token)
+{
+    QMutexLocker locker(&_mutex);
+    
+    if (!isConnected() && !initialize()) {
+        return false;
+    }
+    
+    QSqlQuery query(_database);
+    query.prepare("UPDATE email_verifications SET used = TRUE, used_at = NOW() "
+                  "WHERE verification_token = ?");
+    query.addBindValue(token);
+    
+    return executeQuery(query);
+}
+
+bool Database::isEmailVerificationValid(const QString &token)
+{
+    QMutexLocker locker(&_mutex);
+    
+    if (!isConnected() && !initialize()) {
+        return false;
+    }
+    
+    QSqlQuery query(_database);
+    query.prepare("SELECT COUNT(*) FROM email_verifications "
+                  "WHERE verification_token = ? AND expires_at > NOW() AND used = FALSE");
+    query.addBindValue(token);
+    
+    if (executeQuery(query) && query.next()) {
+        return query.value(0).toInt() > 0;
+    }
+    
+    return false;
+}
+
+bool Database::updateUserEmailVerification(qint64 userId, bool verified)
+{
+    QMutexLocker locker(&_mutex);
+    
+    if (!isConnected() && !initialize()) {
+        return false;
+    }
+    
+    QSqlQuery query(_database);
+    query.prepare("UPDATE users SET email_verified = ?, status = ? WHERE id = ?");
+    query.addBindValue(verified);
+    query.addBindValue(verified ? "active" : "unverified");
+    query.addBindValue(userId);
+    
+    return executeQuery(query);
+}
+
+bool Database::resendEmailVerification(qint64 userId, const QString &email, const QString &token)
+{
+    QMutexLocker locker(&_mutex);
+    
+    if (!isConnected() && !initialize()) {
+        return false;
+    }
+    
+    // 使旧的验证令牌失效
+    QSqlQuery query(_database);
+    query.prepare("UPDATE email_verifications SET used = TRUE WHERE user_id = ? AND token_type = 'register'");
+    query.addBindValue(userId);
+    if (!executeQuery(query)) {
+        return false;
+    }
+    
+    // 创建新的验证令牌
+    return createEmailVerification(userId, email, token, "register");
+}
+
+QString Database::getEmailVerificationToken(qint64 userId, const QString &tokenType)
+{
+    QMutexLocker locker(&_mutex);
+    
+    if (!isConnected() && !initialize()) {
+        return QString();
+    }
+    
+    QSqlQuery query(_database);
+    query.prepare("SELECT verification_token FROM email_verifications "
+                  "WHERE user_id = ? AND token_type = ? AND expires_at > NOW() AND used = FALSE "
+                  "ORDER BY created_at DESC LIMIT 1");
+    query.addBindValue(userId);
+    query.addBindValue(tokenType);
+    
+    if (executeQuery(query) && query.next()) {
+        return query.value(0).toString();
+    }
+    
+    return QString();
+}
+
+bool Database::cleanupExpiredVerifications()
+{
+    QMutexLocker locker(&_mutex);
+    
+    if (!isConnected() && !initialize()) {
+        return false;
+    }
+    
+    QSqlQuery query(_database);
+    query.prepare("DELETE FROM email_verifications WHERE expires_at < NOW()");
     
     return executeQuery(query);
 }
@@ -143,10 +367,10 @@ Database::UserInfo Database::getUserById(qint64 userId)
     }
     
     QSqlQuery query(_database);
-    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, "
+    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, bio, "
                   "status, last_online, created_at, updated_at FROM users WHERE id = ?");
     query.addBindValue(userId);
-    
+
     if (executeQuery(query) && query.next()) {
         userInfo.id = query.value(0).toLongLong();
         userInfo.username = query.value(1).toString();
@@ -155,10 +379,11 @@ Database::UserInfo Database::getUserById(qint64 userId)
         userInfo.salt = query.value(4).toString();
         userInfo.avatarUrl = query.value(5).toString();
         userInfo.displayName = query.value(6).toString();
-        userInfo.status = query.value(7).toString();
-        userInfo.lastOnline = query.value(8).toDateTime();
-        userInfo.createdAt = query.value(9).toDateTime();
-        userInfo.updatedAt = query.value(10).toDateTime();
+        userInfo.bio = query.value(7).toString();
+        userInfo.status = query.value(8).toString();
+        userInfo.lastOnline = query.value(9).toDateTime();
+        userInfo.createdAt = query.value(10).toDateTime();
+        userInfo.updatedAt = query.value(11).toDateTime();
     }
     
     return userInfo;
@@ -174,10 +399,10 @@ Database::UserInfo Database::getUserByUsername(const QString &username)
     }
     
     QSqlQuery query(_database);
-    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, "
+    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, bio, "
                   "status, last_online, created_at, updated_at FROM users WHERE username = ?");
     query.addBindValue(username);
-    
+
     if (executeQuery(query) && query.next()) {
         userInfo.id = query.value(0).toLongLong();
         userInfo.username = query.value(1).toString();
@@ -186,10 +411,11 @@ Database::UserInfo Database::getUserByUsername(const QString &username)
         userInfo.salt = query.value(4).toString();
         userInfo.avatarUrl = query.value(5).toString();
         userInfo.displayName = query.value(6).toString();
-        userInfo.status = query.value(7).toString();
-        userInfo.lastOnline = query.value(8).toDateTime();
-        userInfo.createdAt = query.value(9).toDateTime();
-        userInfo.updatedAt = query.value(10).toDateTime();
+        userInfo.bio = query.value(7).toString();
+        userInfo.status = query.value(8).toString();
+        userInfo.lastOnline = query.value(9).toDateTime();
+        userInfo.createdAt = query.value(10).toDateTime();
+        userInfo.updatedAt = query.value(11).toDateTime();
     }
     
     return userInfo;
@@ -205,10 +431,10 @@ Database::UserInfo Database::getUserByEmail(const QString &email)
     }
     
     QSqlQuery query(_database);
-    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, "
+    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, bio, "
                   "status, last_online, created_at, updated_at FROM users WHERE email = ?");
     query.addBindValue(email);
-    
+
     if (executeQuery(query) && query.next()) {
         userInfo.id = query.value(0).toLongLong();
         userInfo.username = query.value(1).toString();
@@ -217,10 +443,11 @@ Database::UserInfo Database::getUserByEmail(const QString &email)
         userInfo.salt = query.value(4).toString();
         userInfo.avatarUrl = query.value(5).toString();
         userInfo.displayName = query.value(6).toString();
-        userInfo.status = query.value(7).toString();
-        userInfo.lastOnline = query.value(8).toDateTime();
-        userInfo.createdAt = query.value(9).toDateTime();
-        userInfo.updatedAt = query.value(10).toDateTime();
+        userInfo.bio = query.value(7).toString();
+        userInfo.status = query.value(8).toString();
+        userInfo.lastOnline = query.value(9).toDateTime();
+        userInfo.createdAt = query.value(10).toDateTime();
+        userInfo.updatedAt = query.value(11).toDateTime();
     }
     
     return userInfo;
@@ -324,7 +551,7 @@ QList<Database::UserInfo> Database::getActiveUsers(int limit)
     }
     
     QSqlQuery query(_database);
-    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, "
+    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, bio, "
                   "status, last_online, created_at, updated_at FROM users "
                   "WHERE status = 'active' ORDER BY last_online DESC LIMIT ?");
     query.addBindValue(limit);
@@ -339,10 +566,11 @@ QList<Database::UserInfo> Database::getActiveUsers(int limit)
             userInfo.salt = query.value(4).toString();
             userInfo.avatarUrl = query.value(5).toString();
             userInfo.displayName = query.value(6).toString();
-            userInfo.status = query.value(7).toString();
-            userInfo.lastOnline = query.value(8).toDateTime();
-            userInfo.createdAt = query.value(9).toDateTime();
-            userInfo.updatedAt = query.value(10).toDateTime();
+            userInfo.bio = query.value(7).toString();
+            userInfo.status = query.value(8).toString();
+            userInfo.lastOnline = query.value(9).toDateTime();
+            userInfo.createdAt = query.value(10).toDateTime();
+            userInfo.updatedAt = query.value(11).toDateTime();
             users.append(userInfo);
         }
     }
@@ -366,35 +594,44 @@ bool Database::updateUserLastOnline(qint64 userId, const QDateTime &lastOnline)
     return executeQuery(query);
 }
 
-Database::UserInfo Database::authenticateUser(const QString &usernameOrEmail, const QString &passwordHash)
+Database::UserInfo Database::authenticateUser(const QString &usernameOrEmail, const QString &password)
 {
     QMutexLocker locker(&_mutex);
     UserInfo userInfo = {};
-    
+
     if (!isConnected() && !initialize()) {
         return userInfo;
     }
-    
+
     QSqlQuery query(_database);
-    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, "
+    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, bio, "
                   "status, last_online, created_at, updated_at FROM users "
-                  "WHERE (username = ? OR email = ?) AND password_hash = ? AND status = 'active'");
+                  "WHERE (username = ? OR email = ?) AND status = 'active'");
     query.addBindValue(usernameOrEmail);
     query.addBindValue(usernameOrEmail);
-    query.addBindValue(passwordHash);
-    
+
     if (executeQuery(query) && query.next()) {
-        userInfo.id = query.value(0).toLongLong();
-        userInfo.username = query.value(1).toString();
-        userInfo.email = query.value(2).toString();
-        userInfo.passwordHash = query.value(3).toString();
-        userInfo.salt = query.value(4).toString();
-        userInfo.avatarUrl = query.value(5).toString();
-        userInfo.displayName = query.value(6).toString();
-        userInfo.status = query.value(7).toString();
-        userInfo.lastOnline = query.value(8).toDateTime();
-        userInfo.createdAt = query.value(9).toDateTime();
-        userInfo.updatedAt = query.value(10).toDateTime();
+        QString salt = query.value(4).toString();
+        QString dbPasswordHash = query.value(3).toString();
+        
+        // Use the same hashing algorithm as in createUser
+        QByteArray passwordWithSalt = salt.toUtf8() + password.toUtf8();
+        QString providedPasswordHash = QString(QCryptographicHash::hash(passwordWithSalt, QCryptographicHash::Sha256).toHex());
+
+        if (dbPasswordHash == providedPasswordHash) {
+            userInfo.id = query.value(0).toLongLong();
+            userInfo.username = query.value(1).toString();
+            userInfo.email = query.value(2).toString();
+            userInfo.passwordHash = dbPasswordHash; // Store the hash from DB
+            userInfo.salt = salt;
+            userInfo.avatarUrl = query.value(5).toString();
+            userInfo.displayName = query.value(6).toString();
+            userInfo.bio = query.value(7).toString();
+            userInfo.status = query.value(8).toString();
+            userInfo.lastOnline = query.value(9).toDateTime();
+            userInfo.createdAt = query.value(10).toDateTime();
+            userInfo.updatedAt = query.value(11).toDateTime();
+        }
     }
     
     return userInfo;
@@ -532,8 +769,8 @@ bool Database::saveMessage(const QString &messageId, qint64 senderId, qint64 rec
     
     QSqlQuery query(_database);
     query.prepare("INSERT INTO messages (message_id, sender_id, receiver_id, message_type, "
-                  "content, file_url, file_size, created_at) "
-                  "VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+                  "content, file_url, file_size, created_at, updated_at) "
+                  "VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
     query.addBindValue(messageId);
     query.addBindValue(senderId);
     query.addBindValue(receiverId);
@@ -556,7 +793,7 @@ Database::MessageInfo Database::getMessageById(const QString &messageId)
     
     QSqlQuery query(_database);
     query.prepare("SELECT id, message_id, sender_id, receiver_id, message_type, content, "
-                  "file_url, file_size, delivery_status, created_at, delivered_at, read_at "
+                  "file_url, file_size, delivery_status, created_at, updated_at "
                   "FROM messages WHERE message_id = ?");
     query.addBindValue(messageId);
     
@@ -571,8 +808,7 @@ Database::MessageInfo Database::getMessageById(const QString &messageId)
         messageInfo.fileSize = query.value(7).toLongLong();
         messageInfo.deliveryStatus = query.value(8).toString();
         messageInfo.createdAt = query.value(9).toDateTime();
-        messageInfo.deliveredAt = query.value(10).toDateTime();
-        messageInfo.readAt = query.value(11).toDateTime();
+        messageInfo.updatedAt = query.value(10).toDateTime();
     }
     
     return messageInfo;
@@ -589,7 +825,7 @@ QList<Database::MessageInfo> Database::getMessagesBetweenUsers(qint64 userId1, q
     
     QSqlQuery query(_database);
     query.prepare("SELECT id, message_id, sender_id, receiver_id, message_type, content, "
-                  "file_url, file_size, delivery_status, created_at, delivered_at, read_at "
+                  "file_url, file_size, delivery_status, created_at, updated_at "
                   "FROM messages WHERE (sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?) "
                   "ORDER BY created_at DESC LIMIT ? OFFSET ?");
     query.addBindValue(userId1);
@@ -612,8 +848,7 @@ QList<Database::MessageInfo> Database::getMessagesBetweenUsers(qint64 userId1, q
             messageInfo.fileSize = query.value(7).toLongLong();
             messageInfo.deliveryStatus = query.value(8).toString();
             messageInfo.createdAt = query.value(9).toDateTime();
-            messageInfo.deliveredAt = query.value(10).toDateTime();
-            messageInfo.readAt = query.value(11).toDateTime();
+            messageInfo.updatedAt = query.value(10).toDateTime();
             messages.append(messageInfo);
         }
     }
@@ -629,17 +864,9 @@ bool Database::updateMessageStatus(const QString &messageId, const QString &stat
         return false;
     }
     
-    QString sql = "UPDATE messages SET delivery_status = ?";
+    QString sql = "UPDATE messages SET delivery_status = ?, updated_at = NOW() WHERE message_id = ?";
     QVariantList values;
     values << status;
-    
-    if (status == "delivered") {
-        sql += ", delivered_at = NOW()";
-    } else if (status == "read") {
-        sql += ", read_at = NOW()";
-    }
-    
-    sql += " WHERE message_id = ?";
     values << messageId;
     
     QSqlQuery query(_database);
@@ -663,7 +890,7 @@ QList<Database::MessageInfo> Database::getRecentMessages(int limit)
     
     QSqlQuery query(_database);
     query.prepare("SELECT id, message_id, sender_id, receiver_id, message_type, content, "
-                  "file_url, file_size, delivery_status, created_at, delivered_at, read_at "
+                  "file_url, file_size, delivery_status, created_at, updated_at "
                   "FROM messages ORDER BY created_at DESC LIMIT ?");
     query.addBindValue(limit);
     
@@ -680,8 +907,7 @@ QList<Database::MessageInfo> Database::getRecentMessages(int limit)
             messageInfo.fileSize = query.value(7).toLongLong();
             messageInfo.deliveryStatus = query.value(8).toString();
             messageInfo.createdAt = query.value(9).toDateTime();
-            messageInfo.deliveredAt = query.value(10).toDateTime();
-            messageInfo.readAt = query.value(11).toDateTime();
+            messageInfo.updatedAt = query.value(10).toDateTime();
             messages.append(messageInfo);
         }
     }
@@ -821,6 +1047,8 @@ int Database::getTotalUserCount() const
     return 0;
 }
 
+
+
 int Database::getOnlineUserCount() const
 {
     QMutexLocker locker(&_mutex);
@@ -944,7 +1172,8 @@ QList<Database::FriendInfo> Database::getUserFriends(qint64 userId)
 
 // 群组管理
 qint64 Database::createGroup(const QString &groupName, const QString &description, 
-                            qint64 creatorId, const QString &avatarUrl)
+                            qint64 creatorId, const QString &avatarUrl, 
+                            bool isPublic, bool isEncrypted)
 {
     QMutexLocker locker(&_mutex);
     
@@ -957,12 +1186,14 @@ qint64 Database::createGroup(const QString &groupName, const QString &descriptio
     
     // 创建群组
     QSqlQuery groupQuery(_database);
-    groupQuery.prepare("INSERT INTO groups (name, description, creator_id, avatar_url, created_at) "
-                       "VALUES (?, ?, ?, ?, NOW())");
+    groupQuery.prepare("INSERT INTO groups (name, description, creator_id, avatar_url, is_public, is_encrypted, created_at) "
+                       "VALUES (?, ?, ?, ?, ?, ?, NOW())");
     groupQuery.addBindValue(groupName);
     groupQuery.addBindValue(description);
     groupQuery.addBindValue(creatorId);
     groupQuery.addBindValue(avatarUrl.isEmpty() ? QVariant() : avatarUrl);
+    groupQuery.addBindValue(isPublic);
+    groupQuery.addBindValue(isEncrypted);
     
     if (!executeQuery(groupQuery)) {
         _database.rollback();
@@ -1044,7 +1275,7 @@ Database::GroupInfo Database::getGroupById(qint64 groupId)
     
     QSqlQuery query(_database);
     query.prepare("SELECT id, name, description, creator_id, avatar_url, member_count, "
-                  "created_at, updated_at FROM groups WHERE id = ?");
+                  "is_public, is_encrypted, created_at, updated_at FROM groups WHERE id = ?");
     query.addBindValue(groupId);
     
     if (executeQuery(query) && query.next()) {
@@ -1054,8 +1285,10 @@ Database::GroupInfo Database::getGroupById(qint64 groupId)
         groupInfo.creatorId = query.value(3).toLongLong();
         groupInfo.avatarUrl = query.value(4).toString();
         groupInfo.memberCount = query.value(5).toInt();
-        groupInfo.createdAt = query.value(6).toDateTime();
-        groupInfo.updatedAt = query.value(7).toDateTime();
+        groupInfo.is_public = query.value(6).toBool();
+        groupInfo.is_encrypted = query.value(7).toBool();
+        groupInfo.createdAt = query.value(8).toDateTime();
+        groupInfo.updatedAt = query.value(9).toDateTime();
     }
     
     return groupInfo;
@@ -1072,7 +1305,7 @@ QList<Database::GroupInfo> Database::getUserGroups(qint64 userId)
     
     QSqlQuery query(_database);
     query.prepare("SELECT g.id, g.name, g.description, g.creator_id, g.avatar_url, "
-                  "g.member_count, g.created_at, g.updated_at FROM groups g "
+                  "g.member_count, g.is_public, g.is_encrypted, g.created_at, g.updated_at FROM groups g "
                   "JOIN group_members gm ON g.id = gm.group_id "
                   "WHERE gm.user_id = ? ORDER BY g.name");
     query.addBindValue(userId);
@@ -1086,8 +1319,10 @@ QList<Database::GroupInfo> Database::getUserGroups(qint64 userId)
             groupInfo.creatorId = query.value(3).toLongLong();
             groupInfo.avatarUrl = query.value(4).toString();
             groupInfo.memberCount = query.value(5).toInt();
-            groupInfo.createdAt = query.value(6).toDateTime();
-            groupInfo.updatedAt = query.value(7).toDateTime();
+            groupInfo.is_public = query.value(6).toBool();
+            groupInfo.is_encrypted = query.value(7).toBool();
+            groupInfo.createdAt = query.value(8).toDateTime();
+            groupInfo.updatedAt = query.value(9).toDateTime();
             groups.append(groupInfo);
         }
     }
@@ -1280,8 +1515,8 @@ bool Database::saveGroupMessage(const QString &messageId, qint64 senderId, qint6
     
     QSqlQuery query(_database);
     query.prepare("INSERT INTO group_messages (message_id, sender_id, group_id, message_type, "
-                  "content, file_url, file_size, created_at) "
-                  "VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+                  "content, file_url, file_size, created_at, updated_at) "
+                  "VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
     query.addBindValue(messageId);
     query.addBindValue(senderId);
     query.addBindValue(groupId);
@@ -1474,155 +1709,109 @@ QList<Database::ServerStats> Database::getStatsHistory(const QDate &startDate, c
 bool Database::createTables()
 {
     QMutexLocker locker(&_mutex);
-    
+
     if (!isConnected() && !initialize()) {
         qCCritical(database) << "Cannot create tables: database not connected";
         return false;
     }
-    
+
     QSqlQuery query(_database);
-    
-    // 开始事务
+
     if (!_database.transaction()) {
         qCCritical(database) << "Failed to start transaction for table creation";
         return false;
     }
-    
+
     try {
-        // 用户表
         if (!query.exec(R"(
             CREATE TABLE IF NOT EXISTS users (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
-                email VARCHAR(100) NOT NULL UNIQUE COMMENT '邮箱',
-                password_hash VARCHAR(64) NOT NULL COMMENT 'SHA-256密码哈希',
-                salt VARCHAR(32) NOT NULL COMMENT '密码盐值',
-                avatar_url VARCHAR(255) DEFAULT NULL COMMENT '头像URL',
-                display_name VARCHAR(100) DEFAULT NULL COMMENT '显示名称',
-                status ENUM('active', 'disabled', 'pending', 'banned') DEFAULT 'active' COMMENT '用户状态',
-                last_online TIMESTAMP NULL DEFAULT NULL COMMENT '最后在线时间',
-                login_attempts INT DEFAULT 0 COMMENT '登录尝试次数',
-                locked_until TIMESTAMP NULL DEFAULT NULL COMMENT '账户锁定时间',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-                
-                INDEX idx_username (username),
-                INDEX idx_email (email),
-                INDEX idx_status (status),
-                INDEX idx_last_online (last_online),
-                INDEX idx_status_last_online (status, last_online)
+                username VARCHAR(50) NOT NULL UNIQUE,
+                email VARCHAR(100) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                salt VARCHAR(64) NOT NULL,
+                avatar_url VARCHAR(512) DEFAULT NULL,
+                display_name VARCHAR(100) DEFAULT NULL,
+                bio TEXT DEFAULT NULL,
+                status VARCHAR(20) DEFAULT 'inactive',
+                last_online TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
             ) ENGINE=InnoDB COMMENT='用户信息表'
         )")) {
             throw std::runtime_error("Failed to create users table: " + query.lastError().text().toStdString());
         }
-        
-        // 用户会话表
+
         if (!query.exec(R"(
             CREATE TABLE IF NOT EXISTS user_sessions (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 user_id BIGINT UNSIGNED NOT NULL,
-                session_token VARCHAR(128) NOT NULL UNIQUE COMMENT '会话令牌',
-                refresh_token VARCHAR(128) DEFAULT NULL COMMENT '刷新令牌',
-                device_info VARCHAR(500) DEFAULT NULL COMMENT '设备信息',
-                ip_address VARCHAR(45) DEFAULT NULL COMMENT 'IP地址',
-                user_agent TEXT DEFAULT NULL COMMENT '用户代理',
-                expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后活动时间',
-                
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                INDEX idx_user_id (user_id),
-                INDEX idx_session_token (session_token),
-                INDEX idx_expires_at (expires_at),
-                INDEX idx_user_expires (user_id, expires_at)
+                session_token VARCHAR(255) NOT NULL UNIQUE,
+                refresh_token VARCHAR(255) DEFAULT NULL,
+                device_info VARCHAR(255) DEFAULT NULL,
+                ip_address VARCHAR(45) DEFAULT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB COMMENT='用户会话表'
         )")) {
             throw std::runtime_error("Failed to create user_sessions table: " + query.lastError().text().toStdString());
         }
-        
-        // 消息表
+
         if (!query.exec(R"(
             CREATE TABLE IF NOT EXISTS messages (
-                id BIGINT UNSIGNED AUTO_INCREMENT,
-                message_id VARCHAR(36) NOT NULL UNIQUE COMMENT '消息唯一标识',
-                sender_id BIGINT UNSIGNED NOT NULL COMMENT '发送者ID',
-                receiver_id BIGINT UNSIGNED NOT NULL COMMENT '接收者ID',
-                message_type ENUM('text', 'image', 'file', 'audio', 'video', 'location', 'contact') DEFAULT 'text' COMMENT '消息类型',
-                content TEXT NOT NULL COMMENT '消息内容',
-                encrypted_content BLOB DEFAULT NULL COMMENT '加密消息内容',
-                file_url VARCHAR(255) DEFAULT NULL COMMENT '文件URL（如果是文件消息）',
-                file_size BIGINT DEFAULT NULL COMMENT '文件大小（字节）',
-                file_hash VARCHAR(64) DEFAULT NULL COMMENT '文件哈希值',
-                delivery_status ENUM('sent', 'delivered', 'read') DEFAULT 'sent' COMMENT '投递状态',
-                is_encrypted BOOLEAN DEFAULT FALSE COMMENT '是否加密',
-                encryption_type ENUM('none', 'aes256', 'rsa2048', 'ecc_p256') DEFAULT 'none' COMMENT '加密类型',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                delivered_at TIMESTAMP NULL DEFAULT NULL COMMENT '投递时间',
-                read_at TIMESTAMP NULL DEFAULT NULL COMMENT '已读时间',
-                
-                PRIMARY KEY (id, created_at),
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                message_id VARCHAR(36) NOT NULL UNIQUE,
+                sender_id BIGINT UNSIGNED NOT NULL,
+                receiver_id BIGINT UNSIGNED NOT NULL,
+                message_type VARCHAR(20) DEFAULT 'text',
+                content TEXT NOT NULL,
+                file_url VARCHAR(512) DEFAULT NULL,
+                file_size BIGINT DEFAULT NULL,
+                delivery_status VARCHAR(20) DEFAULT 'sent',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
-                INDEX idx_message_id (message_id),
-                INDEX idx_sender_id (sender_id),
-                INDEX idx_receiver_id (receiver_id),
-                INDEX idx_created_at (created_at),
-                INDEX idx_delivery_status (delivery_status),
-                INDEX idx_sender_receiver_created (sender_id, receiver_id, created_at),
-                INDEX idx_receiver_created (receiver_id, created_at)
+                FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB COMMENT='消息表'
         )")) {
             throw std::runtime_error("Failed to create messages table: " + query.lastError().text().toStdString());
         }
-        
-        // 好友关系表
+
         if (!query.exec(R"(
             CREATE TABLE IF NOT EXISTS friendships (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                user_id BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
-                friend_id BIGINT UNSIGNED NOT NULL COMMENT '好友ID',
-                status ENUM('pending', 'accepted', 'blocked', 'deleted') DEFAULT 'pending' COMMENT '关系状态',
-                requested_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '请求时间',
-                accepted_at TIMESTAMP NULL DEFAULT NULL COMMENT '接受时间',
-                blocked_at TIMESTAMP NULL DEFAULT NULL COMMENT '屏蔽时间',
-                note VARCHAR(255) DEFAULT NULL COMMENT '备注',
-                
+                user_id BIGINT UNSIGNED NOT NULL,
+                friend_id BIGINT UNSIGNED NOT NULL,
+                status VARCHAR(20) DEFAULT 'pending',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                remark VARCHAR(255) DEFAULT NULL,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE,
-                UNIQUE KEY uk_friendship (user_id, friend_id),
-                INDEX idx_user_id (user_id),
-                INDEX idx_friend_id (friend_id),
-                INDEX idx_status (status),
-                INDEX idx_user_status (user_id, status)
+                UNIQUE KEY uk_friendship (user_id, friend_id)
             ) ENGINE=InnoDB COMMENT='好友关系表'
         )")) {
             throw std::runtime_error("Failed to create friendships table: " + query.lastError().text().toStdString());
         }
-        
-        // 群组表
+
         if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS groups (
+            CREATE TABLE IF NOT EXISTS chat_groups (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                group_name VARCHAR(100) NOT NULL COMMENT '群组名称',
-                description TEXT DEFAULT NULL COMMENT '群组描述',
-                avatar_url VARCHAR(255) DEFAULT NULL COMMENT '群组头像',
-                owner_id BIGINT UNSIGNED NOT NULL COMMENT '群主ID',
-                max_members INT DEFAULT 500 COMMENT '最大成员数',
-                current_members INT DEFAULT 0 COMMENT '当前成员数',
-                is_public BOOLEAN DEFAULT FALSE COMMENT '是否公开群组',
-                is_encrypted BOOLEAN DEFAULT FALSE COMMENT '是否加密群组',
-                encryption_key_id VARCHAR(64) DEFAULT NULL COMMENT '群组加密密钥ID',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-                
-                FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE,
-                INDEX idx_owner_id (owner_id),
-                INDEX idx_is_public (is_public),
-                INDEX idx_created_at (created_at),
-                INDEX idx_is_encrypted (is_encrypted)
-            ) ENGINE=InnoDB COMMENT='群组表'
+                name VARCHAR(100) NOT NULL,
+                description TEXT DEFAULT NULL,
+                avatar_url VARCHAR(512) DEFAULT NULL,
+                creator_id BIGINT UNSIGNED NOT NULL,
+                member_count INT DEFAULT 1,
+                is_public BOOLEAN DEFAULT TRUE,
+                is_encrypted BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB COMMENT='群组信息表'
         )")) {
-            throw std::runtime_error("Failed to create groups table: " + query.lastError().text().toStdString());
+            throw std::runtime_error("Failed to create chat_groups table: " + query.lastError().text().toStdString());
         }
         
         // 群组成员表
@@ -1631,18 +1820,11 @@ bool Database::createTables()
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
                 group_id BIGINT UNSIGNED NOT NULL,
                 user_id BIGINT UNSIGNED NOT NULL,
-                role ENUM('owner', 'admin', 'member') DEFAULT 'member' COMMENT '成员角色',
-                nickname VARCHAR(50) DEFAULT NULL COMMENT '群内昵称',
-                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
-                last_message_at TIMESTAMP NULL DEFAULT NULL COMMENT '最后发言时间',
-                
-                FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+                role VARCHAR(20) DEFAULT 'member',
+                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                UNIQUE KEY uk_group_member (group_id, user_id),
-                INDEX idx_group_id (group_id),
-                INDEX idx_user_id (user_id),
-                INDEX idx_role (role),
-                INDEX idx_group_role (group_id, role)
+                UNIQUE KEY uk_group_member (group_id, user_id)
             ) ENGINE=InnoDB COMMENT='群组成员表'
         )")) {
             throw std::runtime_error("Failed to create group_members table: " + query.lastError().text().toStdString());
@@ -1651,28 +1833,18 @@ bool Database::createTables()
         // 群组消息表
         if (!query.exec(R"(
             CREATE TABLE IF NOT EXISTS group_messages (
-                id BIGINT UNSIGNED AUTO_INCREMENT,
-                message_id VARCHAR(36) NOT NULL UNIQUE COMMENT '消息唯一标识',
-                group_id BIGINT UNSIGNED NOT NULL COMMENT '群组ID',
-                sender_id BIGINT UNSIGNED NOT NULL COMMENT '发送者ID',
-                message_type ENUM('text', 'image', 'file', 'audio', 'video', 'system', 'location', 'contact') DEFAULT 'text' COMMENT '消息类型',
-                content TEXT NOT NULL COMMENT '消息内容',
-                encrypted_content BLOB DEFAULT NULL COMMENT '加密消息内容',
-                file_url VARCHAR(255) DEFAULT NULL COMMENT '文件URL',
-                file_size BIGINT DEFAULT NULL COMMENT '文件大小',
-                file_hash VARCHAR(64) DEFAULT NULL COMMENT '文件哈希值',
-                is_encrypted BOOLEAN DEFAULT FALSE COMMENT '是否加密',
-                encryption_type ENUM('none', 'aes256', 'rsa2048', 'ecc_p256') DEFAULT 'none' COMMENT '加密类型',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                
-                PRIMARY KEY (id, created_at),
-                FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
-                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-                INDEX idx_message_id (message_id),
-                INDEX idx_group_id (group_id),
-                INDEX idx_sender_id (sender_id),
-                INDEX idx_created_at (created_at),
-                INDEX idx_group_created (group_id, created_at)
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                message_id VARCHAR(36) NOT NULL UNIQUE,
+                group_id BIGINT UNSIGNED NOT NULL,
+                sender_id BIGINT UNSIGNED NOT NULL,
+                message_type VARCHAR(20) DEFAULT 'text',
+                content TEXT NOT NULL,
+                file_url VARCHAR(512) DEFAULT NULL,
+                file_size BIGINT DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
+                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
             ) ENGINE=InnoDB COMMENT='群组消息表'
         )")) {
             throw std::runtime_error("Failed to create group_messages table: " + query.lastError().text().toStdString());
@@ -1681,23 +1853,14 @@ bool Database::createTables()
         // 系统日志表
         if (!query.exec(R"(
             CREATE TABLE IF NOT EXISTS system_logs (
-                id BIGINT UNSIGNED AUTO_INCREMENT,
-                log_level ENUM('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL') NOT NULL COMMENT '日志级别',
-                module VARCHAR(50) NOT NULL COMMENT '模块名称',
-                message TEXT NOT NULL COMMENT '日志消息',
-                user_id BIGINT UNSIGNED DEFAULT NULL COMMENT '相关用户ID',
-                ip_address VARCHAR(45) DEFAULT NULL COMMENT 'IP地址',
-                user_agent TEXT DEFAULT NULL COMMENT '用户代理',
-                extra_data JSON DEFAULT NULL COMMENT '额外数据(JSON格式)',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                
-                PRIMARY KEY (id, created_at),
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-                INDEX idx_log_level (log_level),
-                INDEX idx_module (module),
-                INDEX idx_user_id (user_id),
-                INDEX idx_created_at (created_at),
-                INDEX idx_level_created (log_level, created_at)
+                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                log_level VARCHAR(20) NOT NULL,
+                module VARCHAR(50) NOT NULL,
+                message TEXT NOT NULL,
+                user_id BIGINT UNSIGNED DEFAULT NULL,
+                ip_address VARCHAR(45) DEFAULT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
             ) ENGINE=InnoDB COMMENT='系统日志表'
         )")) {
             throw std::runtime_error("Failed to create system_logs table: " + query.lastError().text().toStdString());
@@ -1705,26 +1868,18 @@ bool Database::createTables()
         
         // 服务器统计表
         if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS server_stats (
+            CREATE TABLE IF NOT EXISTS daily_stats (
                 id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                stat_date DATE NOT NULL COMMENT '统计日期',
-                stat_hour TINYINT DEFAULT NULL COMMENT '统计小时（NULL表示全天）',
-                online_users INT DEFAULT 0 COMMENT '在线用户数',
-                new_registrations INT DEFAULT 0 COMMENT '新注册用户数',
-                messages_sent INT DEFAULT 0 COMMENT '发送消息数',
-                files_transferred INT DEFAULT 0 COMMENT '文件传输数',
-                total_users INT DEFAULT 0 COMMENT '总用户数',
-                active_users INT DEFAULT 0 COMMENT '活跃用户数',
-                peak_online_users INT DEFAULT 0 COMMENT '峰值在线用户数',
-                avg_response_time DECIMAL(10,3) DEFAULT 0 COMMENT '平均响应时间(ms)',
-                error_count INT DEFAULT 0 COMMENT '错误数量',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-                
-                UNIQUE KEY uk_stat_date_hour (stat_date, stat_hour),
-                INDEX idx_stat_date (stat_date),
-                INDEX idx_stat_hour (stat_hour)
-            ) ENGINE=InnoDB COMMENT='服务器统计表'
+                stat_date DATE NOT NULL UNIQUE,
+                online_users INT DEFAULT 0,
+                new_registrations INT DEFAULT 0,
+                messages_sent INT DEFAULT 0,
+                files_transferred INT DEFAULT 0,
+                total_users INT DEFAULT 0,
+                active_users INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB COMMENT='每日统计表'
         )")) {
             throw std::runtime_error("Failed to create server_stats table: " + query.lastError().text().toStdString());
         }
@@ -1809,8 +1964,8 @@ bool Database::createDefaultAdminAccount()
     // 创建管理员账号
     QSqlQuery insertQuery(_database);
     insertQuery.prepare(R"(
-        INSERT INTO users (username, email, password_hash, salt, display_name, status, created_at)
-        VALUES (?, ?, ?, ?, ?, 'active', NOW())
+        INSERT INTO users (username, email, password_hash, salt, display_name, status, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, 'active', NOW(), NOW())
     )");
     
     insertQuery.addBindValue(adminUsername);

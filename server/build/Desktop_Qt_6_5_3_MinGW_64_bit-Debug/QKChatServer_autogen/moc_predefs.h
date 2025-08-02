@@ -155,7 +155,6 @@
 #define __cpp_ref_qualifiers 200710L
 #define __DEC32_MIN__ 1E-95DF
 #define __DEPRECATED 1
-#define NO_OPENSSL 1
 #define __cpp_rvalue_references 200610L
 #define __DBL_MAX_EXP__ 1024
 #define __WCHAR_WIDTH__ 16
@@ -193,6 +192,7 @@
 #define __SIZE_TYPE__ long long unsigned int
 #define __DBL_HAS_QUIET_NAN__ 1
 #define __FLT32X_EPSILON__ 2.22044604925031308084726333618164062e-16F32x
+#define QT_SSL_USE_OPENSSL 1
 #define __DECIMAL_BID_FORMAT__ 1
 #define __GXX_TYPEINFO_EQUALITY_INLINE 0
 #define __FLT64_MIN_10_EXP__ (-307)
@@ -394,6 +394,7 @@
 #define __cpp_alias_templates 200704L
 #define WINNT 1
 #define __FLT_DENORM_MIN__ 1.40129846432481707092372958328991613e-45F
+#define QT_SSL_USE_OPENSSL_PRE 1
 #define __FLT128_IS_IEC_60559__ 2
 #define __INT8_MAX__ 0x7f
 #define __LONG_WIDTH__ 32

@@ -153,14 +153,14 @@ bool ServerConfig::isSslEnabled() const
     return getValue("Security/ssl_enabled", true).toBool();
 }
 
-QString ServerConfig::getCertificateFile() const
+QString ServerConfig::getRawCertificateFile() const
 {
-    return getValue("Security/cert_file", "certs/server.crt").toString();
+    return getValue("Security/cert_file", "../certs/server.crt").toString();
 }
 
-QString ServerConfig::getPrivateKeyFile() const
+QString ServerConfig::getRawPrivateKeyFile() const
 {
-    return getValue("Security/key_file", "certs/server.key").toString();
+    return getValue("Security/key_file", "../certs/server.key").toString();
 }
 
 QString ServerConfig::getCaFile() const
@@ -170,12 +170,36 @@ QString ServerConfig::getCaFile() const
 
 QString ServerConfig::getSslCertificateFile() const
 {
-    return getCertificateFile();
+    QString certPath = getRawCertificateFile();
+    qCDebug(serverConfig) << "Raw certificate path:" << certPath;
+
+    if (QDir::isAbsolutePath(certPath)) {
+        return certPath;
+    }
+
+    QDir appDir(QCoreApplication::applicationDirPath());
+    QString absolutePath = appDir.absoluteFilePath(certPath);
+    qCDebug(serverConfig) << "Application directory:" << appDir.path();
+    qCDebug(serverConfig) << "Calculated absolute certificate path:" << absolutePath;
+
+    return absolutePath;
 }
 
 QString ServerConfig::getSslPrivateKeyFile() const
 {
-    return getPrivateKeyFile();
+    QString keyPath = getRawPrivateKeyFile();
+    qCDebug(serverConfig) << "Raw private key path:" << keyPath;
+
+    if (QDir::isAbsolutePath(keyPath)) {
+        return keyPath;
+    }
+
+    QDir appDir(QCoreApplication::applicationDirPath());
+    QString absolutePath = appDir.absoluteFilePath(keyPath);
+    qCDebug(serverConfig) << "Application directory:" << appDir.path();
+    qCDebug(serverConfig) << "Calculated absolute private key path:" << absolutePath;
+
+    return absolutePath;
 }
 
 QString ServerConfig::getDatabaseType() const
@@ -195,7 +219,7 @@ int ServerConfig::getDatabasePort() const
 
 QString ServerConfig::getDatabaseName() const
 {
-    return getValue("Database/name", "qkchat").toString();
+    return getValue("Database/name", "qkchat_db").toString();
 }
 
 QString ServerConfig::getDatabaseUsername() const
@@ -293,8 +317,8 @@ void ServerConfig::initializeDefaults()
     
     // 安全配置默认值
     _configCache["Security/ssl_enabled"] = true;
-    _configCache["Security/cert_file"] = "certs/server.crt";
-    _configCache["Security/key_file"] = "certs/server.key";
+    _configCache["Security/cert_file"] = "../certs/server.crt";
+    _configCache["Security/key_file"] = "../certs/server.key";
     _configCache["Security/admin_username"] = "admin";
     _configCache["Security/admin_password"] = "QKchat2024!";
     _configCache["Security/session_timeout"] = 1800;
@@ -305,9 +329,9 @@ void ServerConfig::initializeDefaults()
     _configCache["Database/type"] = "mysql";
     _configCache["Database/host"] = "localhost";
     _configCache["Database/port"] = 3306;
-    _configCache["Database/name"] = "qkchat";
+    _configCache["Database/name"] = "qkchat_db";
     _configCache["Database/username"] = "qkchat_user";
-    _configCache["Database/password"] = "qkchat_pass";
+    _configCache["Database/password"] = "3143285505";
     _configCache["Database/pool_size"] = 10;
     
     // Redis配置默认值
@@ -318,7 +342,7 @@ void ServerConfig::initializeDefaults()
     
     // 日志配置默认值
     _configCache["Logging/level"] = "info";
-    _configCache["Logging/file"] = "logs/server.log";
+    _configCache["Logging/file"] = "../logs/server.log";
     _configCache["Logging/max_file_size"] = 10485760; // 10MB
     _configCache["Logging/max_files"] = 5;
 }

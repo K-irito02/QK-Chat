@@ -28,6 +28,7 @@ public:
     QString createSession(qint64 userId, const QString &ipAddress, int expirationHours = 24);
     QString createSession(qint64 userId, const QString &deviceInfo, const QString &ipAddress, int expirationHours = 24);
     bool validateSession(const QString &sessionToken, qint64 &userId);
+    bool updateSessionLastActive(const QString &sessionToken);
     bool removeSession(const QString &sessionToken);
     bool removeUserSessions(qint64 userId);
     void cleanExpiredSessions();
@@ -53,6 +54,7 @@ private:
         QString deviceInfo;
         QString ipAddress;
         QDateTime createdAt;
+        QDateTime lastActive;
         QDateTime expiresAt;
         bool isValid;
     };

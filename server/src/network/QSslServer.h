@@ -4,6 +4,7 @@
 #include <QTcpServer>
 #include <QSslSocket>
 #include <QSslConfiguration>
+#include <QSslCipher>
 
 /**
  * @brief 自定义SSL服务器类

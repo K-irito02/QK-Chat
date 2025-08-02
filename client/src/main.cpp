@@ -10,6 +10,7 @@
 #include <QUrl>
 #include <QObject>
 #include <QDir>
+#include <QDebug>
 
 #include "controllers/UserController.h"
 #include "controllers/ChatController.h"
@@ -18,10 +19,26 @@
 #include "network/NetworkClient.h"
 #include "database/LocalDatabase.h"
 #include "utils/Validator.h"
+#include "utils/ThreadPool.h"
+
+Q_DECLARE_LOGGING_CATEGORY(userController)
+Q_DECLARE_LOGGING_CATEGORY(networkClient)
 
 int main(int argc, char *argv[])
 {
+    // 设置环境变量以启用调试输出
+    qputenv("QT_LOGGING_TO_CONSOLE", "1");
+    qputenv("QT_DEBUG_PLUGINS", "1");
+    
     QGuiApplication app(argc, argv);
+    
+    // 配置调试输出
+    QLoggingCategory::setFilterRules("qkchat.client.*=true");
+    qSetMessagePattern("[%{time yyyy-MM-dd hh:mm:ss.zzz}] %{category}: %{message}");
+    
+    // 测试调试输出
+    qCInfo(userController) << "QK Chat Client starting...";
+    qCInfo(networkClient) << "Network client initialized";
     
     // 设置应用程序信息
     app.setApplicationName("QK Chat Client");
@@ -51,11 +68,16 @@ int main(int argc, char *argv[])
     auto networkClient = new NetworkClient(&app);
     auto localDatabase = new LocalDatabase(&app);
     auto userModel = userController->userModel();
+    auto threadPool = new ThreadPool(QThread::idealThreadCount(), &app);
     
     // 设置依赖关系
     chatController->setUserModel(userModel);
     chatController->setNetworkClient(networkClient);
     chatController->setLocalDatabase(localDatabase);
+    chatController->setThreadPool(threadPool);
+    userController->setThreadPool(threadPool);
+    userController->setNetworkClient(networkClient);  // 添加这行
+    userController->setDatabase(localDatabase);      // 添加这行
     
     // 初始化组件
     localDatabase->initialize();

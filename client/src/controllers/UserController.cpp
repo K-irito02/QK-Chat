@@ -3,6 +3,7 @@
 #include "../database/LocalDatabase.h"
 #include "../network/NetworkClient.h"
 #include "../utils/Validator.h"
+#include "../utils/ThreadPool.h"
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QVariant>
@@ -14,6 +15,7 @@
 #include <QLoggingCategory>
 #include <QDebug>
 #include <QRandomGenerator>
+#include <QTimer>
 
 Q_LOGGING_CATEGORY(userController, "qkchat.client.usercontroller")
 
@@ -27,6 +29,7 @@ UserController::UserController(QObject *parent)
     , _database(nullptr)
     , _networkClient(nullptr)
     , _validator(new Validator(this))
+    , _threadPool(nullptr)
     , _isLoading(false)
     , _loginAttempts(0)
     , _needCaptcha(false)
@@ -74,6 +77,13 @@ void UserController::setValidator(Validator *validator)
     }
 }
 
+void UserController::setThreadPool(ThreadPool *threadPool)
+{
+    if (_threadPool != threadPool) {
+        _threadPool = threadPool;
+    }
+}
+
 // 用户操作方法
 void UserController::login(const QString &usernameOrEmail, const QString &password, const QString &captcha)
 {
@@ -112,10 +122,18 @@ void UserController::login(const QString &usernameOrEmail, const QString &passwo
         _networkClient = new NetworkClient(this);
         connect(_networkClient, &NetworkClient::loginResponse, this, &UserController::onLoginResponse);
         connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
+        // 确保连接到服务器
+        _networkClient->connectToServer("localhost", 8443);
     }
     
-    // 发送登录请求
-    _networkClient->login(usernameOrEmail.trimmed(), password, captcha);
+    // 异步发送登录请求
+    if (_threadPool) {
+        _threadPool->enqueue([this, usernameOrEmail, password, captcha]() {
+            _networkClient->login(usernameOrEmail.trimmed(), password, captcha);
+        });
+    } else {
+        _networkClient->login(usernameOrEmail.trimmed(), password, captcha);
+    }
     
     qCInfo(userController) << "Login request sent";
 }
@@ -153,10 +171,18 @@ void UserController::registerUser(const QString &username, const QString &email,
         _networkClient = new NetworkClient(this);
         connect(_networkClient, &NetworkClient::registerResponse, this, &UserController::onRegisterResponse);
         connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
+        // 确保连接到服务器
+        _networkClient->connectToServer("localhost", 8443);
     }
     
-    // 发送注册请求
-    _networkClient->registerUser(username.trimmed(), email.trimmed(), password, avatar);
+    // 异步发送注册请求
+    if (_threadPool) {
+        _threadPool->enqueue([this, username, email, password, avatar]() {
+            _networkClient->registerUser(username.trimmed(), email.trimmed(), password, avatar);
+        });
+    } else {
+        _networkClient->registerUser(username.trimmed(), email.trimmed(), password, avatar);
+    }
     
     qCInfo(userController) << "Register request sent";
 }
@@ -256,6 +282,9 @@ bool UserController::checkUsernameAvailability(const QString &username)
         connect(_networkClient, &NetworkClient::usernameAvailability, this, [this](bool available) {
             emit usernameAvailabilityResult(available);
         });
+        connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
+        // 确保连接到服务器
+        _networkClient->connectToServer("localhost", 8443);
     }
     
     _networkClient->checkUsernameAvailability(username.trimmed());
@@ -276,10 +305,25 @@ bool UserController::checkEmailAvailability(const QString &email)
         connect(_networkClient, &NetworkClient::emailAvailability, this, [this](bool available) {
             emit emailAvailabilityResult(available);
         });
+        connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
+        // 确保连接到服务器
+        _networkClient->connectToServer("localhost", 8443);
     }
     
     _networkClient->checkEmailAvailability(email.trimmed());
     return true; // 实际结果通过信号返回
+}
+
+void UserController::verifyEmailToken(const QString &token)
+{
+    qCInfo(userController) << "Verifying email token:" << token;
+    
+    if (!_networkClient) {
+        _networkClient = new NetworkClient(this);
+        connect(_networkClient, &NetworkClient::verifyEmailResponse, this, &UserController::onVerifyEmailResponse);
+    }
+    
+    _networkClient->verifyEmail(token);
 }
 
 // 头像管理
@@ -368,6 +412,54 @@ void UserController::saveLoginCredentials(const QString &username, const QString
     qCInfo(userController) << "Login credentials saved";
 }
 
+void UserController::sendEmailVerification(const QString &email)
+{
+    qCInfo(userController) << "Sending email verification to:" << email;
+    
+    if (!_networkClient) {
+        _networkClient = new NetworkClient(this);
+        connect(_networkClient, &NetworkClient::resendVerificationResponse, this, &UserController::onEmailVerificationSent);
+        connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
+        // 确保连接到服务器
+        _networkClient->connectToServer("localhost", 8443);
+        
+        // 延迟发送，确保连接建立
+        QTimer::singleShot(2000, this, [this, email]() {
+            qCInfo(userController) << "Delayed sending email verification to:" << email;
+            _networkClient->sendEmailVerification(email);
+        });
+    } else {
+        // 如果已经有连接，直接发送
+        _networkClient->sendEmailVerification(email);
+    }
+}
+
+void UserController::resendEmailVerification(const QString &email)
+{
+    qCInfo(userController) << "Resending email verification to:" << email;
+    
+    if (!_networkClient) {
+        _networkClient = new NetworkClient(this);
+        connect(_networkClient, &NetworkClient::resendVerificationResponse, this, &UserController::onEmailVerificationSent);
+        connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
+        // 确保连接到服务器
+        _networkClient->connectToServer("localhost", 8443);
+    }
+    
+    _networkClient->resendVerification(email);
+}
+
+void UserController::onEmailVerificationSent(bool success, const QString &message)
+{
+    if (success) {
+        qCInfo(userController) << "Email verification sent successfully";
+        setErrorMessage("");
+    } else {
+        qCWarning(userController) << "Failed to send email verification:" << message;
+        setErrorMessage(message);
+    }
+}
+
 // 网络响应处理槽函数
 void UserController::onLoginResponse(bool success, const QString &message, const QString &token)
 {
@@ -399,14 +491,19 @@ void UserController::onLoginResponse(bool success, const QString &message, const
     }
 }
 
-void UserController::onRegisterResponse(bool success, const QString &message)
+void UserController::onRegisterResponse(bool success, const QString &message, const QString &username, const QString &email, qint64 userId)
 {
     setIsLoading(false);
     
     if (success) {
-        qCInfo(userController) << "Registration successful";
+        qCInfo(userController) << "Registration successful for user:" << username << "with email:" << email;
         setErrorMessage("");
-        emit registerSuccess();
+        emit registerSuccess(username, email, userId);
+        
+        // 注册成功后自动触发邮箱验证
+        if (!email.isEmpty()) {
+            sendEmailVerification(email);
+        }
     } else {
         qCWarning(userController) << "Registration failed:" << message;
         setErrorMessage(message);
@@ -421,6 +518,29 @@ void UserController::onNetworkError(const QString &error)
     qCWarning(userController) << "Network error:" << error;
     
     emit loginFailed("网络连接失败");
+}
+
+// 邮箱验证响应处理
+void UserController::onVerifyEmailResponse(bool success, const QString &message)
+{
+    if (success) {
+        qCInfo(userController) << "Email verification successful:" << message;
+        emit emailVerified();
+    } else {
+        qCWarning(userController) << "Email verification failed:" << message;
+        emit emailVerificationFailed(message);
+    }
+}
+
+void UserController::onResendVerificationResponse(bool success, const QString &message)
+{
+    if (success) {
+        qCInfo(userController) << "Email verification resent successfully:" << message;
+        emit emailVerificationResent();
+    } else {
+        qCWarning(userController) << "Failed to resend email verification:" << message;
+        emit emailVerificationResendFailed(message);
+    }
 }
 
 void UserController::resetLoginAttempts()
@@ -482,4 +602,34 @@ void UserController::generateCaptcha()
                         .arg(captchaText.toUtf8().toBase64()));
     
     emit captchaImageChanged();
-} 
+}
+void UserController::verifyEmailCode(const QString &email, const QString &code)
+{
+    qCInfo(userController) << "Verifying email code for:" << email;
+    if (!_networkClient) {
+        _networkClient = new NetworkClient(this);
+        connect(_networkClient, &NetworkClient::emailCodeVerified, this, [this](bool success, const QString &message) {
+            if (success) {
+                emit emailCodeVerified();
+            } else {
+                emit emailCodeVerificationFailed(message);
+            }
+        });
+        connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
+        // 确保连接到服务器
+        _networkClient->connectToServer("localhost", 8443);
+    }
+    _networkClient->verifyEmailCode(email, code);
+}
+
+void UserController::connectToServer(const QString &host, int port)
+{
+    qCInfo(userController) << "Connecting to server:" << host << ":" << port;
+    if (!_networkClient) {
+        _networkClient = new NetworkClient(this);
+        connect(_networkClient, &NetworkClient::loginResponse, this, &UserController::onLoginResponse);
+        connect(_networkClient, &NetworkClient::registerResponse, this, &UserController::onRegisterResponse);
+        connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
+    }
+    _networkClient->connectToServer(host, port);
+}

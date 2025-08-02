@@ -5,7 +5,7 @@
 #include "../network/QSslServer.h"
 #include <QSslSocket>
 #include <QTimer>
-#include <QThreadPool>
+#include "../utils/ThreadPool.h"
 #include <QMutex>
 #include <QHash>
 #include <QMutexLocker>
@@ -74,14 +74,7 @@ signals:
     void userOnline(qint64 userId);
     void userOffline(qint64 userId);
     
-private slots:
-    void onNewConnection();
-    void onClientDisconnected();
-    void onClientDataReceived();
-    void onSslErrors(const QList<QSslError> &errors);
-    void cleanupConnections();
-    
-private:
+public:
     struct ClientConnection {
         QSslSocket *socket;
         qint64 userId;
@@ -90,6 +83,14 @@ private:
         QByteArray readBuffer;
     };
     
+private slots:
+    void onNewConnection();
+    void onClientDisconnected();
+    void onClientDataReceived();
+    void onSslErrors(const QList<QSslError> &errors);
+    void cleanupConnections();
+    
+private:
     void setupSslServer();
     void setupCleanupTimer();
     void processClientMessage(ClientConnection *client, const QByteArray &data);
@@ -97,6 +98,11 @@ private:
     void handleLogoutRequest(ClientConnection *client);
     void handleMessageRequest(ClientConnection *client, const QVariantMap &data);
     void handleHeartbeat(ClientConnection *client);
+    void handleRegisterRequest(ClientConnection *client, const QVariantMap &data);
+    void handleEmailVerificationRequest(ClientConnection *client, const QVariantMap &data);
+    void handleEmailCodeVerificationRequest(ClientConnection *client, const QVariantMap &data);
+    void handleSendEmailVerificationRequest(ClientConnection *client, const QVariantMap &data);
+    void handleResendVerificationRequest(ClientConnection *client, const QVariantMap &data);
     
     void removeClient(QSslSocket *socket);
     ClientConnection *getClientBySocket(QSslSocket *socket);
@@ -106,7 +112,7 @@ private:
     Database *_database;
     SessionManager *_sessionManager;
     ProtocolParser *_protocolParser;
-    QThreadPool *_threadPool;
+    ThreadPool *_threadPool;
     QTimer *_cleanupTimer;
     
     QHash<QSslSocket*, ClientConnection*> _clients;

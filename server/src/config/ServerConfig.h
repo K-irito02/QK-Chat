@@ -88,6 +88,10 @@ private:
     void initializeDefaults();
     QString getDefaultConfigPath() const;
     
+    // 私有辅助方法
+    QString getRawCertificateFile() const;
+    QString getRawPrivateKeyFile() const;
+    
     static ServerConfig* _instance;
     QSettings* _settings;
     QString _configFile;

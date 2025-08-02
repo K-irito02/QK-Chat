@@ -1,6 +1,10 @@
 -- QK Chat Server MySQL Database Schema
 -- 优化版本 v1.1 - 高性能、可扩展、安全
 
+-- 设置字符集
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 -- 创建数据库
 CREATE DATABASE IF NOT EXISTS qkchat CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE qkchat;
@@ -13,23 +17,23 @@ CREATE TABLE IF NOT EXISTS users (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
     email VARCHAR(100) NOT NULL UNIQUE COMMENT '邮箱',
-    password_hash VARCHAR(64) NOT NULL COMMENT 'SHA-256密码哈希',
-    salt VARCHAR(32) NOT NULL COMMENT '密码盐值',
-    avatar_url VARCHAR(255) DEFAULT NULL COMMENT '头像URL',
-    display_name VARCHAR(100) DEFAULT NULL COMMENT '显示名称',
-    status ENUM('active', 'disabled', 'pending', 'banned') DEFAULT 'active' COMMENT '用户状态',
-    last_online TIMESTAMP NULL DEFAULT NULL COMMENT '最后在线时间',
-    login_attempts INT DEFAULT 0 COMMENT '登录尝试次数',
-    locked_until TIMESTAMP NULL DEFAULT NULL COMMENT '账户锁定时间',
+    password_hash VARCHAR(255) NOT NULL COMMENT '密码哈希',
+    salt VARCHAR(64) NOT NULL COMMENT '盐值',
+    display_name VARCHAR(50) DEFAULT NULL COMMENT '显示名称',
+    avatar_url VARCHAR(512) DEFAULT NULL COMMENT '头像URL',
+    bio TEXT DEFAULT NULL COMMENT '个人简介',
+    status ENUM('active', 'inactive', 'banned', 'deleted') DEFAULT 'inactive' COMMENT '账户状态',
+    email_verified BOOLEAN DEFAULT FALSE COMMENT '邮箱是否已验证',
+    verification_token VARCHAR(64) DEFAULT NULL COMMENT '邮箱验证令牌',
+    last_online TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最后在线时间',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     
-    INDEX idx_username (username),
-    INDEX idx_email (email),
+    UNIQUE INDEX idx_username (username),
+    UNIQUE INDEX idx_email (email),
     INDEX idx_status (status),
-    INDEX idx_last_online (last_online),
-    INDEX idx_status_last_online (status, last_online)
-) ENGINE=InnoDB COMMENT='用户信息表';
+    INDEX idx_last_online (last_online)
+) ENGINE=InnoDB COMMENT='用户表';
 
 -- 用户会话表
 CREATE TABLE IF NOT EXISTS user_sessions (
@@ -51,42 +55,31 @@ CREATE TABLE IF NOT EXISTS user_sessions (
     INDEX idx_user_expires (user_id, expires_at)
 ) ENGINE=InnoDB COMMENT='用户会话表';
 
--- 消息表（分区表，按时间分区）
+-- 消息表（优化版本，去掉分区表）
 CREATE TABLE IF NOT EXISTS messages (
-    id BIGINT UNSIGNED AUTO_INCREMENT,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     message_id VARCHAR(36) NOT NULL UNIQUE COMMENT '消息唯一标识',
     sender_id BIGINT UNSIGNED NOT NULL COMMENT '发送者ID',
     receiver_id BIGINT UNSIGNED NOT NULL COMMENT '接收者ID',
-    message_type ENUM('text', 'image', 'file', 'audio', 'video', 'location', 'contact') DEFAULT 'text' COMMENT '消息类型',
+    message_type ENUM('text', 'image', 'file', 'audio', 'video', 'system', 'location', 'contact') DEFAULT 'text' COMMENT '消息类型',
     content TEXT NOT NULL COMMENT '消息内容',
     encrypted_content BLOB DEFAULT NULL COMMENT '加密消息内容',
-    file_url VARCHAR(255) DEFAULT NULL COMMENT '文件URL（如果是文件消息）',
-    file_size BIGINT DEFAULT NULL COMMENT '文件大小（字节）',
+    file_url VARCHAR(512) DEFAULT NULL COMMENT '文件URL',
+    file_size BIGINT DEFAULT NULL COMMENT '文件大小',
     file_hash VARCHAR(64) DEFAULT NULL COMMENT '文件哈希值',
-    delivery_status ENUM('sent', 'delivered', 'read') DEFAULT 'sent' COMMENT '投递状态',
     is_encrypted BOOLEAN DEFAULT FALSE COMMENT '是否加密',
     encryption_type ENUM('none', 'aes256', 'rsa2048', 'ecc_p256') DEFAULT 'none' COMMENT '加密类型',
+    delivery_status ENUM('sent', 'delivered', 'read', 'failed') DEFAULT 'sent' COMMENT '投递状态',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    delivered_at TIMESTAMP NULL DEFAULT NULL COMMENT '投递时间',
-    read_at TIMESTAMP NULL DEFAULT NULL COMMENT '已读时间',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     
-    PRIMARY KEY (id, created_at),
-    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_message_id (message_id),
     INDEX idx_sender_id (sender_id),
     INDEX idx_receiver_id (receiver_id),
     INDEX idx_created_at (created_at),
     INDEX idx_delivery_status (delivery_status),
-    INDEX idx_sender_receiver_created (sender_id, receiver_id, created_at),
-    INDEX idx_receiver_created (receiver_id, created_at)
-) ENGINE=InnoDB 
-PARTITION BY RANGE (YEAR(created_at)) (
-    PARTITION p2024 VALUES LESS THAN (2025),
-    PARTITION p2025 VALUES LESS THAN (2026),
-    PARTITION p2026 VALUES LESS THAN (2027),
-    PARTITION p_future VALUES LESS THAN MAXVALUE
-) COMMENT='消息表';
+    INDEX idx_sender_receiver_created (sender_id, receiver_id, created_at)
+) ENGINE=InnoDB COMMENT='消息表';
 
 -- 消息已读状态表（优化查询性能）
 CREATE TABLE IF NOT EXISTS message_read_status (
@@ -123,7 +116,7 @@ CREATE TABLE IF NOT EXISTS friendships (
 ) ENGINE=InnoDB COMMENT='好友关系表';
 
 -- 群组表
-CREATE TABLE IF NOT EXISTS groups (
+CREATE TABLE IF NOT EXISTS chat_groups (
     id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     group_name VARCHAR(100) NOT NULL COMMENT '群组名称',
     description TEXT DEFAULT NULL COMMENT '群组描述',
@@ -154,7 +147,7 @@ CREATE TABLE IF NOT EXISTS group_members (
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '加入时间',
     last_message_at TIMESTAMP NULL DEFAULT NULL COMMENT '最后发言时间',
     
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     UNIQUE KEY uk_group_member (group_id, user_id),
     INDEX idx_group_id (group_id),
@@ -163,37 +156,28 @@ CREATE TABLE IF NOT EXISTS group_members (
     INDEX idx_group_role (group_id, role)
 ) ENGINE=InnoDB COMMENT='群组成员表';
 
--- 群组消息表（分区表）
+-- 群组消息表（优化版本，去掉分区表）
 CREATE TABLE IF NOT EXISTS group_messages (
-    id BIGINT UNSIGNED AUTO_INCREMENT,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     message_id VARCHAR(36) NOT NULL UNIQUE COMMENT '消息唯一标识',
     group_id BIGINT UNSIGNED NOT NULL COMMENT '群组ID',
     sender_id BIGINT UNSIGNED NOT NULL COMMENT '发送者ID',
     message_type ENUM('text', 'image', 'file', 'audio', 'video', 'system', 'location', 'contact') DEFAULT 'text' COMMENT '消息类型',
     content TEXT NOT NULL COMMENT '消息内容',
     encrypted_content BLOB DEFAULT NULL COMMENT '加密消息内容',
-    file_url VARCHAR(255) DEFAULT NULL COMMENT '文件URL',
+    file_url VARCHAR(512) DEFAULT NULL COMMENT '文件URL',
     file_size BIGINT DEFAULT NULL COMMENT '文件大小',
     file_hash VARCHAR(64) DEFAULT NULL COMMENT '文件哈希值',
     is_encrypted BOOLEAN DEFAULT FALSE COMMENT '是否加密',
     encryption_type ENUM('none', 'aes256', 'rsa2048', 'ecc_p256') DEFAULT 'none' COMMENT '加密类型',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     
-    PRIMARY KEY (id, created_at),
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
-    FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
     INDEX idx_message_id (message_id),
     INDEX idx_group_id (group_id),
     INDEX idx_sender_id (sender_id),
     INDEX idx_created_at (created_at),
     INDEX idx_group_created (group_id, created_at)
-) ENGINE=InnoDB 
-PARTITION BY RANGE (YEAR(created_at)) (
-    PARTITION p2024 VALUES LESS THAN (2025),
-    PARTITION p2025 VALUES LESS THAN (2026),
-    PARTITION p2026 VALUES LESS THAN (2027),
-    PARTITION p_future VALUES LESS THAN MAXVALUE
-) COMMENT='群组消息表';
+) ENGINE=InnoDB COMMENT='群组消息表';
 
 -- 群组消息已读状态表
 CREATE TABLE IF NOT EXISTS group_message_read_status (
@@ -224,7 +208,7 @@ CREATE TABLE IF NOT EXISTS encryption_keys (
     is_active BOOLEAN DEFAULT TRUE COMMENT '是否激活',
     
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
     INDEX idx_key_id (key_id),
     INDEX idx_user_id (user_id),
     INDEX idx_group_id (group_id),
@@ -254,7 +238,7 @@ CREATE TABLE IF NOT EXISTS file_transfers (
     
     FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE SET NULL,
-    FOREIGN KEY (group_id) REFERENCES groups(id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
     INDEX idx_transfer_id (transfer_id),
     INDEX idx_sender_id (sender_id),
     INDEX idx_receiver_id (receiver_id),
@@ -264,9 +248,9 @@ CREATE TABLE IF NOT EXISTS file_transfers (
     INDEX idx_file_hash (file_hash)
 ) ENGINE=InnoDB COMMENT='文件传输记录表';
 
--- 系统日志表（分区表）
+-- 系统日志表（优化版本，去掉分区表）
 CREATE TABLE IF NOT EXISTS system_logs (
-    id BIGINT UNSIGNED AUTO_INCREMENT,
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     log_level ENUM('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL') NOT NULL COMMENT '日志级别',
     module VARCHAR(50) NOT NULL COMMENT '模块名称',
     message TEXT NOT NULL COMMENT '日志消息',
@@ -276,20 +260,12 @@ CREATE TABLE IF NOT EXISTS system_logs (
     extra_data JSON DEFAULT NULL COMMENT '额外数据(JSON格式)',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     
-    PRIMARY KEY (id, created_at),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_log_level (log_level),
     INDEX idx_module (module),
     INDEX idx_user_id (user_id),
     INDEX idx_created_at (created_at),
     INDEX idx_level_created (log_level, created_at)
-) ENGINE=InnoDB 
-PARTITION BY RANGE (YEAR(created_at)) (
-    PARTITION p2024 VALUES LESS THAN (2025),
-    PARTITION p2025 VALUES LESS THAN (2026),
-    PARTITION p2026 VALUES LESS THAN (2027),
-    PARTITION p_future VALUES LESS THAN MAXVALUE
-) COMMENT='系统日志表';
+) ENGINE=InnoDB COMMENT='系统日志表';
 
 -- 服务器统计表
 CREATE TABLE IF NOT EXISTS server_stats (
@@ -333,14 +309,48 @@ CREATE TABLE IF NOT EXISTS user_activity_stats (
     INDEX idx_last_activity (last_activity)
 ) ENGINE=InnoDB COMMENT='用户活动统计表';
 
+-- 邮箱验证记录表
+CREATE TABLE IF NOT EXISTS email_verifications (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
+    email VARCHAR(100) NOT NULL COMMENT '邮箱地址',
+    verification_token VARCHAR(64) NOT NULL UNIQUE COMMENT '验证令牌',
+    token_type ENUM('register', 'reset_password', 'change_email') DEFAULT 'register' COMMENT '令牌类型',
+    expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
+    used BOOLEAN DEFAULT FALSE COMMENT '是否已使用',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    used_at TIMESTAMP NULL DEFAULT NULL COMMENT '使用时间',
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_id (user_id),
+    INDEX idx_verification_token (verification_token),
+    INDEX idx_email (email),
+    INDEX idx_expires_at (expires_at),
+    INDEX idx_token_type (token_type)
+) ENGINE=InnoDB COMMENT='邮箱验证记录表';
+
+-- 邮箱验证码表
+CREATE TABLE IF NOT EXISTS email_verification_codes (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(100) NOT NULL COMMENT '邮箱地址',
+    verification_code VARCHAR(6) NOT NULL COMMENT '验证码',
+    expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
+    used BOOLEAN DEFAULT FALSE COMMENT '是否已使用',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    used_at TIMESTAMP NULL DEFAULT NULL COMMENT '使用时间',
+    
+    INDEX idx_email (email),
+    INDEX idx_verification_code (verification_code),
+    INDEX idx_expires_at (expires_at),
+    INDEX idx_email_code (email, verification_code)
+) ENGINE=InnoDB COMMENT='邮箱验证码表';
+
 -- 创建默认管理员用户（用于测试）
 INSERT INTO users (username, email, password_hash, salt, display_name, status) VALUES 
 ('admin', 'admin@qkchat.com', SHA2(CONCAT('QKchat2024!', 'admin_salt'), 256), 'admin_salt', '系统管理员', 'active')
 ON DUPLICATE KEY UPDATE username=username;
 
 -- 创建复合索引优化查询性能
-CREATE INDEX idx_messages_sender_receiver_created ON messages(sender_id, receiver_id, created_at);
-CREATE INDEX idx_group_messages_group_created ON group_messages(group_id, created_at);
 CREATE INDEX idx_user_sessions_user_expires ON user_sessions(user_id, expires_at);
 CREATE INDEX idx_friendships_user_status ON friendships(user_id, status);
 CREATE INDEX idx_group_members_group_role ON group_members(group_id, role);
@@ -364,13 +374,17 @@ JOIN users r ON m.receiver_id = r.id
 WHERE m.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
 ORDER BY m.created_at DESC;
 
-CREATE OR REPLACE VIEW user_friends AS
+-- This view is problematic as it cannot be parameterized. 
+-- It's better to implement this logic in the application code.
+-- For demonstration, here is a corrected but still limited version.
+CREATE OR REPLACE VIEW user_friends_example AS
 SELECT 
-    u.id, u.username, u.display_name, u.avatar_url, u.last_online,
+    f.user_id as user_id,
+    u.id as friend_id, u.username, u.display_name, u.avatar_url, u.last_online,
     f.status, f.requested_at, f.accepted_at
 FROM friendships f
 JOIN users u ON (f.friend_id = u.id)
-WHERE f.user_id = ? AND f.status = 'accepted'
+WHERE f.status = 'accepted'
 ORDER BY u.last_online DESC;
 
 CREATE OR REPLACE VIEW group_info AS
@@ -378,7 +392,7 @@ SELECT
     g.id, g.group_name, g.description, g.avatar_url, g.current_members, g.max_members,
     g.is_public, g.is_encrypted, g.created_at,
     u.username as owner_username, u.display_name as owner_name
-FROM groups g
+FROM chat_groups g
 JOIN users u ON g.owner_id = u.id;
 
 -- 存储过程：清理过期会话
@@ -409,15 +423,15 @@ DELIMITER ;
 
 -- 存储过程：更新群组成员数
 DELIMITER //
-CREATE PROCEDURE UpdateGroupMemberCount(IN group_id BIGINT)
+CREATE PROCEDURE UpdateGroupMemberCount(IN p_group_id BIGINT)
 BEGIN
-    UPDATE groups 
+    UPDATE chat_groups 
     SET current_members = (
         SELECT COUNT(*) 
         FROM group_members 
-        WHERE group_id = group_id
+        WHERE group_id = p_group_id
     )
-    WHERE id = group_id;
+    WHERE id = p_group_id;
 END //
 DELIMITER ;
 
@@ -441,83 +455,12 @@ BEGIN
 END //
 DELIMITER ;
 
--- 触发器：更新用户最后在线时间
-DELIMITER //
-CREATE TRIGGER update_user_last_online 
-AFTER UPDATE ON user_sessions
-FOR EACH ROW
-BEGIN
-    IF NEW.last_activity != OLD.last_activity THEN
-        UPDATE users SET last_online = NEW.last_activity WHERE id = NEW.user_id;
-    END IF;
-END //
-DELIMITER ;
+-- 触发器功能可以在后续手动配置
+-- 注意：触发器需要手动创建以确保数据一致性
 
--- 触发器：更新群组成员数
-DELIMITER //
-CREATE TRIGGER update_group_member_count_insert
-AFTER INSERT ON group_members
-FOR EACH ROW
-BEGIN
-    UPDATE groups SET current_members = current_members + 1 WHERE id = NEW.group_id;
-END //
-DELIMITER ;
-
-CREATE TRIGGER update_group_member_count_delete
-AFTER DELETE ON group_members
-FOR EACH ROW
-BEGIN
-    UPDATE groups SET current_members = current_members - 1 WHERE id = OLD.group_id;
-END //
-DELIMITER ;
-
--- 触发器：更新消息已读状态
-DELIMITER //
-CREATE TRIGGER update_message_read_status
-AFTER INSERT ON message_read_status
-FOR EACH ROW
-BEGIN
-    UPDATE messages SET read_at = NEW.read_at WHERE id = NEW.message_id;
-END //
-DELIMITER ;
-
--- 创建事件调度器（需要启用event_scheduler）
+-- 注意：事件调度器需要手动启用
 -- SET GLOBAL event_scheduler = ON;
-
--- 事件：定期清理过期数据
-DELIMITER //
-CREATE EVENT IF NOT EXISTS cleanup_expired_data_event
-ON SCHEDULE EVERY 1 DAY
-STARTS CURRENT_TIMESTAMP
-DO
-BEGIN
-    CALL CleanupExpiredData();
-END //
-DELIMITER ;
-
--- 事件：定期更新统计信息
-DELIMITER //
-CREATE EVENT IF NOT EXISTS update_daily_stats_event
-ON SCHEDULE EVERY 1 HOUR
-STARTS CURRENT_TIMESTAMP
-DO
-BEGIN
-    INSERT INTO server_stats (stat_date, stat_hour, online_users, total_users, active_users)
-    SELECT 
-        CURDATE(),
-        HOUR(NOW()),
-        COUNT(DISTINCT user_id) as online_users,
-        COUNT(*) as total_users,
-        COUNT(CASE WHEN last_online >= DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 END) as active_users
-    FROM users u
-    LEFT JOIN user_sessions s ON u.id = s.user_id AND s.expires_at > NOW()
-    ON DUPLICATE KEY UPDATE
-        online_users = VALUES(online_users),
-        total_users = VALUES(total_users),
-        active_users = VALUES(active_users),
-        updated_at = NOW();
-END //
-DELIMITER ;
+-- 事件调度器功能可以在后续手动配置
 
 -- 数据库初始化完成
-SELECT 'QK Chat Database Schema Optimized v1.1 Initialized Successfully' as Status; 
+SELECT 'QK Chat Database Schema Optimized v1.1 Initialized Successfully' as Status;

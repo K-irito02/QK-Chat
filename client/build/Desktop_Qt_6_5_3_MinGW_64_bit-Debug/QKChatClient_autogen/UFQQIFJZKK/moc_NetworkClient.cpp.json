@@ -55,9 +55,51 @@
                         {
                             "name": "message",
                             "type": "QString"
+                        },
+                        {
+                            "name": "username",
+                            "type": "QString"
+                        },
+                        {
+                            "name": "email",
+                            "type": "QString"
+                        },
+                        {
+                            "name": "userId",
+                            "type": "qint64"
                         }
                     ],
                     "name": "registerResponse",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "arguments": [
+                        {
+                            "name": "success",
+                            "type": "bool"
+                        },
+                        {
+                            "name": "message",
+                            "type": "QString"
+                        }
+                    ],
+                    "name": "verifyEmailResponse",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "arguments": [
+                        {
+                            "name": "success",
+                            "type": "bool"
+                        },
+                        {
+                            "name": "message",
+                            "type": "QString"
+                        }
+                    ],
+                    "name": "resendVerificationResponse",
                     "returnType": "void"
                 },
                 {
@@ -173,6 +215,21 @@
                         }
                     ],
                     "name": "networkError",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "arguments": [
+                        {
+                            "name": "success",
+                            "type": "bool"
+                        },
+                        {
+                            "name": "message",
+                            "type": "QString"
+                        }
+                    ],
+                    "name": "emailCodeVerified",
                     "returnType": "void"
                 }
             ],

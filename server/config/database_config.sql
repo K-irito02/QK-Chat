@@ -1,6 +1,10 @@
 -- 根据配置清单-0.1V.md创建数据库和用户
 -- MySQL 8.0+ 配置脚本
 
+-- 设置字符集
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 -- 创建数据库
 CREATE DATABASE IF NOT EXISTS qkchat_db 
 CHARACTER SET utf8mb4 

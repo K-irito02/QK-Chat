@@ -12,5 +12,7 @@
 #include "M7KQ2GL7XF/moc_DatabaseOptimizer.cpp"
 #include "UFQQIFJZKK/moc_ProtocolParser.cpp"
 #include "UFQQIFJZKK/moc_QSslServer.cpp"
+#include "GQ6NBGVJMG/moc_EmailService.cpp"
 #include "VSCBVMNR7M/moc_AdminAuth.cpp"
 #include "VSCBVMNR7M/moc_AdminManager.cpp"
+#include "VSCBVMNR7M/moc_ThreadPool.cpp"

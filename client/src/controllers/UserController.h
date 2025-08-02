@@ -10,6 +10,7 @@ class UserModel;
 class LocalDatabase;
 class NetworkClient;
 class Validator;
+class ThreadPool;
 
 /**
  * @brief 用户控制器类
@@ -45,12 +46,14 @@ public:
     void setDatabase(LocalDatabase *database);
     void setNetworkClient(NetworkClient *networkClient);
     void setValidator(Validator *validator);
+    void setThreadPool(ThreadPool *threadPool);
     
     // 用户操作方法
     Q_INVOKABLE void login(const QString &usernameOrEmail, const QString &password, const QString &captcha = "");
     Q_INVOKABLE void registerUser(const QString &username, const QString &email, const QString &password, const QUrl &avatar);
     Q_INVOKABLE void logout();
     Q_INVOKABLE void refreshCaptcha();
+    Q_INVOKABLE void connectToServer(const QString &host = "localhost", int port = 8443);
     
     // 验证方法
     Q_INVOKABLE bool validateUsername(const QString &username);
@@ -58,6 +61,12 @@ public:
     Q_INVOKABLE bool validatePassword(const QString &password);
     Q_INVOKABLE bool checkUsernameAvailability(const QString &username);
     Q_INVOKABLE bool checkEmailAvailability(const QString &email);
+    
+    // 邮箱验证相关方法
+    Q_INVOKABLE void sendEmailVerification(const QString &email);
+    Q_INVOKABLE void resendEmailVerification(const QString &email);
+    Q_INVOKABLE void verifyEmailToken(const QString &token);
+    Q_INVOKABLE void verifyEmailCode(const QString &email, const QString &code);
     
     // 头像管理
     Q_INVOKABLE QStringList getDefaultAvatars() const;
@@ -76,7 +85,7 @@ signals:
     
     void loginSuccess();
     void loginFailed(const QString &error);
-    void registerSuccess();
+    void registerSuccess(const QString &username, const QString &email, qint64 userId);
     void registerFailed(const QString &error);
     void logoutSuccess();
     
@@ -86,11 +95,24 @@ signals:
     void usernameAvailabilityResult(bool isAvailable);
     void emailAvailabilityResult(bool isAvailable);
     
+    // 邮箱验证信号
+    void emailVerified();
+    void emailVerificationFailed(const QString &error);
+    void emailVerificationResent();
+    void emailVerificationResendFailed(const QString &error);
+    void emailCodeVerified();
+    void emailCodeVerificationFailed(const QString &error);
+    
 private slots:
     void onLoginResponse(bool success, const QString &message, const QString &token);
-    void onRegisterResponse(bool success, const QString &message);
+    void onRegisterResponse(bool success, const QString &message, const QString &username, const QString &email, qint64 userId);
     void onNetworkError(const QString &error);
+    void onEmailVerificationSent(bool success, const QString &message);
     void resetLoginAttempts();
+    
+    // 邮箱验证响应处理
+    void onVerifyEmailResponse(bool success, const QString &message);
+    void onResendVerificationResponse(bool success, const QString &message);
     
 private:
     void setIsLoading(bool loading);
@@ -102,6 +124,7 @@ private:
     LocalDatabase *_database;
     NetworkClient *_networkClient;
     Validator *_validator;
+    ThreadPool *_threadPool;
     
     bool _isLoading;
     QString _errorMessage;
@@ -111,4 +134,4 @@ private:
     QTimer *_resetTimer;
 };
 
-#endif // USERCONTROLLER_H 
+#endif // USERCONTROLLER_H

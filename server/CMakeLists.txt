@@ -60,9 +60,12 @@ set(SOURCES
     src/crypto/CryptoManager.cpp
     src/network/ProtocolParser.cpp
     src/network/QSslServer.cpp
+    src/services/EmailService.cpp
+    src/services/EmailTemplate.cpp
     src/utils/AdminAuth.cpp
     src/utils/AdminManager.cpp
     src/config/ServerConfig.cpp
+    src/utils/ThreadPool.cpp
 )
 
 # Check if all source files exist
@@ -91,9 +94,13 @@ set(HEADERS
     src/cache/CacheManager.h
     src/crypto/CryptoManager.h
     src/network/ProtocolParser.h
+    src/network/QSslServer.h
+    src/services/EmailService.h
+    src/services/EmailTemplate.h
     src/utils/AdminAuth.h
     src/utils/AdminManager.h
     src/config/ServerConfig.h
+    src/utils/ThreadPool.h
 )
 
 # Check if all header files exist
@@ -128,18 +135,11 @@ qt_add_executable(QKChatServer
 # 依赖库配置
 # =============================================================================
 
-# 查找OpenSSL
-find_package(OpenSSL)
-if(OpenSSL_FOUND)
-    target_link_libraries(QKChatServer PRIVATE 
-        OpenSSL::SSL 
-        OpenSSL::Crypto
-    )
-    message(STATUS "OpenSSL found: ${OPENSSL_VERSION}")
-else()
-    message(WARNING "OpenSSL not found - SSL features will be disabled")
-    add_definitions(-DNO_OPENSSL)
-endif()
+# 强制启用SSL支持
+target_compile_definitions(QKChatServer PRIVATE
+    QT_SSL_USE_OPENSSL
+    QT_SSL_USE_OPENSSL_PRE
+)
 
 # Qt6库链接
 target_link_libraries(QKChatServer PRIVATE
@@ -179,6 +179,43 @@ set_target_properties(QKChatServer PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
     DEBUG_POSTFIX "_d"
 )
+
+# 复制证书文件
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/certs)
+    file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/certs 
+         DESTINATION ${CMAKE_BINARY_DIR}/bin)
+    message(STATUS "Certs copied to output directory")
+endif()
+
+# Deploy Qt dependencies using windeployqt on Windows
+# Deploy Qt dependencies and copy certs directory on Windows
+if(WIN32)
+    # Copy the certs directory to the output directory
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/certs
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/certs"
+        COMMENT "Copying certs directory to output directory"
+    )
+
+    # Find and run windeployqt
+    get_target_property(QT_CORE_LOCATION Qt6::Core IMPORTED_LOCATION_RELEASE)
+    get_filename_component(QT_BIN_DIR ${QT_CORE_LOCATION} DIRECTORY)
+    find_program(WINDEPLOYQT_EXECUTABLE windeployqt HINTS ${QT_BIN_DIR})
+
+    if(WINDEPLOYQT_EXECUTABLE)
+        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${WINDEPLOYQT_EXECUTABLE}
+                --verbose 1
+                --dir "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
+                --plugindir "$<TARGET_FILE_DIR:${PROJECT_NAME}>/plugins"
+                "$<TARGET_FILE:${PROJECT_NAME}>"
+            COMMENT "Running windeployqt to deploy Qt dependencies"
+        )
+    else()
+        message(FATAL_ERROR "windeployqt not found. Please ensure it is in your PATH or Qt's bin directory.")
+    endif()
+endif()
 
 # =============================================================================
 # 资源文件配置

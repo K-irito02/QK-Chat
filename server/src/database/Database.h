@@ -43,6 +43,7 @@ public:
         QString salt;
         QString avatarUrl;
         QString displayName;
+        QString bio;
         QString status;
         QDateTime lastOnline;
         QDateTime createdAt;
@@ -54,6 +55,18 @@ public:
     UserInfo getUserByUsername(const QString &username);
     UserInfo getUserByEmail(const QString &email);
     bool updateUser(qint64 userId, const QVariantMap &data);
+    
+    // 邮箱验证相关
+    bool createEmailVerification(qint64 userId, const QString &email, const QString &token, const QString &tokenType = "register", int expiryHours = 24);
+    bool verifyEmailToken(const QString &token, QString *email = nullptr);
+    bool verifyEmailCode(const QString &email, const QString &code);
+    bool saveEmailVerificationCode(const QString &email, const QString &code);
+    bool markEmailVerificationUsed(const QString &token);
+    bool isEmailVerificationValid(const QString &token);
+    bool updateUserEmailVerification(qint64 userId, bool verified);
+    bool resendEmailVerification(qint64 userId, const QString &email, const QString &token);
+    QString getEmailVerificationToken(qint64 userId, const QString &tokenType = "register");
+    bool cleanupExpiredVerifications();
     bool deleteUser(qint64 userId);
     bool isUsernameAvailable(const QString &username);
     bool isEmailAvailable(const QString &email);
@@ -64,7 +77,7 @@ public:
     qint64 getTotalMessageCount() const;
     
     // 用户认证
-    UserInfo authenticateUser(const QString &usernameOrEmail, const QString &passwordHash);
+    UserInfo authenticateUser(const QString &usernameOrEmail, const QString &password);
     
     // 会话管理
     struct SessionInfo {
@@ -97,8 +110,7 @@ public:
         qint64 fileSize;
         QString deliveryStatus;
         QDateTime createdAt;
-        QDateTime deliveredAt;
-        QDateTime readAt;
+        QDateTime updatedAt;
     };
     
     bool saveMessage(const QString &messageId, qint64 senderId, qint64 receiverId, 
@@ -134,6 +146,8 @@ public:
         qint64 creatorId;
         QString avatarUrl;
         int memberCount;
+        bool is_public;
+        bool is_encrypted;
         QDateTime createdAt;
         QDateTime updatedAt;
     };
@@ -151,7 +165,7 @@ public:
     };
     
     qint64 createGroup(const QString &groupName, const QString &description, 
-                      qint64 creatorId, const QString &avatarUrl = "");
+                      qint64 creatorId, const QString &avatarUrl = "", bool isPublic = true, bool isEncrypted = false);
     bool deleteGroup(qint64 groupId);
     GroupInfo getGroupById(qint64 groupId);
     QList<GroupInfo> getUserGroups(qint64 userId);

@@ -1041,6 +1041,12 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/utils/ThreadPool.h",
+			"MU",
+			"VSCBVMNR7M/moc_ThreadPool.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/client/src/utils/Validator.h",
 			"MU",
 			"VSCBVMNR7M/moc_Validator.cpp",
@@ -1219,6 +1225,11 @@
 		],
 		[
 			"D:/QT_Learn/Projects/QKChatApp/client/src/utils/FileTransferManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/utils/ThreadPool.cpp",
 			"MU",
 			null
 		],

@@ -1,9 +1,11 @@
 #include "ThreadSafetyEnhancements.h"
 #include <QDebug>
 #include <QCoreApplication>
-#include <QThread>
+#include <QElapsedTimer>
+#include <QCryptographicHash>
+#include <QFileInfo>
+#include <QDir>
 #include <algorithm>
-#include <unordered_set>
 
 Q_LOGGING_CATEGORY(threadSafety, "qkchat.server.threadsafety")
 
@@ -27,201 +29,264 @@ LockWaitMonitor* LockWaitMonitor::instance()
 
 LockWaitMonitor::LockWaitMonitor(QObject *parent)
     : QObject(parent)
-    , m_deadlockTimer(new QTimer(this))
+    , m_detectionTimer(new QTimer(this))
 {
-    connect(m_deadlockTimer, &QTimer::timeout, this, &LockWaitMonitor::performDeadlockCheck);
-    m_deadlockTimer->start(1000); // 每秒检查一次
+    connect(m_detectionTimer, &QTimer::timeout, this, &LockWaitMonitor::performDeadlockDetection);
+    m_detectionTimer->start(5000); // 每5秒检查一次死锁
     
     qCInfo(threadSafety) << "LockWaitMonitor initialized";
 }
 
-void LockWaitMonitor::registerLockAcquire(const QString& lockName, QThread* thread)
+void LockWaitMonitor::recordLockWait(const QString& lockName, QThread* thread, LockType type)
 {
-    std::unique_lock<std::shared_mutex> lock(m_lockInfoMutex);
+    QMutexLocker locker(&m_mutex);
     
-    LockInfo& info = m_lockInfo[lockName];
-    info.lockName = lockName;
-    info.owner = thread;
-    info.acquiredTime = QDateTime::currentDateTime();
+    WaitInfo waitInfo;
+    waitInfo.lockName = lockName;
+    waitInfo.thread = thread;
+    waitInfo.startTime = QDateTime::currentDateTime();
+    waitInfo.lockType = type;
     
-    // 移除等待记录
-    auto& threadLocks = m_threadLocks[thread];
-    threadLocks.removeAll(lockName);
-    threadLocks.append(lockName);
+    QString key = QString("%1:%2").arg(lockName).arg(reinterpret_cast<quintptr>(thread));
+    m_waitingThreads[key] = waitInfo;
+    
+    updateWaitGraph(lockName, thread);
+    
+    qCDebug(threadSafety) << "Lock wait recorded:" << lockName << "thread:" << thread << "type:" << static_cast<int>(type);
 }
 
-void LockWaitMonitor::registerLockRelease(const QString& lockName, QThread* thread)
+void LockWaitMonitor::recordLockAcquired(const QString& lockName, QThread* thread, LockType type)
 {
-    std::unique_lock<std::shared_mutex> lock(m_lockInfoMutex);
+    QMutexLocker locker(&m_mutex);
     
-    auto it = m_lockInfo.find(lockName);
-    if (it != m_lockInfo.end() && it->second.owner == thread) {
-        m_lockInfo.erase(it);
-    }
+    QString key = QString("%1:%2").arg(lockName).arg(reinterpret_cast<quintptr>(thread));
     
-    auto& threadLocks = m_threadLocks[thread];
-    threadLocks.removeAll(lockName);
-    if (threadLocks.isEmpty()) {
-        m_threadLocks.erase(thread);
-    }
-}
-
-void LockWaitMonitor::registerLockWait(const QString& lockName, QThread* thread)
-{
-    std::shared_lock<std::shared_mutex> lock(m_lockInfoMutex);
-    
-    auto it = m_lockInfo.find(lockName);
-    if (it != m_lockInfo.end()) {
-        QElapsedTimer timer;
-        timer.start();
+    auto it = m_waitingThreads.find(key);
+    if (it != m_waitingThreads.end()) {
+        WaitInfo waitInfo = it.value();
+        m_waitingThreads.erase(it);
         
-        // 记录等待开始时间
-        LockInfo waitInfo;
-        waitInfo.lockName = lockName + "_wait";
-        waitInfo.owner = thread;
-        waitInfo.waitTimer = timer;
-        waitInfo.acquiredTime = QDateTime::currentDateTime();
+        // 计算等待时间
+        qint64 waitTime = waitInfo.startTime.msecsTo(QDateTime::currentDateTime());
         
-        lock.unlock();
-        std::unique_lock<std::shared_mutex> writeLock(m_lockInfoMutex);
-        m_lockInfo[waitInfo.lockName] = waitInfo;
+        // 记录锁持有信息
+        LockInfo lockInfo;
+        lockInfo.lockName = lockName;
+        lockInfo.thread = thread;
+        lockInfo.lockType = type;
+        lockInfo.acquiredTime = QDateTime::currentDateTime();
+        
+        m_heldLocks[key] = lockInfo;
+        
+        // 更新统计
+        updateStatistics(lockName, waitTime);
+        
+        if (waitTime > m_maxWaitTime) {
+            emit longWaitDetected(lockName, thread, waitTime);
+            qCWarning(threadSafety) << "Long wait detected:" << lockName << "wait time:" << waitTime << "ms";
+        }
+        
+        qCDebug(threadSafety) << "Lock acquired:" << lockName << "thread:" << thread << "wait time:" << waitTime << "ms";
     }
 }
 
-void LockWaitMonitor::performDeadlockCheck()
+void LockWaitMonitor::recordLockReleased(const QString& lockName, QThread* thread)
 {
-    std::shared_lock<std::shared_mutex> lock(m_lockInfoMutex);
+    QMutexLocker locker(&m_mutex);
+    
+    QString key = QString("%1:%2").arg(lockName).arg(reinterpret_cast<quintptr>(thread));
+    
+    if (m_heldLocks.remove(key) > 0) {
+        qCDebug(threadSafety) << "Lock released:" << lockName << "thread:" << thread;
+    }
+}
+
+void LockWaitMonitor::setMaxWaitTime(int maxWaitTimeMs)
+{
+    m_maxWaitTime = maxWaitTimeMs;
+    qCInfo(threadSafety) << "Max wait time set to:" << maxWaitTimeMs << "ms";
+}
+
+QJsonObject LockWaitMonitor::getStatistics() const
+{
+    QMutexLocker locker(&m_mutex);
+    
+    QJsonObject stats;
+    
+    QJsonObject lockStats;
+    for (auto it = m_lockStats.begin(); it != m_lockStats.end(); ++it) {
+        QJsonObject lockStat;
+        lockStat["totalWaits"] = it.value().totalWaits.loadAcquire();
+        lockStat["totalWaitTime"] = static_cast<qint64>(it.value().totalWaitTime.loadAcquire());
+        lockStat["maxWaitTime"] = static_cast<qint64>(it.value().maxWaitTime.loadAcquire());
+        lockStat["averageWaitTime"] = it.value().totalWaits.loadAcquire() > 0 ? 
+                                      static_cast<qint64>(it.value().totalWaitTime.loadAcquire()) / it.value().totalWaits.loadAcquire() : 0;
+        lockStats[it.key()] = lockStat;
+    }
+    
+    stats["lockStatistics"] = lockStats;
+    stats["currentWaitingThreads"] = m_waitingThreads.size();
+    stats["currentHeldLocks"] = m_heldLocks.size();
+    stats["deadlockDetections"] = static_cast<qint64>(m_deadlockCount.loadAcquire());
+    
+    return stats;
+}
+
+void LockWaitMonitor::performDeadlockDetection()
+{
+    QMutexLocker locker(&m_mutex);
+    
+    // 简化的死锁检测：检查循环等待
+    QMap<QThread*, QStringList> threadWaits;
     
     // 构建等待图
-    std::unordered_map<QThread*, QThread*> waitGraph;
-    
-    for (const auto& [lockName, info] : m_lockInfo) {
-        if (lockName.endsWith("_wait")) {
-            QString originalLock = lockName.left(lockName.length() - 5);
-            auto ownerIt = m_lockInfo.find(originalLock);
-            if (ownerIt != m_lockInfo.end()) {
-                waitGraph[info.owner] = ownerIt->second.owner;
-            }
-            
-            // 检查长时间等待
-            if (info.waitTimer.elapsed() > m_maxWaitTime) {
-                emit longWaitDetected(originalLock, info.waitTimer.elapsed());
-            }
-        }
+    for (const WaitInfo& wait : m_waitingThreads) {
+        threadWaits[wait.thread].append(wait.lockName);
     }
     
-    // 检测死锁环
-    std::unordered_set<QThread*> visited;
-    std::unordered_set<QThread*> recursionStack;
-    
-    for (const auto& [thread, _] : waitGraph) {
-        if (visited.find(thread) == visited.end()) {
-            if (detectDeadlockCycle(thread, waitGraph, visited, recursionStack)) {
-                QStringList involvedThreads;
-                for (QThread* t : recursionStack) {
-                    involvedThreads << QString("Thread_%1").arg(reinterpret_cast<quintptr>(t));
-                }
-                emit deadlockDetected(involvedThreads);
-                break;
-            }
+    // 检查是否有线程等待时间过长
+    QDateTime now = QDateTime::currentDateTime();
+    for (const WaitInfo& wait : m_waitingThreads) {
+        qint64 waitTime = wait.startTime.msecsTo(now);
+        if (waitTime > m_maxWaitTime * 2) { // 两倍最大等待时间认为是潜在死锁
+            emit potentialDeadlockDetected(wait.lockName, wait.thread);
+            m_deadlockCount.fetchAndAddOrdered(1);
+            
+            qCWarning(threadSafety) << "Potential deadlock detected:" << wait.lockName 
+                                    << "thread:" << wait.thread << "wait time:" << waitTime << "ms";
         }
     }
 }
 
-bool LockWaitMonitor::detectDeadlockCycle(QThread* startThread, 
-                                        const std::unordered_map<QThread*, QThread*>& waitGraph,
-                                        std::unordered_set<QThread*>& visited,
-                                        std::unordered_set<QThread*>& recursionStack)
+void LockWaitMonitor::updateWaitGraph(const QString& lockName, QThread* thread)
 {
-    visited.insert(startThread);
-    recursionStack.insert(startThread);
-    
-    auto it = waitGraph.find(startThread);
-    if (it != waitGraph.end()) {
-        QThread* nextThread = it->second;
-        
-        if (recursionStack.find(nextThread) != recursionStack.end()) {
-            return true; // 找到环
-        }
-        
-        if (visited.find(nextThread) == visited.end()) {
-            if (detectDeadlockCycle(nextThread, waitGraph, visited, recursionStack)) {
-                return true;
-            }
-        }
+    // 简化的等待图更新
+    Q_UNUSED(lockName)
+    Q_UNUSED(thread)
+    // 这里可以实现更复杂的死锁检测算法
+}
+
+void LockWaitMonitor::updateStatistics(const QString& lockName, qint64 waitTime)
+{
+    if (!m_lockStats.contains(lockName)) {
+        m_lockStats[lockName] = LockStatistics();
     }
     
-    recursionStack.erase(startThread);
-    return false;
+    LockStatistics& stats = m_lockStats[lockName];
+    stats.totalWaits.fetchAndAddOrdered(1);
+    stats.totalWaitTime.fetchAndAddOrdered(waitTime);
+    
+    qint64 currentMax = stats.maxWaitTime.loadAcquire();
+    while (waitTime > currentMax && !stats.maxWaitTime.testAndSetOrdered(currentMax, waitTime)) {
+        currentMax = stats.maxWaitTime.loadAcquire();
+    }
 }
 
 // ============================================================================
 // SmartRWLock 实现
 // ============================================================================
 
-SmartRWLock::SmartRWLock(const QString& name)
-    : m_name(name)
+SmartRWLock::SmartRWLock(const QString& name, QObject *parent)
+    : QObject(parent)
+    , m_name(name)
     , m_monitor(LockWaitMonitor::instance())
 {
-}
-
-SmartRWLock::~SmartRWLock()
-{
-    m_monitor->registerLockRelease(m_name, QThread::currentThread());
-}
-
-void SmartRWLock::lockForRead()
-{
-    m_monitor->registerLockWait(m_name, QThread::currentThread());
-    m_stats.readWaits.fetchAndAddOrdered(1);
-    
-    m_lock.lockForRead();
-    
-    m_monitor->registerLockAcquire(m_name + "_read", QThread::currentThread());
-    m_stats.readLocks.fetchAndAddOrdered(1);
-}
-
-void SmartRWLock::lockForWrite()
-{
-    m_monitor->registerLockWait(m_name, QThread::currentThread());
-    m_stats.writeWaits.fetchAndAddOrdered(1);
-    
-    m_lock.lockForWrite();
-    
-    m_monitor->registerLockAcquire(m_name + "_write", QThread::currentThread());
-    m_stats.writeLocks.fetchAndAddOrdered(1);
+    qCDebug(threadSafety) << "SmartRWLock created:" << m_name;
 }
 
 bool SmartRWLock::tryLockForRead(int timeout)
 {
-    bool success = m_lock.tryLockForRead(timeout);
-    if (success) {
-        m_monitor->registerLockAcquire(m_name + "_read", QThread::currentThread());
+    QThread* currentThread = QThread::currentThread();
+    m_monitor->recordLockWait(m_name, currentThread, LockWaitMonitor::LockType::ReadLock);
+    
+    QElapsedTimer timer;
+    timer.start();
+    
+    bool acquired = m_lock.tryLockForRead(timeout);
+    
+    if (acquired) {
+        m_monitor->recordLockAcquired(m_name, currentThread, LockWaitMonitor::LockType::ReadLock);
         m_stats.readLocks.fetchAndAddOrdered(1);
+        
+        qCDebug(threadSafety) << "Read lock acquired:" << m_name << "elapsed:" << timer.elapsed() << "ms";
     } else {
+        m_stats.readWaits.fetchAndAddOrdered(1);
         m_stats.timeouts.fetchAndAddOrdered(1);
+        
+        qCWarning(threadSafety) << "Read lock timeout:" << m_name << "timeout:" << timeout << "ms";
     }
-    return success;
+    
+    return acquired;
 }
 
 bool SmartRWLock::tryLockForWrite(int timeout)
 {
-    bool success = m_lock.tryLockForWrite(timeout);
-    if (success) {
-        m_monitor->registerLockAcquire(m_name + "_write", QThread::currentThread());
+    QThread* currentThread = QThread::currentThread();
+    m_monitor->recordLockWait(m_name, currentThread, LockWaitMonitor::LockType::WriteLock);
+    
+    QElapsedTimer timer;
+    timer.start();
+    
+    bool acquired = m_lock.tryLockForWrite(timeout);
+    
+    if (acquired) {
+        m_monitor->recordLockAcquired(m_name, currentThread, LockWaitMonitor::LockType::WriteLock);
         m_stats.writeLocks.fetchAndAddOrdered(1);
+        
+        qCDebug(threadSafety) << "Write lock acquired:" << m_name << "elapsed:" << timer.elapsed() << "ms";
     } else {
+        m_stats.writeWaits.fetchAndAddOrdered(1);
         m_stats.timeouts.fetchAndAddOrdered(1);
+        
+        qCWarning(threadSafety) << "Write lock timeout:" << m_name << "timeout:" << timeout << "ms";
     }
-    return success;
+    
+    return acquired;
+}
+
+void SmartRWLock::lockForRead()
+{
+    QThread* currentThread = QThread::currentThread();
+    m_monitor->recordLockWait(m_name, currentThread, LockWaitMonitor::LockType::ReadLock);
+    
+    QElapsedTimer timer;
+    timer.start();
+    
+    m_lock.lockForRead();
+    
+    m_monitor->recordLockAcquired(m_name, currentThread, LockWaitMonitor::LockType::ReadLock);
+    m_stats.readLocks.fetchAndAddOrdered(1);
+    
+    qCDebug(threadSafety) << "Read lock acquired (blocking):" << m_name << "elapsed:" << timer.elapsed() << "ms";
+}
+
+void SmartRWLock::lockForWrite()
+{
+    QThread* currentThread = QThread::currentThread();
+    m_monitor->recordLockWait(m_name, currentThread, LockWaitMonitor::LockType::WriteLock);
+    
+    QElapsedTimer timer;
+    timer.start();
+    
+    m_lock.lockForWrite();
+    
+    m_monitor->recordLockAcquired(m_name, currentThread, LockWaitMonitor::LockType::WriteLock);
+    m_stats.writeLocks.fetchAndAddOrdered(1);
+    
+    qCDebug(threadSafety) << "Write lock acquired (blocking):" << m_name << "elapsed:" << timer.elapsed() << "ms";
 }
 
 void SmartRWLock::unlock()
 {
-    QThread* currentThread = QThread::currentThread();
-    m_monitor->registerLockRelease(m_name + "_read", currentThread);
-    m_monitor->registerLockRelease(m_name + "_write", currentThread);
     m_lock.unlock();
+    m_monitor->recordLockReleased(m_name, QThread::currentThread());
+    
+    qCDebug(threadSafety) << "Lock released:" << m_name;
+}
+
+SmartRWLock::LockStats SmartRWLock::getStats() const
+{
+    return m_stats;
 }
 
 // ============================================================================
@@ -230,90 +295,123 @@ void SmartRWLock::unlock()
 
 ConnectionPoolEnhancer::ConnectionPoolEnhancer(QObject *parent)
     : QObject(parent)
-    , m_circuitTimer(new QTimer(this))
+    , m_checkTimer(new QTimer(this))
+    , m_circuitBreakerState(CircuitBreakerState::Closed)
 {
-    connect(m_circuitTimer, &QTimer::timeout, this, &ConnectionPoolEnhancer::checkCircuitBreaker);
-    m_circuitTimer->start(5000); // 每5秒检查一次
-}
-
-bool ConnectionPoolEnhancer::shouldAllocateConnection() const
-{
-    if (m_circuitState.load() == CircuitState::Open) {
-        return false;
-    }
+    connect(m_checkTimer, &QTimer::timeout, this, &ConnectionPoolEnhancer::performHealthCheck);
+    m_checkTimer->start(10000); // 每10秒检查一次
     
-    int active = m_activeConnections.loadAcquire();
-    return active < m_config.maxConnections;
+    qCInfo(threadSafety) << "ConnectionPoolEnhancer initialized";
 }
 
-bool ConnectionPoolEnhancer::shouldRejectRequest() const
+void ConnectionPoolEnhancer::setConfig(const PoolConfig& config)
 {
-    if (m_circuitState.load() == CircuitState::Open) {
-        return true;
-    }
-    
-    if (m_config.enableBackpressure) {
-        double load = getCurrentLoad();
-        return load > m_config.backpressureThreshold;
-    }
-    
-    return false;
+    m_config = config;
+    qCInfo(threadSafety) << "Pool config updated - failure threshold:" << config.failureThreshold
+                         << "timeout:" << config.timeout.count() << "ms";
 }
 
-void ConnectionPoolEnhancer::recordConnectionSuccess()
+bool ConnectionPoolEnhancer::acquireConnection(int timeoutMs)
 {
-    m_consecutiveFailures.storeRelease(0);
-    
-    if (m_circuitState.load() == CircuitState::HalfOpen) {
-        m_circuitState.store(CircuitState::Closed);
-        emit circuitBreakerClosed();
-        qCInfo(threadSafety) << "Circuit breaker closed - connection successful";
-    }
-}
-
-void ConnectionPoolEnhancer::recordConnectionFailure()
-{
-    int failures = m_consecutiveFailures.fetchAndAddOrdered(1) + 1;
-    
-    if (failures >= m_config.circuitBreakerThreshold && 
-        m_circuitState.load() == CircuitState::Closed) {
-        m_circuitState.store(CircuitState::Open);
-        m_circuitOpenTime = QDateTime::currentDateTime();
-        emit circuitBreakerOpened();
-        qCWarning(threadSafety) << "Circuit breaker opened - too many failures:" << failures;
-    }
-}
-
-void ConnectionPoolEnhancer::recordConnectionTimeout()
-{
-    recordConnectionFailure(); // 超时也视为失败
-}
-
-double ConnectionPoolEnhancer::getCurrentLoad() const
-{
-    int active = m_activeConnections.loadAcquire();
-    int pending = m_pendingRequests.loadAcquire();
-    return static_cast<double>(active + pending) / m_config.maxConnections;
-}
-
-void ConnectionPoolEnhancer::checkCircuitBreaker()
-{
-    if (m_circuitState.load() == CircuitState::Open) {
-        QDateTime now = QDateTime::currentDateTime();
-        if (m_circuitOpenTime.msecsTo(now) >= m_config.circuitBreakerTimeout) {
-            m_circuitState.store(CircuitState::HalfOpen);
-            qCInfo(threadSafety) << "Circuit breaker moved to half-open state";
+    // 检查熔断器状态
+    if (m_circuitBreakerState == CircuitBreakerState::Open) {
+        auto now = std::chrono::steady_clock::now();
+        if (now - m_lastFailureTime < m_config.timeout) {
+            recordFailure();
+            return false; // 熔断器开启，拒绝请求
+        } else {
+            m_circuitBreakerState = CircuitBreakerState::HalfOpen;
+            emit circuitBreakerStateChanged(m_circuitBreakerState);
         }
     }
     
-    // 检查系统负载
-    double load = getCurrentLoad();
-    if (load > m_config.backpressureThreshold) {
+    // 检查背压
+    if (m_queueSize.loadAcquire() >= m_config.backpressureThreshold) {
+        m_backpressureDrops.fetchAndAddOrdered(1);
         emit backpressureActivated();
+        return false;
     }
     
-    if (load > 0.95) {
-        emit poolOverloaded();
+    m_queueSize.fetchAndAddOrdered(1);
+    
+    // 模拟连接获取
+    QThread::msleep(10); // 模拟数据库连接延迟
+    
+    bool success = true; // 简化实现，假设总是成功
+    
+    if (success) {
+        recordSuccess();
+        m_queueSize.fetchAndSubOrdered(1);
+        m_acquiredConnections.fetchAndAddOrdered(1);
+        return true;
+    } else {
+        recordFailure();
+        m_queueSize.fetchAndSubOrdered(1);
+        return false;
+    }
+}
+
+void ConnectionPoolEnhancer::releaseConnection()
+{
+    m_acquiredConnections.fetchAndSubOrdered(1);
+    qCDebug(threadSafety) << "Connection released";
+}
+
+ConnectionPoolEnhancer::PoolStats ConnectionPoolEnhancer::getStats() const
+{
+    PoolStats stats;
+    stats.totalRequests = m_totalRequests.loadAcquire();
+    stats.successfulRequests = m_successfulRequests.loadAcquire();
+    stats.failedRequests = m_failedRequests.loadAcquire();
+    stats.timeouts = m_timeouts.loadAcquire();
+    stats.backpressureDrops = m_backpressureDrops.loadAcquire();
+    stats.currentQueueSize = m_queueSize.loadAcquire();
+    stats.acquiredConnections = m_acquiredConnections.loadAcquire();
+    stats.circuitBreakerState = m_circuitBreakerState;
+    
+    return stats;
+}
+
+void ConnectionPoolEnhancer::recordSuccess()
+{
+    m_totalRequests.fetchAndAddOrdered(1);
+    m_successfulRequests.fetchAndAddOrdered(1);
+    m_consecutiveFailures.storeRelease(0);
+    
+    if (m_circuitBreakerState == CircuitBreakerState::HalfOpen) {
+        m_circuitBreakerState = CircuitBreakerState::Closed;
+        emit circuitBreakerStateChanged(m_circuitBreakerState);
+        qCInfo(threadSafety) << "Circuit breaker closed after successful operation";
+    }
+}
+
+void ConnectionPoolEnhancer::recordFailure()
+{
+    m_totalRequests.fetchAndAddOrdered(1);
+    m_failedRequests.fetchAndAddOrdered(1);
+    
+    int failures = m_consecutiveFailures.fetchAndAddOrdered(1) + 1;
+    
+    if (failures >= m_config.failureThreshold && m_circuitBreakerState == CircuitBreakerState::Closed) {
+        m_circuitBreakerState = CircuitBreakerState::Open;
+        m_lastFailureTime = std::chrono::steady_clock::now();
+        emit circuitBreakerStateChanged(m_circuitBreakerState);
+        
+        qCWarning(threadSafety) << "Circuit breaker opened after" << failures << "consecutive failures";
+    }
+}
+
+void ConnectionPoolEnhancer::performHealthCheck()
+{
+    // 检查连接池健康状态
+    PoolStats stats = getStats();
+    
+    double failureRate = stats.totalRequests > 0 ? 
+                        static_cast<double>(stats.failedRequests) / stats.totalRequests : 0.0;
+    
+    if (failureRate > 0.1) { // 失败率超过10%
+        emit poolUnhealthy(failureRate);
+        qCWarning(threadSafety) << "Pool unhealthy - failure rate:" << failureRate;
     }
 }
 
@@ -322,22 +420,18 @@ void ConnectionPoolEnhancer::checkCircuitBreaker()
 // ============================================================================
 
 SSLSessionManager* SSLSessionManager::s_instance = nullptr;
-QMutex SSLSessionManager::s_instanceMutex;
 
 SSLSessionManager* SSLSessionManager::instance()
 {
     if (!s_instance) {
-        QMutexLocker locker(&s_instanceMutex);
-        if (!s_instance) {
-            s_instance = new SSLSessionManager();
-        }
+        s_instance = new SSLSessionManager();
     }
     return s_instance;
 }
 
 SSLSessionManager::SSLSessionManager(QObject *parent)
     : QObject(parent)
-    , m_sessionsLock("SSLSessions")
+    , m_lock("SSLSessionManager")
     , m_cleanupTimer(new QTimer(this))
 {
     connect(m_cleanupTimer, &QTimer::timeout, this, &SSLSessionManager::performCleanup);
@@ -346,86 +440,118 @@ SSLSessionManager::SSLSessionManager(QObject *parent)
     qCInfo(threadSafety) << "SSLSessionManager initialized";
 }
 
-bool SSLSessionManager::storeSession(const QByteArray& sessionId, const QByteArray& sessionData)
+void SSLSessionManager::setConfig(const SSLConfig& config)
 {
-    m_sessionsLock.lockForWrite();
+    SmartRWLock::WriteLocker locker(&m_lock);
+    m_config = config;
     
-    // 检查是否超过最大会话数
-    if (m_sessions.size() >= m_maxSessions) {
+    qCInfo(threadSafety) << "SSL config updated - cache size:" << config.maxCacheSize
+                         << "session timeout:" << config.sessionTimeout.count() << "ms";
+}
+
+bool SSLSessionManager::cacheSession(const QString& sessionId, const QByteArray& sessionData)
+{
+    SmartRWLock::WriteLocker locker(&m_lock);
+    
+    if (m_sessionCache.size() >= m_config.maxCacheSize) {
         // 移除最旧的会话
-        auto oldest = std::min_element(m_sessions.begin(), m_sessions.end(),
-            [](const SessionInfo& a, const SessionInfo& b) {
-                return a.lastUsed < b.lastUsed;
-            });
-        if (oldest != m_sessions.end()) {
-            m_sessions.erase(oldest);
+        auto oldest = std::min_element(m_sessionCache.begin(), m_sessionCache.end(),
+                                     [](const SSLSession& a, const SSLSession& b) {
+                                         return a.lastAccessed < b.lastAccessed;
+                                     });
+        if (oldest != m_sessionCache.end()) {
+            m_sessionCache.erase(oldest);
         }
     }
     
-    SessionInfo info;
-    info.sessionId = sessionId;
-    info.sessionData = sessionData;
-    info.createdTime = QDateTime::currentDateTime();
-    info.lastUsed = info.createdTime;
+    SSLSession session;
+    session.sessionId = sessionId;
+    session.sessionData = sessionData;
+    session.createdTime = QDateTime::currentDateTime();
+    session.lastAccessed = session.createdTime;
+    session.accessCount = 0;
     
-    m_sessions[sessionId] = info;
-    m_sessionsLock.unlock();
+    m_sessionCache[sessionId] = session;
+    m_totalSessions.fetchAndAddOrdered(1);
     
-    emit sessionStored(sessionId);
+    qCDebug(threadSafety) << "SSL session cached:" << sessionId;
     return true;
 }
 
-QByteArray SSLSessionManager::retrieveSession(const QByteArray& sessionId)
+QByteArray SSLSessionManager::retrieveSession(const QString& sessionId)
 {
-    m_sessionsLock.lockForRead();
+    SmartRWLock::ReadLocker locker(&m_lock);
     
-    auto it = m_sessions.find(sessionId);
-    if (it != m_sessions.end()) {
-        SessionInfo& info = it.value();
+    auto it = m_sessionCache.find(sessionId);
+    if (it != m_sessionCache.end()) {
+        SSLSession& session = it.value();
         
-        // 检查是否过期
-        QDateTime now = QDateTime::currentDateTime();
-        if (info.createdTime.secsTo(now) < m_sessionTimeout) {
-            info.lastUsed = now;
-            info.useCount.fetchAndAddOrdered(1);
-            
-            QByteArray data = info.sessionData;
-            m_sessionsLock.unlock();
-            
-            emit sessionReused(sessionId);
-            return data;
+        // 检查会话是否过期
+        if (session.createdTime.msecsTo(QDateTime::currentDateTime()) > m_config.sessionTimeout.count()) {
+            // 会话过期，需要在写锁中移除
+            locker.unlock();
+            SmartRWLock::WriteLocker writeLocker(&m_lock);
+            m_sessionCache.erase(it);
+            m_expiredSessions.fetchAndAddOrdered(1);
+            return QByteArray();
         }
+        
+        session.lastAccessed = QDateTime::currentDateTime();
+        session.accessCount++;
+        m_reusedSessions.fetchAndAddOrdered(1);
+        
+        qCDebug(threadSafety) << "SSL session retrieved:" << sessionId;
+        return session.sessionData;
     }
     
-    m_sessionsLock.unlock();
     return QByteArray();
 }
 
-void SSLSessionManager::removeSession(const QByteArray& sessionId)
+void SSLSessionManager::removeSession(const QString& sessionId)
 {
-    m_sessionsLock.lockForWrite();
-    m_sessions.remove(sessionId);
-    m_sessionsLock.unlock();
+    SmartRWLock::WriteLocker locker(&m_lock);
+    
+    if (m_sessionCache.remove(sessionId) > 0) {
+        qCDebug(threadSafety) << "SSL session removed:" << sessionId;
+    }
+}
+
+SSLSessionManager::SSLStats SSLSessionManager::getStats() const
+{
+    SmartRWLock::ReadLocker locker(&m_lock);
+    
+    SSLStats stats;
+    stats.totalSessions = m_totalSessions.loadAcquire();
+    stats.cachedSessions = m_sessionCache.size();
+    stats.reusedSessions = m_reusedSessions.loadAcquire();
+    stats.expiredSessions = m_expiredSessions.loadAcquire();
+    stats.cacheHitRate = stats.totalSessions > 0 ? 
+                         static_cast<double>(stats.reusedSessions) / stats.totalSessions : 0.0;
+    
+    return stats;
 }
 
 void SSLSessionManager::performCleanup()
 {
-    m_sessionsLock.lockForWrite();
+    SmartRWLock::WriteLocker locker(&m_lock);
     
     QDateTime now = QDateTime::currentDateTime();
-    auto it = m_sessions.begin();
+    int cleanedCount = 0;
     
-    while (it != m_sessions.end()) {
-        if (it->createdTime.secsTo(now) >= m_sessionTimeout) {
-            it = m_sessions.erase(it);
+    auto it = m_sessionCache.begin();
+    while (it != m_sessionCache.end()) {
+        if (it.value().createdTime.msecsTo(now) > m_config.sessionTimeout.count()) {
+            it = m_sessionCache.erase(it);
+            cleanedCount++;
         } else {
             ++it;
         }
     }
     
-    m_sessionsLock.unlock();
-    
-    qCDebug(threadSafety) << "SSL session cleanup completed, remaining sessions:" << m_sessions.size();
+    if (cleanedCount > 0) {
+        m_expiredSessions.fetchAndAddOrdered(cleanedCount);
+        qCDebug(threadSafety) << "SSL session cleanup completed, removed" << cleanedCount << "expired sessions";
+    }
 }
 
 // ============================================================================
@@ -435,98 +561,127 @@ void SSLSessionManager::performCleanup()
 BackpressureController::BackpressureController(int maxQueueSize, QObject *parent)
     : QObject(parent)
     , m_maxQueueSize(maxQueueSize)
-    , m_rateTimer(new QTimer(this))
+    , m_evaluationTimer(new QTimer(this))
 {
     m_stats.maxSize.storeRelease(maxQueueSize);
     
-    connect(m_rateTimer, &QTimer::timeout, this, &BackpressureController::updateRates);
-    m_rateTimer->start(1000); // 每秒更新速率
+    connect(m_evaluationTimer, &QTimer::timeout, this, &BackpressureController::evaluateBackpressure);
+    m_evaluationTimer->start(1000); // 每秒评估一次
     
     qCInfo(threadSafety) << "BackpressureController initialized with max queue size:" << maxQueueSize;
 }
 
 bool BackpressureController::canEnqueue() const
 {
-    BackpressureLevel level = getCurrentLevel();
+    BackpressureLevel currentLevel = getCurrentLevel();
     
-    switch (level) {
+    switch (currentLevel) {
     case BackpressureLevel::Normal:
-    case BackpressureLevel::Warning:
         return true;
+    case BackpressureLevel::Warning:
+        return QRandomGenerator::global()->bounded(100) < 90; // 90% 通过率
     case BackpressureLevel::Critical:
-        return QRandomGenerator::global()->bounded(100) < 50; // 50%概率拒绝
+        return QRandomGenerator::global()->bounded(100) < 50; // 50% 通过率
     case BackpressureLevel::Emergency:
-        return false;
+        return QRandomGenerator::global()->bounded(100) < 10; // 10% 通过率
     }
     
-    return true;
+    return false;
 }
 
 void BackpressureController::onMessageEnqueued()
 {
     m_stats.currentSize.fetchAndAddOrdered(1);
-    m_messagesLastSecond.fetchAndAddOrdered(1);
+    updateArrivalRate();
     
-    if (m_stats.currentSize.loadAcquire() > m_maxQueueSize) {
-        emit queueOverflow();
-    }
+    qCDebug(threadSafety) << "Message enqueued, current size:" << m_stats.currentSize.loadAcquire();
 }
 
 void BackpressureController::onMessageProcessed()
 {
     m_stats.currentSize.fetchAndSubOrdered(1);
-    m_processedLastSecond.fetchAndAddOrdered(1);
+    updateProcessingRate();
+    
+    qCDebug(threadSafety) << "Message processed, current size:" << m_stats.currentSize.loadAcquire();
 }
 
 void BackpressureController::onMessageDropped()
 {
     m_stats.droppedMessages.fetchAndAddOrdered(1);
-    emit messageDropped();
+    
+    qCWarning(threadSafety) << "Message dropped due to backpressure";
 }
 
 BackpressureController::BackpressureLevel BackpressureController::getCurrentLevel() const
 {
-    return calculateLevel();
+    int currentSize = m_stats.currentSize.loadAcquire();
+    double utilization = static_cast<double>(currentSize) / m_maxQueueSize;
+    
+    if (utilization >= 0.9) return BackpressureLevel::Emergency;
+    if (utilization >= 0.7) return BackpressureLevel::Critical;
+    if (utilization >= 0.5) return BackpressureLevel::Warning;
+    
+    return BackpressureLevel::Normal;
 }
 
-void BackpressureController::setThresholds(double warningThreshold, double criticalThreshold, double emergencyThreshold)
+BackpressureController::BackpressureStats BackpressureController::getStats() const
 {
-    m_warningThreshold = warningThreshold;
-    m_criticalThreshold = criticalThreshold;
-    m_emergencyThreshold = emergencyThreshold;
+    return m_stats;
 }
 
-void BackpressureController::updateRates()
+void BackpressureController::evaluateBackpressure()
 {
+    BackpressureLevel newLevel = getCurrentLevel();
+    BackpressureLevel oldLevel = m_currentLevel.exchange(newLevel);
+    
+    if (newLevel != oldLevel) {
+        emit backpressureLevelChanged(newLevel, oldLevel);
+        
+        qCInfo(threadSafety) << "Backpressure level changed from" << static_cast<int>(oldLevel)
+                             << "to" << static_cast<int>(newLevel);
+    }
+    
     // 更新处理速率
-    int arrival = m_messagesLastSecond.fetchAndStoreOrdered(0);
-    int processed = m_processedLastSecond.fetchAndStoreOrdered(0);
+    updateProcessingRate();
+}
+
+void BackpressureController::updateArrivalRate()
+{
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastArrivalUpdate);
     
-    m_stats.arrivalRate.storeRelease(arrival);
-    m_stats.processingRate.storeRelease(processed);
-    
-    // 检查背压级别变化
-    BackpressureLevel newLevel = calculateLevel();
-    static BackpressureLevel lastLevel = BackpressureLevel::Normal;
-    
-    if (newLevel != lastLevel) {
-        emit backpressureLevelChanged(newLevel);
-        lastLevel = newLevel;
+    if (elapsed.count() >= 1000) { // 每秒更新一次
+        m_arrivalCount.fetchAndAddOrdered(1);
+        
+        if (elapsed.count() > 0) {
+            double rate = static_cast<double>(m_arrivalCount.loadAcquire()) * 1000.0 / elapsed.count();
+            m_stats.arrivalRate.storeRelease(static_cast<int>(rate));
+        }
+        
+        m_arrivalCount.storeRelease(0);
+        m_lastArrivalUpdate = now;
+    } else {
+        m_arrivalCount.fetchAndAddOrdered(1);
     }
 }
 
-BackpressureController::BackpressureLevel BackpressureController::calculateLevel() const
+void BackpressureController::updateProcessingRate()
 {
-    double utilization = static_cast<double>(m_stats.currentSize.loadAcquire()) / m_maxQueueSize;
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(now - m_lastProcessingUpdate);
     
-    if (utilization >= m_emergencyThreshold) {
-        return BackpressureLevel::Emergency;
-    } else if (utilization >= m_criticalThreshold) {
-        return BackpressureLevel::Critical;
-    } else if (utilization >= m_warningThreshold) {
-        return BackpressureLevel::Warning;
+    if (elapsed.count() >= 1000) { // 每秒更新一次
+        m_processingCount.fetchAndAddOrdered(1);
+        
+        if (elapsed.count() > 0) {
+            double rate = static_cast<double>(m_processingCount.loadAcquire()) * 1000.0 / elapsed.count();
+            m_stats.processingRate.storeRelease(static_cast<int>(rate));
+        }
+        
+        m_processingCount.storeRelease(0);
+        m_lastProcessingUpdate = now;
     } else {
-        return BackpressureLevel::Normal;
+        m_processingCount.fetchAndAddOrdered(1);
     }
 }
 
@@ -534,47 +689,78 @@ BackpressureController::BackpressureLevel BackpressureController::calculateLevel
 // AtomicStatsCounter 实现
 // ============================================================================
 
-void AtomicStatsCounter::updateResponseTime(int responseTime)
+AtomicStatsCounter::AtomicStatsCounter()
 {
-    m_stats.totalResponseTime.fetch_add(responseTime, std::memory_order_relaxed);
-    m_stats.responseCount.fetch_add(1, std::memory_order_relaxed);
+    qCDebug(threadSafety) << "AtomicStatsCounter initialized";
+}
+
+void AtomicStatsCounter::incrementMessages()
+{
+    m_snapshot.totalMessages.fetchAndAddOrdered(1);
+}
+
+void AtomicStatsCounter::incrementProcessedMessages()
+{
+    m_snapshot.processedMessages.fetchAndAddOrdered(1);
+}
+
+void AtomicStatsCounter::incrementFailedMessages()
+{
+    m_snapshot.failedMessages.fetchAndAddOrdered(1);
+}
+
+void AtomicStatsCounter::incrementConnections()
+{
+    m_snapshot.totalConnections.fetchAndAddOrdered(1);
+    m_snapshot.activeConnections.fetchAndAddOrdered(1);
+}
+
+void AtomicStatsCounter::decrementConnections()
+{
+    m_snapshot.activeConnections.fetchAndSubOrdered(1);
+}
+
+void AtomicStatsCounter::incrementAuthenticatedConnections()
+{
+    m_snapshot.authenticatedConnections.fetchAndAddOrdered(1);
+}
+
+void AtomicStatsCounter::decrementAuthenticatedConnections()
+{
+    m_snapshot.authenticatedConnections.fetchAndSubOrdered(1);
+}
+
+void AtomicStatsCounter::updateResponseTime(int responseTimeMs)
+{
+    m_snapshot.totalResponseTime.fetchAndAddOrdered(responseTimeMs);
+    m_snapshot.responseCount.fetchAndAddOrdered(1);
     
     // 更新最大响应时间
-    int currentMax = m_stats.maxResponseTime.load(std::memory_order_relaxed);
-    while (responseTime > currentMax) {
-        if (m_stats.maxResponseTime.compare_exchange_weak(currentMax, responseTime, std::memory_order_relaxed)) {
-            break;
-        }
+    int currentMax = m_snapshot.maxResponseTime.loadAcquire();
+    while (responseTimeMs > currentMax && 
+           !m_snapshot.maxResponseTime.testAndSetOrdered(currentMax, responseTimeMs)) {
+        currentMax = m_snapshot.maxResponseTime.loadAcquire();
     }
 }
 
-AtomicStatsCounter::Stats AtomicStatsCounter::getSnapshot() const
+AtomicStatsCounter::StatsSnapshot AtomicStatsCounter::getSnapshot() const
 {
-    Stats snapshot;
-    snapshot.totalMessages.store(m_stats.totalMessages.load(std::memory_order_acquire));
-    snapshot.processedMessages.store(m_stats.processedMessages.load(std::memory_order_acquire));
-    snapshot.failedMessages.store(m_stats.failedMessages.load(std::memory_order_acquire));
-    snapshot.totalConnections.store(m_stats.totalConnections.load(std::memory_order_acquire));
-    snapshot.activeConnections.store(m_stats.activeConnections.load(std::memory_order_acquire));
-    snapshot.authenticatedConnections.store(m_stats.authenticatedConnections.load(std::memory_order_acquire));
-    snapshot.totalResponseTime.store(m_stats.totalResponseTime.load(std::memory_order_acquire));
-    snapshot.responseCount.store(m_stats.responseCount.load(std::memory_order_acquire));
-    snapshot.maxResponseTime.store(m_stats.maxResponseTime.load(std::memory_order_acquire));
-    
-    return snapshot;
+    return m_snapshot;
 }
 
 void AtomicStatsCounter::reset()
 {
-    m_stats.totalMessages.store(0, std::memory_order_relaxed);
-    m_stats.processedMessages.store(0, std::memory_order_relaxed);
-    m_stats.failedMessages.store(0, std::memory_order_relaxed);
-    m_stats.totalConnections.store(0, std::memory_order_relaxed);
-    m_stats.activeConnections.store(0, std::memory_order_relaxed);
-    m_stats.authenticatedConnections.store(0, std::memory_order_relaxed);
-    m_stats.totalResponseTime.store(0, std::memory_order_relaxed);
-    m_stats.responseCount.store(0, std::memory_order_relaxed);
-    m_stats.maxResponseTime.store(0, std::memory_order_relaxed);
+    m_snapshot.totalMessages.storeRelease(0);
+    m_snapshot.processedMessages.storeRelease(0);
+    m_snapshot.failedMessages.storeRelease(0);
+    m_snapshot.totalConnections.storeRelease(0);
+    m_snapshot.activeConnections.storeRelease(0);
+    m_snapshot.authenticatedConnections.storeRelease(0);
+    m_snapshot.totalResponseTime.storeRelease(0);
+    m_snapshot.responseCount.storeRelease(0);
+    m_snapshot.maxResponseTime.storeRelease(0);
+    
+    qCDebug(threadSafety) << "AtomicStatsCounter reset";
 }
 
 // ============================================================================

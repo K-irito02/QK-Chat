@@ -146,6 +146,37 @@ foreach(UI_FILE ${UI_FILES})
     endif()
 endforeach()
 
+# Add new enhancement modules
+set(ENHANCEMENT_SOURCES
+    src/core/ThreadSafetyEnhancements.cpp
+    src/core/RobustnessManager.cpp
+    src/core/StackTraceCollector.cpp
+    src/core/ArchitectureOptimizer.cpp
+    src/core/EnhancedChatServer.cpp
+)
+
+set(ENHANCEMENT_HEADERS
+    src/core/ThreadSafetyEnhancements.h
+    src/core/RobustnessManager.h
+    src/core/StackTraceCollector.h
+    src/core/ArchitectureOptimizer.h
+    src/core/EnhancedChatServer.h
+)
+
+# Option to enable enhancements
+option(ENABLE_ENHANCEMENTS "Enable server enhancements" ON)
+
+if(ENABLE_ENHANCEMENTS)
+    add_definitions(-DENABLE_ENHANCEMENTS)
+    list(APPEND SOURCES ${ENHANCEMENT_SOURCES})
+    list(APPEND HEADERS ${ENHANCEMENT_HEADERS})
+    
+    message(STATUS "Server enhancements enabled")
+endif()
+
+# Add required libraries for enhancements
+find_package(Threads REQUIRED)
+
 # =============================================================================
 # 可执行文件配置
 # =============================================================================

@@ -975,6 +975,15 @@
 		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Multimedia/Qt6QWindowsMediaPluginTargets.cmake",
 		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Multimedia/Qt6QWindowsMediaPluginTargets-relwithdebinfo.cmake",
 		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Multimedia/Qt6QWindowsMediaPluginAdditionalTargetInfo.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineConfigVersion.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineConfigVersionImpl.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineConfig.cmake",
+		"C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeFindDependencyMacro.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineDependencies.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineTargets.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineTargets-relwithdebinfo.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineAdditionalTargetInfo.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineVersionlessTargets.cmake",
 		"C:/Program Files/CMake/share/cmake-4.0/Modules/GNUInstallDirs.cmake",
 		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Core/Qt6CoreConfigureFileTemplate.in",
 		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Qml/Qt6QmlModuleDirMappingTemplate.qrc.in",
@@ -996,6 +1005,12 @@
 			"D:/QT_Learn/Projects/QKChatApp/client/src/config/ConfigManager.h",
 			"MU",
 			"6DQYUKT47J/moc_ConfigManager.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/config/DevelopmentConfig.h",
+			"MU",
+			"6DQYUKT47J/moc_DevelopmentConfig.cpp",
 			null
 		],
 		[
@@ -1029,15 +1044,69 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/monitoring/ConnectionMonitor.h",
+			"MU",
+			"TF3CHM4QLJ/moc_ConnectionMonitor.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/monitoring/DiagnosticTool.h",
+			"MU",
+			"TF3CHM4QLJ/moc_DiagnosticTool.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/ConnectionPool.h",
+			"MU",
+			"UFQQIFJZKK/moc_ConnectionPool.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/ConnectionStateManager.h",
+			"MU",
+			"UFQQIFJZKK/moc_ConnectionStateManager.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/ErrorHandler.h",
+			"MU",
+			"UFQQIFJZKK/moc_ErrorHandler.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/HeartbeatManager.h",
+			"MU",
+			"UFQQIFJZKK/moc_HeartbeatManager.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/client/src/network/NetworkClient.h",
 			"MU",
 			"UFQQIFJZKK/moc_NetworkClient.cpp",
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/ReconnectManager.h",
+			"MU",
+			"UFQQIFJZKK/moc_ReconnectManager.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/SSLConfigManager.h",
+			"MU",
+			"UFQQIFJZKK/moc_SSLConfigManager.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/client/src/utils/FileTransferManager.h",
 			"MU",
 			"VSCBVMNR7M/moc_FileTransferManager.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/utils/LogManager.h",
+			"MU",
+			"VSCBVMNR7M/moc_LogManager.cpp",
 			null
 		],
 		[
@@ -1077,6 +1146,7 @@
 		"QT_QUICKCONTROLS2_LIB",
 		"QT_QUICK_LIB",
 		"QT_SQL_LIB",
+		"QT_STATEMACHINE_LIB",
 		"UNICODE",
 		"WIN32",
 		"WIN32_LEAN_AND_MEAN",
@@ -1103,6 +1173,7 @@
 		"D:/QT_Learn/Projects/QKChatApp/client/src/utils",
 		"D:/QT_Learn/Projects/QKChatApp/client/src/crypto",
 		"D:/QT_Learn/Projects/QKChatApp/client/src/config",
+		"D:/QT_Learn/Projects/QKChatApp/client/src/monitoring",
 		"D:/Qt/6.5.3/mingw_64/include/QtQml/6.5.3",
 		"D:/Qt/6.5.3/mingw_64/include/QtQml/6.5.3/QtQml",
 		"D:/Qt/6.5.3/mingw_64/include/QtCore/6.5.3",
@@ -1121,6 +1192,7 @@
 		"D:/Qt/6.5.3/mingw_64/include/QtQuickControls2",
 		"D:/Qt/6.5.3/mingw_64/include/QtConcurrent",
 		"D:/Qt/6.5.3/mingw_64/include/QtMultimedia",
+		"D:/Qt/6.5.3/mingw_64/include/QtStateMachine",
 		"D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++",
 		"D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/x86_64-w64-mingw32",
 		"D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/backward",
@@ -1193,6 +1265,11 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/config/DevelopmentConfig.cpp",
+			"MU",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/client/src/controllers/ChatController.cpp",
 			"MU",
 			null
@@ -1219,12 +1296,57 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/monitoring/ConnectionMonitor.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/monitoring/DiagnosticTool.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/ConnectionPool.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/ConnectionStateManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/ErrorHandler.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/HeartbeatManager.cpp",
+			"MU",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/client/src/network/NetworkClient.cpp",
 			"MU",
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/ReconnectManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/network/SSLConfigManager.cpp",
+			"MU",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/client/src/utils/FileTransferManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/client/src/utils/LogManager.cpp",
 			"MU",
 			null
 		],

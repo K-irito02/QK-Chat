@@ -8,6 +8,8 @@
 #include <QHBoxLayout>
 #include <QGroupBox>
 #include <QTimer>
+#include <QMutex>
+#include <QMutexLocker>
 
 DashboardWidget::DashboardWidget(QWidget *parent)
     : QWidget(parent)
@@ -22,19 +24,30 @@ DashboardWidget::DashboardWidget(QWidget *parent)
     , _memoryProgressBar(nullptr)
     , _chatServer(nullptr)
     , _isDarkTheme(false)
+    , _updateTimer(nullptr)
 {
     setupUI();
     
-    // 设置定时器更新统计信息
-    QTimer *timer = new QTimer(this);
-    connect(timer, &QTimer::timeout, this, &DashboardWidget::updateStatistics);
-    timer->start(5000); // 每5秒更新一次
+    // 设置定时器更新统计信息 - 但不立即启动
+    _updateTimer = new QTimer(this);
+    connect(_updateTimer, &QTimer::timeout, this, &DashboardWidget::updateStatistics, Qt::QueuedConnection);
+    // 不在构造函数中启动定时器，等待服务器启动后再启动
 }
 
 void DashboardWidget::setChatServer(ChatServer *server)
 {
     _chatServer = server;
-    updateStatistics();
+    
+    // 只有在服务器真正运行后才开始更新
+    if (_chatServer && _chatServer->isRunning()) {
+        // 如果定时器已经在运行，先停止
+        if (_updateTimer->isActive()) {
+            _updateTimer->stop();
+        }
+        
+        updateStatistics();
+        _updateTimer->start(10000); // 每10秒更新一次
+    }
 }
 
 void DashboardWidget::refreshData()
@@ -142,32 +155,107 @@ void DashboardWidget::setupCharts()
 void DashboardWidget::updateStatistics()
 {
     if (!_chatServer) {
+        qDebug() << "[DashboardWidget] ChatServer is null, cannot update statistics";
         return;
     }
-    
-    // 更新在线用户数
-    int onlineUsers = _chatServer->getOnlineUserCount();
-    _onlineUsersLabel->setText(QString::number(onlineUsers));
-    
-    // 更新总用户数
-    int totalUsers = _chatServer->getTotalUserCount();
-    _totalUsersLabel->setText(QString::number(totalUsers));
-    
-    // 更新消息数量
-    int messagesCount = _chatServer->getMessagesCount();
-    _messagesCountLabel->setText(QString::number(messagesCount));
-    
-    // 更新运行时间
-    QString uptime = _chatServer->getUptime();
-    _uptimeLabel->setText(uptime);
-    
-    // 更新CPU使用率（模拟数据）
-    int cpuUsage = _chatServer->getCpuUsage();
-    _cpuUsageLabel->setText(QString("%1%").arg(cpuUsage));
-    _cpuProgressBar->setValue(cpuUsage);
-    
-    // 更新内存使用率（模拟数据）
-    int memoryUsage = _chatServer->getMemoryUsage();
-    _memoryUsageLabel->setText(QString("%1%").arg(memoryUsage));
-    _memoryProgressBar->setValue(memoryUsage);
-} 
+
+    // 添加线程安全保护
+    static QMutex updateMutex;
+    QMutexLocker locker(&updateMutex);
+
+    try {
+        qDebug() << "[DashboardWidget] Updating statistics...";
+
+        // 更新在线用户数
+        int onlineUsers = 0;
+        try {
+            onlineUsers = _chatServer->getOnlineUserCount();
+        } catch (...) {
+            qWarning() << "[DashboardWidget] Failed to get online user count";
+        }
+        
+        if (_onlineUsersLabel) {
+            _onlineUsersLabel->setText(QString::number(onlineUsers));
+        }
+        qDebug() << "[DashboardWidget] Online users:" << onlineUsers;
+
+        // 更新总用户数
+        int totalUsers = 0;
+        try {
+            totalUsers = _chatServer->getTotalUserCount();
+        } catch (...) {
+            qWarning() << "[DashboardWidget] Failed to get total user count";
+        }
+        
+        if (_totalUsersLabel) {
+            _totalUsersLabel->setText(QString::number(totalUsers));
+        }
+        qDebug() << "[DashboardWidget] Total users:" << totalUsers;
+
+        // 更新消息数量
+        int messagesCount = 0;
+        try {
+            messagesCount = _chatServer->getMessagesCount();
+        } catch (...) {
+            qWarning() << "[DashboardWidget] Failed to get messages count";
+        }
+        
+        if (_messagesCountLabel) {
+            _messagesCountLabel->setText(QString::number(messagesCount));
+        }
+        qDebug() << "[DashboardWidget] Messages count:" << messagesCount;
+
+        // 更新运行时间
+        QString uptime = "0:00:00";
+        try {
+            uptime = _chatServer->getUptime();
+        } catch (...) {
+            qWarning() << "[DashboardWidget] Failed to get uptime";
+        }
+        
+        if (_uptimeLabel) {
+            _uptimeLabel->setText(uptime);
+        }
+        qDebug() << "[DashboardWidget] Uptime:" << uptime;
+
+        // 更新CPU使用率 - 添加超时保护
+        int cpuUsage = 0;
+        try {
+            cpuUsage = _chatServer->getCpuUsage();
+        } catch (...) {
+            qWarning() << "[DashboardWidget] Failed to get CPU usage";
+            cpuUsage = 0;
+        }
+        
+        if (_cpuUsageLabel) {
+            _cpuUsageLabel->setText(QString("%1%").arg(cpuUsage));
+        }
+        if (_cpuProgressBar) {
+            _cpuProgressBar->setValue(cpuUsage);
+        }
+        qDebug() << "[DashboardWidget] CPU usage:" << cpuUsage << "%";
+
+        // 更新内存使用率 - 添加超时保护
+        int memoryUsage = 0;
+        try {
+            memoryUsage = _chatServer->getMemoryUsage();
+        } catch (...) {
+            qWarning() << "[DashboardWidget] Failed to get memory usage";
+            memoryUsage = 0;
+        }
+        
+        if (_memoryUsageLabel) {
+            _memoryUsageLabel->setText(QString("%1%").arg(memoryUsage));
+        }
+        if (_memoryProgressBar) {
+            _memoryProgressBar->setValue(memoryUsage);
+        }
+        qDebug() << "[DashboardWidget] Memory usage:" << memoryUsage << "%";
+
+        qDebug() << "[DashboardWidget] Statistics update completed";
+    } catch (const std::exception& e) {
+        qWarning() << "[DashboardWidget] Exception in updateStatistics:" << e.what();
+    } catch (...) {
+        qWarning() << "[DashboardWidget] Unknown exception in updateStatistics";
+    }
+}

@@ -373,6 +373,9 @@ Qt6Quick_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Quick
 //The directory containing a CMake configuration file for Qt6Sql.
 Qt6Sql_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Sql
 
+//The directory containing a CMake configuration file for Qt6WebSockets.
+Qt6WebSockets_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets
+
 //The directory containing a CMake configuration file for Qt6WidgetsTools.
 Qt6WidgetsTools_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WidgetsTools
 

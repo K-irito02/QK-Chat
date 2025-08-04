@@ -52,6 +52,7 @@ private:
     
     ChatServer *_chatServer;
     bool _isDarkTheme;
+    QTimer *_updateTimer;
 };
 
 #endif // DASHBOARDWIDGET_H 

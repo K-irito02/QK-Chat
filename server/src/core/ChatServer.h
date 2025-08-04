@@ -2,134 +2,275 @@
 #define CHATSERVER_H
 
 #include <QObject>
-#include "../network/QSslServer.h"
 #include <QSslSocket>
-#include <QTimer>
-#include "../utils/ThreadPool.h"
-#include <QMutex>
-#include <QHash>
-#include <QMutexLocker>
-#include <QDateTime>
-#include <QByteArray>
-#include <QVariantMap>
-#include <QList>
-#include <QSslError>
-#include <QString>
-#include <QStringList>
-#include <QHostAddress>
 
-class Database;
-class SessionManager;
-class ProtocolParser;
+class ChatClientConnection;
+#include "ChatClientConnection.h"
+#include <QDateTime>
+#include <QTimer>
+#include <QLoggingCategory>
+#include <QAtomicInt>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QList>
+#include <QStringList>
+#include <QHash>
+#include <QMutex>
+#include <QByteArray>
+#include <memory>
+
+#include "ThreadManager.h"
+#include "ConnectionManager.h"
+#include "MessageEngine.h"
+#include "SessionManager.h"
+#include "../network/NetworkEventHandler.h"
+#include "../network/QSslServer.h"
+#include "../network/ProtocolParser.h"
+#include "../database/Database.h"
+#include "../database/DatabasePool.h"
+#include "../cache/CacheManagerV2.h"
+#include "../config/ServerConfig.h"
+#include "../utils/LogManager.h"
+#include "../utils/ThreadPool.h"
+
+Q_DECLARE_LOGGING_CATEGORY(chatServer)
+
+// 常量定义
+const int CLEANUP_INTERVAL = 300000; // 5分钟
+const int HEARTBEAT_TIMEOUT = 30000; // 30秒
+
+// 前向声明
+class ChatClientConnection;
 
 /**
- * @brief 聊天服务器核心类
+ * @brief 重构后的高性能聊天服务器
  * 
- * 提供核心服务器功能：
- * - SSL连接管理
- * - 消息路由
- * - 会话管理
- * - 协议解析
+ * 新架构特性：
+ * - 线程池分离：网络、消息、数据库、文件、服务线程池
+ * - 无锁数据结构：减少锁竞争，提高并发性能
+ * - 异步处理：网络事件和消息处理完全异步化
+ * - 连接池管理：数据库连接池，支持读写分离
+ * - 智能缓存：多级缓存，自动淘汰策略
+ * - 实时监控：性能指标收集和健康检查
  */
 class ChatServer : public QObject
 {
     Q_OBJECT
-    
+
 public:
+    struct ServerStats {
+        // 连接统计
+        int totalConnections{0};
+        int authenticatedConnections{0};
+        int activeConnections{0};
+        
+        // 消息统计
+        qint64 totalMessages{0};
+        qint64 processedMessages{0};
+        qint64 failedMessages{0};
+        
+        // 性能统计
+        int averageResponseTime{0};
+        int maxResponseTime{0};
+        int throughputPerSecond{0};
+        
+        // 系统统计
+        int cpuUsage{0};
+        int memoryUsage{0};
+        QString uptime{};
+        
+        // 线程池统计
+        ThreadManager::SystemStats threadStats{};
+        
+        // 数据库统计
+        DatabasePool::PoolStats databaseStats{};
+        
+        QDateTime lastUpdate{};
+    };
+
     explicit ChatServer(QObject *parent = nullptr);
     ~ChatServer();
-    
+
     // 服务器控制
-    bool startServer();
+    bool startServer(const QString& host = "0.0.0.0", int port = 8443);
     void stopServer();
     void restartServer();
     bool isRunning() const;
-    bool initializeDatabase();
     
-    // 状态查询
+    // 配置管理
+    bool loadConfiguration(const QString& configFile = QString());
+    void setMaxConnections(int maxConnections);
+    void setHeartbeatInterval(int seconds);
+    void setMessageQueueSize(int maxSize);
+    
+    // 统计信息
+    ServerStats getServerStats() const;
+    void resetAllStats();
+    
+    // 消息发送接口
+    bool sendMessageToUser(qint64 userId, const QJsonObject& message);
+    bool sendMessageToUsers(const QList<qint64>& userIds, const QJsonObject& message);
+    void broadcastMessage(const QJsonObject& message);
+    void broadcastToAuthenticated(const QJsonObject& message);
+    
+    // 用户管理
+    QStringList getOnlineUsers() const;
+    QStringList getConnectedUsers() const;
     int getOnlineUserCount() const;
     int getConnectionCount() const;
-    QStringList getConnectedUsers() const;
-    
-    // Dashboard统计方法
     int getTotalUserCount() const;
-    int getMessagesCount() const { QMutexLocker locker(&_statsMutex); return _totalMessages; }
+    int getMessagesCount() const;
     QString getUptime() const;
     int getCpuUsage() const;
     int getMemoryUsage() const;
+    bool kickUser(qint64 userId, const QString& reason = QString());
     
     // 消息发送
-    bool sendMessageToUser(qint64 userId, const QByteArray &message);
-    void broadcastMessage(const QByteArray &message);
+    bool sendMessageToUser(qint64 userId, const QByteArray& message);
+    void broadcastMessage(const QByteArray& message);
     
+    // 健康检查
+    bool isHealthy() const;
+    QString getHealthReport() const;
+    
+    // 数据库初始化
+    bool initializeDatabase();
+
 signals:
     void serverStarted();
     void serverStopped();
-    void serverError(const QString &error);
+    void serverError(const QString& error);
     
-    void clientConnected(qint64 socketId);
-    void clientDisconnected(qint64 socketId);
-    
-    void messageReceived(qint64 fromUserId, qint64 toUserId, const QString &message);
+    void clientConnected(qint64 userId);
+    void clientDisconnected(qint64 userId);
+    void clientAuthenticated(qint64 userId);
     void userOnline(qint64 userId);
     void userOffline(qint64 userId);
     
-public:
-    struct ClientConnection {
-        QSslSocket *socket;
-        qint64 userId;
-        QString sessionToken;
-        QDateTime lastActivity;
-        QByteArray readBuffer;
-    };
+    void messageReceived(qint64 fromUserId, qint64 toUserId, const QJsonObject& message);
+    void messageProcessed(const QString& messageId);
+    void messageFailed(const QString& messageId, const QString& error);
     
+    void performanceAlert(const QString& message);
+    void systemOverloaded();
+    void healthStatusChanged(bool healthy);
+
+private slots:
+    // 系统维护
+    void performSystemMaintenance();
+    void updateSystemStats();
+    void checkSystemHealth();
+    
+    // 组件事件处理
+    void onConnectionManagerEvent();
+    void onMessageEngineEvent();
+     void onThreadManagerEvent();
+
 private slots:
     void onNewConnection();
     void onClientDisconnected();
     void onClientDataReceived();
-    void onSslErrors(const QList<QSslError> &errors);
-    void cleanupConnections();
-    
+
 private:
-    void setupSslServer();
-    void setupCleanupTimer();
-    void processClientMessage(ClientConnection *client, const QByteArray &data);
-    void handleLoginRequest(ClientConnection *client, const QVariantMap &data);
-    void handleLogoutRequest(ClientConnection *client);
-    void handleMessageRequest(ClientConnection *client, const QVariantMap &data);
-    void handleHeartbeat(ClientConnection *client);
-    void handleRegisterRequest(ClientConnection *client, const QVariantMap &data);
-    void handleEmailVerificationRequest(ClientConnection *client, const QVariantMap &data);
-    void handleEmailCodeVerificationRequest(ClientConnection *client, const QVariantMap &data);
-    void handleSendEmailVerificationRequest(ClientConnection *client, const QVariantMap &data);
-    void handleResendVerificationRequest(ClientConnection *client, const QVariantMap &data);
+    // 核心组件
+    CustomSslServer* _sslServer;
+    Database* _database;
+    SessionManager* _sessionManager;
+    ProtocolParser* _protocolParser;
+    ThreadPool* _threadPool;
+    QTimer* _cleanupTimer;
     
-    void removeClient(QSslSocket *socket);
-    ClientConnection *getClientBySocket(QSslSocket *socket);
-    ClientConnection *getClientByUserId(qint64 userId);
-    
-    CustomSslServer *_sslServer;
-    Database *_database;
-    SessionManager *_sessionManager;
-    ProtocolParser *_protocolParser;
-    ThreadPool *_threadPool;
-    QTimer *_cleanupTimer;
-    
-    QHash<QSslSocket*, ClientConnection*> _clients;
-    QHash<qint64, ClientConnection*> _userConnections;
+    // 客户端连接管理
+    QHash<QSslSocket*, std::shared_ptr<ChatClientConnection>> _clients;
+    QHash<qint64, std::shared_ptr<ChatClientConnection>> _userConnections;
     mutable QMutex _clientsMutex;
     
+    // 配置和状态
     QString _host;
     int _port;
     bool _isRunning;
-    
-    // 统计相关成员变量
     QDateTime _startTime;
-    int _totalMessages;
+    QDateTime _lastSystemInfoUpdate;
+    
+    // 统计信息
+    qint64 _totalMessages;
+    int _cachedCpuUsage;
+    int _cachedMemoryUsage;
+    
+    // 统计信息互斥锁
     mutable QMutex _statsMutex;
     
-    static const int HEARTBEAT_TIMEOUT = 90000; // 90秒
-    static const int CLEANUP_INTERVAL = 60000;  // 60秒
+    // 系统信息定时器
+    QTimer* _systemInfoTimer;
+    
+    // 初始化方法
+    bool initializeComponents();
+    bool initializeCache();
+    bool initializeNetwork();
+    bool initializeMessageHandlers();
+    
+    // 配置方法
+    void setupTimers();
+    void setupSignalConnections();
+    void loadDefaultConfiguration();
+    void setupSslServer();
+    void setupCleanupTimer();
+    void setupSystemInfoTimer();
+    void initializeEmailService();
+    
+    // SSL配置
+    bool setupSslConfiguration();
+    
+    // 消息处理器
+    void registerMessageHandlers();
+    
+    // 统计更新
+    void updateConnectionStats();
+    void updateMessageStats();
+    void updatePerformanceStats();
+    void updateSystemResourceStats();
+    void updateSystemInfo();
+    
+    // 健康检查
+    bool checkComponentHealth() const;
+    bool checkResourceHealth() const;
+    bool checkPerformanceHealth() const;
+    void checkDatabaseHealth();
+    
+    // 系统信息获取
+    int getCpuUsageInternal() const;
+    int getMemoryUsageInternal() const;
+    int getCpuUsageViaProcess() const;
+    int getMemoryUsageViaProcess() const;
+    
+    // 错误处理
+    void handleComponentError(const QString& component, const QString& error);
+    void handleSystemError(const QString& error);
+    
+    // 客户端管理
+      void onSslErrors(const QList<QSslError>& errors);
+      void cleanupConnections();
+    void removeClient(QSslSocket* socket);
+    void processClientMessage(ChatClientConnection* client, const QByteArray& data);
+    
+    // 消息处理
+    void handleLogoutRequest(ChatClientConnection* client);
+    void handleMessageRequest(ChatClientConnection* client, const QVariantMap& data);
+    void handleHeartbeat(ChatClientConnection* client);
+    void handleRegisterRequest(ChatClientConnection* client, const QVariantMap& data);
+    void handleEmailVerificationRequest(ChatClientConnection* client, const QVariantMap& data);
+    void handleSendEmailVerificationRequest(ChatClientConnection* client, const QVariantMap& data);
+    void handleEmailCodeVerificationRequest(ChatClientConnection* client, const QVariantMap& data);
+    void handleResendVerificationRequest(ChatClientConnection* client, const QVariantMap& data);
+    void handleLoginRequest(ChatClientConnection* client, const QVariantMap& data);
+    
+    // 工具方法
+    QString formatUptime() const;
+    void logServerEvent(const QString& event, const QString& details = QString()) const;
+    
+    // 客户端查询
+    std::shared_ptr<ChatClientConnection> getClientBySocket(QSslSocket* socket);
+    std::shared_ptr<ChatClientConnection> getClientByUserId(qint64 userId);
 };
 
 #endif // CHATSERVER_H

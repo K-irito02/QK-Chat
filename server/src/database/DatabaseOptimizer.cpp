@@ -1,6 +1,6 @@
 #include "DatabaseOptimizer.h"
 #include "Database.h"
-#include "../cache/CacheManager.h"
+#include "../cache/CacheManagerV2.h"
 #include <QSqlError>
 #include <QSqlRecord>
 #include <QCryptographicHash>
@@ -14,7 +14,7 @@
 
 Q_LOGGING_CATEGORY(databaseOptimizer, "qkchat.server.database.optimizer")
 
-DatabaseOptimizer::DatabaseOptimizer(Database *database, CacheManager *cacheManager, QObject *parent)
+DatabaseOptimizer::DatabaseOptimizer(Database *database, CacheManagerV2 *cacheManager, QObject *parent)
     : QObject(parent)
     , m_database(database)
     , m_cacheManager(cacheManager)

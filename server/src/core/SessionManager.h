@@ -46,17 +46,17 @@ public:
 signals:
     void sessionCreated(qint64 userId, const QString &sessionToken);
     void sessionRemoved(const QString &sessionToken);
-    void sessionExpired(const QString &sessionToken);
+    void sessionExpired(qint64 userId, const QString &sessionToken);
     
 private:
     struct SessionInfo {
-        qint64 userId;
-        QString deviceInfo;
-        QString ipAddress;
-        QDateTime createdAt;
-        QDateTime lastActive;
-        QDateTime expiresAt;
-        bool isValid;
+        qint64 userId{0};
+        QString deviceInfo{};
+        QString ipAddress{};
+        QDateTime createdAt{};
+        QDateTime lastActive{};
+        QDateTime expiresAt{};
+        bool isValid{false};
     };
     
     void setupCleanupTimer();

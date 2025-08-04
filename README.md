@@ -61,125 +61,104 @@ QKChat 是一个基于 Qt6 和 QML 开发的现代化端到端聊天应用。支
 ### 客户端架构
 ```
 client/
-├── src/               # 源代码
-│   ├── main.cpp       # 程序入口
-│   ├── controllers/   # 控制器层
-│   │   ├── UserController.cpp
-│   │   ├── UserController.h
-│   │   ├── ChatController.cpp
-│   │   └── ChatController.h
-│   ├── models/        # 数据模型
-│   │   ├── UserModel.cpp
-│   │   └── UserModel.h
-│   ├── network/       # 网络通信
-│   │   ├── NetworkClient.cpp
-│   │   └── NetworkClient.h
-│   ├── database/      # 本地数据库
-│   │   ├── LocalDatabase.cpp
-│   │   └── LocalDatabase.h
-│   ├── crypto/        # 加密模块
-│   │   ├── CryptoManager.cpp
-│   │   └── CryptoManager.h
-│   ├── utils/         # 工具类
-│   │   ├── Validator.cpp
-│   │   ├── Validator.h
-│   │   ├── FileTransferManager.cpp
-│   │   └── FileTransferManager.h
-│   └── config/        # 配置管理
-│       ├── ConfigManager.cpp
-│       └── ConfigManager.h
-├── qml/               # QML界面
-│   ├── main.qml       # 主界面
-│   ├── LoginWindow.qml    # 登录窗口
-│   ├── RegisterWindow.qml # 注册窗口
-│   ├── ChatMainWindow.qml # 聊天主窗口
-│   └── components/    # 界面组件
-│       ├── ChatWindow.qml     # 聊天窗口
-│       ├── MessageBubble.qml  # 消息气泡
-│       ├── ProfilePage.qml    # 个人资料页
-│       ├── ContactsPage.qml   # 联系人页
-│       ├── GroupsPage.qml     # 群组页
-│       ├── SettingsPage.qml   # 设置页
-│       ├── AddPage.qml        # 添加页
-│       ├── DefaultPage.qml    # 默认页
-│       ├── AvatarSelector.qml # 头像选择器
-│       ├── EmojiPicker.qml    # 表情选择器
-│       ├── CustomButton.qml   # 自定义按钮
-│       ├── CustomTextField.qml # 自定义输入框
-│       └── SideBarButton.qml  # 侧边栏按钮
+├── CMakeLists.txt     # CMake构建文件
+├── CMakeLists.txt.user
+├── README.md          # 项目说明
+├── Resource.qrc       # Qt资源文件
+├── config/            # 配置文件
+│   └── dev.ini
 ├── icons/             # 图标资源
-│   ├── logo.png
+│   ├── add-contact.png
+│   ├── add.png
+│   ├── add.svg
+│   ├── arrow-down.png
+│   ├── arrow-right.png
+│   ├── attach.png
 │   ├── avatar1.png
 │   ├── avatar2.png
 │   ├── avatar3.png
 │   ├── avatar4.png
 │   ├── avatar5.png
 │   ├── captcha.png
+│   ├── chat-empty.png
+│   ├── chat.png
+│   ├── contacts-empty.png
+│   ├── create-group.png
+│   ├── delete.png
 │   ├── edit.png
+│   ├── email-verification.svg
 │   ├── email.png
+│   ├── emoji.png
+│   ├── exit.png
 │   ├── eye-off.png
 │   ├── eye.png
+│   ├── file.png
+│   ├── group.png
+│   ├── groups-empty.png
+│   ├── home.png
+│   ├── info.png
+│   ├── invite.png
+│   ├── join-group.png
+│   ├── keyboard.png
 │   ├── lock.png
+│   ├── logo.png
+│   ├── message-sending.png
+│   ├── message-sent.png
+│   ├── message-settings.png
+│   ├── mic.png
 │   ├── moon.png
+│   ├── more.png
+│   ├── phone.png
+│   ├── privacy.png
+│   ├── profile.png
+│   ├── search.png
+│   ├── send.png
+│   ├── settings.png
 │   ├── sun.png
-│   └── user.png
-├── config/            # 配置文件
-│   └── dev.ini
-├── CMakeLists.txt     # CMake构建文件
-├── Resource.qrc       # Qt资源文件
-└── README.md          # 项目说明
+│   ├── user.png
+│   └── video.png
+├── qml/               # QML界面
+│   ├── ChatMainWindow.qml # 聊天主窗口
+│   ├── EmailVerificationDialog.qml # 邮箱验证对话框
+│   ├── LoginWindow.qml    # 登录窗口
+│   ├── RegisterWindow.qml # 注册窗口
+│   ├── components/    # 界面组件
+│   └── main.qml       # 主界面
+└── src/               # 源代码
+    ├── config/        # 配置管理
+    ├── controllers/   # 控制器层
+    ├── crypto/        # 加密模块
+    ├── database/      # 本地数据库
+    ├── main.cpp       # 程序入口
+    ├── models/        # 数据模型
+    ├── network/       # 网络通信
+    └── utils/         # 工具类
 ```
 
 ### 服务器架构
 ```
 server/
-├── src/               # 源代码
-│   ├── main.cpp       # 程序入口
-│   ├── core/          # 核心服务
-│   │   ├── ChatServer.cpp
-│   │   ├── ChatServer.h
-│   │   ├── SessionManager.cpp
-│   │   ├── SessionManager.h
-│   │   ├── GroupManager.cpp
-│   │   └── GroupManager.h
-│   ├── database/      # 数据库层
-│   │   ├── Database.cpp
-│   │   ├── Database.h
-│   │   ├── DatabaseOptimizer.cpp
-│   │   └── DatabaseOptimizer.h
-│   ├── cache/         # 缓存系统
-│   │   ├── CacheManager.cpp
-│   │   └── CacheManager.h
-│   ├── network/       # 网络协议
-│   │   ├── ProtocolParser.cpp
-│   │   ├── ProtocolParser.h
-│   │   ├── QSslServer.cpp
-│   │   └── QSslServer.h
-│   ├── admin/         # 管理界面
-│   │   ├── AdminWindow.cpp
-│   │   ├── AdminWindow.h
-│   │   ├── LoginDialog.cpp
-│   │   ├── LoginDialog.h
-│   │   ├── LoginDialog.ui
-│   │   ├── DashboardWidget.cpp
-│   │   └── DashboardWidget.h
-│   ├── utils/         # 工具类
-│   │   ├── AdminAuth.cpp
-│   │   ├── AdminAuth.h
-│   │   ├── AdminManager.cpp
-│   │   └── AdminManager.h
-│   ├── crypto/        # 加密模块
-│   │   ├── CryptoManager.cpp
-│   │   └── CryptoManager.h
-│   └── config/        # 配置管理
-│       ├── ServerConfig.cpp
-│       └── ServerConfig.h
+├── CMakeLists.txt     # CMake构建文件
+├── CMakeLists.txt.user
+├── README.md          # 项目说明
 ├── config/            # 配置文件
-│   └── dev.conf
+│   ├── database_config.sql
+│   ├── dev.conf
+│   ├── redis.conf
+│   └── ssl_config.cnf
 ├── data/              # 数据文件
 │   └── mysql_init.sql # 数据库初始化脚本
-├── CMakeLists.txt     # CMake构建文件
-└── README.md          # 项目说明
+└── src/               # 源代码
+    ├── admin/         # 管理界面
+    ├── cache/         # 缓存系统
+    ├── config/        # 配置管理
+    ├── core/          # 核心服务
+    ├── crypto/        # 加密模块
+    ├── database/      # 数据库层
+    ├── main.cpp       # 程序入口
+    ├── network/       # 网络协议
+    ├── services/      # 服务层
+    └── utils/         # 工具类
 ```
 
 ### 系统要求

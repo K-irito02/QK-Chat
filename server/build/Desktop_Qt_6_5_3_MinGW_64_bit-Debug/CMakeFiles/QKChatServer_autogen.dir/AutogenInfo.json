@@ -319,6 +319,15 @@
 		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Concurrent/Qt6ConcurrentTargets-relwithdebinfo.cmake",
 		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Concurrent/Qt6ConcurrentAdditionalTargetInfo.cmake",
 		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Concurrent/Qt6ConcurrentVersionlessTargets.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsConfigVersion.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsConfigVersionImpl.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsConfig.cmake",
+		"C:/Program Files/CMake/share/cmake-4.0/Modules/CMakeFindDependencyMacro.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsDependencies.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsTargets.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsTargets-relwithdebinfo.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsAdditionalTargetInfo.cmake",
+		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsVersionlessTargets.cmake",
 		"C:/Program Files/CMake/share/cmake-4.0/Modules/GNUInstallDirs.cmake",
 		"D:/QT_Learn/Projects/QKChatApp/server/config/dev.conf",
 		"D:/QT_Learn/Projects/QKChatApp/server/data/mysql_init.sql",
@@ -350,9 +359,27 @@
 			null
 		],
 		[
-			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/CacheManager.h",
+			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/CacheManagerV2.h",
 			"MU",
-			"QICLR22GGH/moc_CacheManager.cpp",
+			"QICLR22GGH/moc_CacheManagerV2.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/CachePreloader.h",
+			"MU",
+			"QICLR22GGH/moc_CachePreloader.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/CacheStrategyManager.h",
+			"MU",
+			"QICLR22GGH/moc_CacheStrategyManager.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/MultiLevelCache.h",
+			"MU",
+			"QICLR22GGH/moc_MultiLevelCache.cpp",
 			null
 		],
 		[
@@ -362,9 +389,21 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ChatClientConnection.h",
+			"MU",
+			"PRMOGMWJPH/moc_ChatClientConnection.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ChatServer.h",
 			"MU",
 			"PRMOGMWJPH/moc_ChatServer.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ConnectionManager.h",
+			"MU",
+			"PRMOGMWJPH/moc_ConnectionManager.cpp",
 			null
 		],
 		[
@@ -374,9 +413,27 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/MessageEngine.h",
+			"MU",
+			"PRMOGMWJPH/moc_MessageEngine.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/MessageHandlers.h",
+			"MU",
+			"PRMOGMWJPH/moc_MessageHandlers.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/SessionManager.h",
 			"MU",
 			"PRMOGMWJPH/moc_SessionManager.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ThreadManager.h",
+			"MU",
+			"PRMOGMWJPH/moc_ThreadManager.cpp",
 			null
 		],
 		[
@@ -395,6 +452,18 @@
 			"D:/QT_Learn/Projects/QKChatApp/server/src/database/DatabaseOptimizer.h",
 			"MU",
 			"M7KQ2GL7XF/moc_DatabaseOptimizer.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/database/DatabasePool.h",
+			"MU",
+			"M7KQ2GL7XF/moc_DatabasePool.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/network/NetworkEventHandler.h",
+			"MU",
+			"UFQQIFJZKK/moc_NetworkEventHandler.cpp",
 			null
 		],
 		[
@@ -431,6 +500,24 @@
 			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/AdminManager.h",
 			"MU",
 			"VSCBVMNR7M/moc_AdminManager.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/AutoRecovery.h",
+			"MU",
+			"VSCBVMNR7M/moc_AutoRecovery.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/LockFreeStructures.h",
+			"MU",
+			"VSCBVMNR7M/moc_LockFreeStructures.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.h",
+			"MU",
+			"VSCBVMNR7M/moc_LogManager.cpp",
 			null
 		],
 		[
@@ -546,7 +633,22 @@
 			null
 		],
 		[
-			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/CacheManager.cpp",
+			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/CacheManagerV2.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/CachePreloader.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/CacheStrategyManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/MultiLevelCache.cpp",
 			"MU",
 			null
 		],
@@ -556,7 +658,17 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ChatClientConnection.cpp",
+			"MU",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ChatServer.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ConnectionManager.cpp",
 			"MU",
 			null
 		],
@@ -566,7 +678,22 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/MessageEngine.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/MessageHandlers.cpp",
+			"MU",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/SessionManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ThreadManager.cpp",
 			"MU",
 			null
 		],
@@ -585,7 +712,17 @@
 			"MU",
 			null
 		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/database/DatabasePool.cpp",
+			"MU",
+			null
+		],
 		[ "D:/QT_Learn/Projects/QKChatApp/server/src/main.cpp", "MU", null ],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/network/NetworkEventHandler.cpp",
+			"MU",
+			null
+		],
 		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/network/ProtocolParser.cpp",
 			"MU",
@@ -613,6 +750,16 @@
 		],
 		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/AdminManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/AutoRecovery.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.cpp",
 			"MU",
 			null
 		],

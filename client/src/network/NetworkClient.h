@@ -8,6 +8,11 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QVariantMap>
+#include "SSLConfigManager.h"
+#include "ConnectionStateManager.h"
+#include "ErrorHandler.h"
+#include "ReconnectManager.h"
+#include "HeartbeatManager.h"
 
 /**
  * @brief 网络客户端类
@@ -97,6 +102,11 @@ private slots:
     
 private:
     void setupSslSocket();
+    void setupStateManager();
+    void setupErrorHandler();
+    void setupReconnectManager();
+    void setupHeartbeatManager();
+    void updateFromDevelopmentConfig();
     void processIncomingData();
     void sendData(const QByteArray &data);
     QByteArray createPacket(const QString &type, const QVariantMap &data);
@@ -112,7 +122,11 @@ private:
     QSslSocket *_sslSocket;
     QTimer *_heartbeatTimer;
     QNetworkAccessManager *_networkManager;
-    
+    ConnectionStateManager *_stateManager;
+    ErrorHandler *_errorHandler;
+    ReconnectManager *_reconnectManager;
+    HeartbeatManager *_heartbeatManager;
+
     QString _serverHost;
     int _serverPort;
     bool _isConnected;

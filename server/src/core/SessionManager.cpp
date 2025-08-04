@@ -61,23 +61,38 @@ QString SessionManager::createSession(qint64 userId, const QString &deviceInfo, 
 
 bool SessionManager::validateSession(const QString &sessionToken, qint64 &userId)
 {
-    QMutexLocker locker(&_mutex);
-    
-    if (!_sessions.contains(sessionToken)) {
-        return false;
+    // 先进行快速检查，减少锁持有时间
+    {
+        QMutexLocker locker(&_mutex);
+
+        if (!_sessions.contains(sessionToken)) {
+            return false;
+        }
+
+        SessionInfo &session = _sessions[sessionToken];
+
+        if (!session.isValid || isSessionExpired(session)) {
+            // 会话已过期，需要移除
+            locker.unlock();
+            // 避免递归锁调用，直接在这里移除
+            QMutexLocker removeLocker(&_mutex);
+            if (_sessions.contains(sessionToken)) {
+                SessionInfo sessionToRemove = _sessions.take(sessionToken);
+                if (_userSessions.contains(sessionToRemove.userId)) {
+                    _userSessions[sessionToRemove.userId].removeAll(sessionToken);
+                    if (_userSessions[sessionToRemove.userId].isEmpty()) {
+                        _userSessions.remove(sessionToRemove.userId);
+                    }
+                }
+                emit sessionExpired(sessionToRemove.userId, sessionToken);
+            }
+            return false;
+        }
+
+        userId = session.userId;
+        session.lastActive = QDateTime::currentDateTime();
+        return true;
     }
-    
-    SessionInfo &session = _sessions[sessionToken];
-    
-    if (!session.isValid || isSessionExpired(session)) {
-        // 会话已过期，移除它
-        removeSession(sessionToken);
-        return false;
-    }
-    
-    userId = session.userId;
-    session.lastActive = QDateTime::currentDateTime();
-    return true;
 }
 
 bool SessionManager::removeSession(const QString &sessionToken)
@@ -161,7 +176,7 @@ void SessionManager::cleanExpiredSessions()
             }
         }
         
-        emit sessionExpired(sessionToken);
+        emit sessionExpired(userId, sessionToken);
     }
     
     if (!expiredTokens.isEmpty()) {

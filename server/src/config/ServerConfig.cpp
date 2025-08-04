@@ -202,6 +202,11 @@ QString ServerConfig::getSslPrivateKeyFile() const
     return absolutePath;
 }
 
+QString ServerConfig::getSslPrivateKeyPassword() const
+{
+    return getValue("Security/key_password", "").toString();
+}
+
 QString ServerConfig::getDatabaseType() const
 {
     return getValue("Database/type", "mysql").toString();

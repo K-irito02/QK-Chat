@@ -38,6 +38,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Network
     Sql
     Concurrent
+    WebSockets
 )
 
 qt_standard_project_setup()
@@ -54,16 +55,28 @@ set(SOURCES
     src/core/ChatServer.cpp
     src/core/SessionManager.cpp
     src/core/GroupManager.cpp
+    src/core/ThreadManager.cpp
+    src/core/ChatClientConnection.cpp
+    src/core/ConnectionManager.cpp
+    src/core/MessageEngine.cpp
+    src/core/MessageHandlers.cpp
     src/database/Database.cpp
     src/database/DatabaseOptimizer.cpp
-    src/cache/CacheManager.cpp
+    src/database/DatabasePool.cpp
+    src/cache/CacheManagerV2.cpp
+    src/cache/MultiLevelCache.cpp
+    src/cache/CacheStrategyManager.cpp
+    src/cache/CachePreloader.cpp
     src/crypto/CryptoManager.cpp
     src/network/ProtocolParser.cpp
     src/network/QSslServer.cpp
+    src/network/NetworkEventHandler.cpp
     src/services/EmailService.cpp
     src/services/EmailTemplate.cpp
     src/utils/AdminAuth.cpp
     src/utils/AdminManager.cpp
+    src/utils/LogManager.cpp
+    src/utils/AutoRecovery.cpp
     src/config/ServerConfig.cpp
     src/utils/ThreadPool.cpp
 )
@@ -89,18 +102,30 @@ set(HEADERS
     src/core/ChatServer.h
     src/core/SessionManager.h
     src/core/GroupManager.h
+    src/core/ThreadManager.h
+    src/core/ConnectionManager.h
+    src/core/MessageEngine.h
+    src/core/MessageHandlers.h
     src/database/Database.h
     src/database/DatabaseOptimizer.h
-    src/cache/CacheManager.h
+    src/database/DatabasePool.h
+    src/cache/CacheManagerV2.h
+    src/cache/MultiLevelCache.h
+    src/cache/CacheStrategyManager.h
+    src/cache/CachePreloader.h
     src/crypto/CryptoManager.h
     src/network/ProtocolParser.h
     src/network/QSslServer.h
+    src/network/NetworkEventHandler.h
     src/services/EmailService.h
     src/services/EmailTemplate.h
     src/utils/AdminAuth.h
     src/utils/AdminManager.h
+    src/utils/LogManager.h
+    src/utils/AutoRecovery.h
     src/config/ServerConfig.h
     src/utils/ThreadPool.h
+    src/utils/LockFreeStructures.h
 )
 
 # Check if all header files exist

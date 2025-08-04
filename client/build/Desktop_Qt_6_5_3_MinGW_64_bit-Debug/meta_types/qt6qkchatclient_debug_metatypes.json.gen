@@ -225,6 +225,76 @@
     {
         "classes": [
             {
+                "className": "DevelopmentConfig",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "Environment",
+                        "values": [
+                            "Development",
+                            "Testing",
+                            "Staging",
+                            "Production"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "LogLevel",
+                        "values": [
+                            "Debug",
+                            "Info",
+                            "Warning",
+                            "Error",
+                            "Critical"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "DevelopmentConfig",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "env",
+                                "type": "Environment"
+                            }
+                        ],
+                        "name": "environmentChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "configurationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "sslConfigurationChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "debugConfigurationChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "DevelopmentConfig.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
                 "className": "UserModel",
                 "methods": [
                     {
@@ -2336,6 +2406,799 @@
     {
         "classes": [
             {
+                "className": "ConnectionMonitor",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "MetricType",
+                        "values": [
+                            "ConnectionSuccess",
+                            "ConnectionFailure",
+                            "Latency",
+                            "PacketLoss",
+                            "Throughput",
+                            "Reconnection",
+                            "Error"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "AlertLevel",
+                        "values": [
+                            "Info",
+                            "Warning",
+                            "Critical"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "QualityLevel",
+                        "values": [
+                            "Excellent",
+                            "Good",
+                            "Fair",
+                            "Poor",
+                            "Bad"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "ConnectionMonitor",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "metric",
+                                "type": "MetricData"
+                            }
+                        ],
+                        "name": "metricRecorded",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "alert",
+                                "type": "Alert"
+                            }
+                        ],
+                        "name": "alertGenerated",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "quality",
+                                "type": "QualityLevel"
+                            }
+                        ],
+                        "name": "qualityChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "stable",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "connectionStabilityChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "stats",
+                                "type": "ConnectionStats"
+                            }
+                        ],
+                        "name": "statisticsUpdated",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "name": "onMonitoringTimer",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onCleanupTimer",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "ConnectionMonitor.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
+                "className": "DiagnosticTool",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "TestType",
+                        "values": [
+                            "NetworkConnectivity",
+                            "DnsResolution",
+                            "PortConnectivity",
+                            "SslCertificate",
+                            "Bandwidth",
+                            "Latency",
+                            "PacketLoss"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "TestResult",
+                        "values": [
+                            "Passed",
+                            "Failed",
+                            "Warning",
+                            "InProgress",
+                            "NotRun"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "DiagnosticTool",
+                "signals": [
+                    {
+                        "access": "public",
+                        "name": "diagnosticStarted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "report",
+                                "type": "DiagnosticReport"
+                            }
+                        ],
+                        "name": "diagnosticCompleted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "type",
+                                "type": "TestType"
+                            }
+                        ],
+                        "name": "testStarted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "type",
+                                "type": "TestType"
+                            },
+                            {
+                                "name": "result",
+                                "type": "TestResult"
+                            }
+                        ],
+                        "name": "testCompleted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "percentage",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "progressUpdated",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "name": "onNetworkReply",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onTestTimeout",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onLatencyTestTimer",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "DiagnosticTool.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
+                "className": "ConnectionPool",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "LoadBalanceStrategy",
+                        "values": [
+                            "RoundRobin",
+                            "LeastConnections",
+                            "Random",
+                            "HealthBased"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "ConnectionStatus",
+                        "values": [
+                            "Available",
+                            "Busy",
+                            "Connecting",
+                            "Disconnected",
+                            "Error"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "ConnectionPool",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "connectionId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "connectionCreated",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "connectionId",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "connectionDestroyed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "connectionId",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "status",
+                                "type": "ConnectionStatus"
+                            }
+                        ],
+                        "name": "connectionStatusChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "newSize",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "poolSizeChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "healthyCount",
+                                "type": "int"
+                            },
+                            {
+                                "name": "totalCount",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "healthCheckCompleted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "strategy",
+                                "type": "LoadBalanceStrategy"
+                            }
+                        ],
+                        "name": "loadBalanceStrategyChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "name": "onConnectionConnected",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onConnectionDisconnected",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "onConnectionError",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onHealthCheckTimer",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onIdleCheckTimer",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "ConnectionPool.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
+                "className": "ConnectionStateManager",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "ConnectionState",
+                        "values": [
+                            "Disconnected",
+                            "Connecting",
+                            "SslHandshaking",
+                            "Authenticating",
+                            "Connected",
+                            "Reconnecting",
+                            "Error"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "ConnectionEvent",
+                        "values": [
+                            "StartConnection",
+                            "SocketConnected",
+                            "SslHandshakeCompleted",
+                            "AuthenticationSucceeded",
+                            "AuthenticationFailed",
+                            "ConnectionLost",
+                            "ReconnectRequested",
+                            "DisconnectRequested",
+                            "ErrorOccurred"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "ConnectionStateManager",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "oldState",
+                                "type": "ConnectionState"
+                            },
+                            {
+                                "name": "newState",
+                                "type": "ConnectionState"
+                            }
+                        ],
+                        "name": "stateChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "connectionEstablished",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "connectionLost",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "authenticationRequired",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "attempt",
+                                "type": "int"
+                            },
+                            {
+                                "name": "maxAttempts",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "retryAttemptStarted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "maxRetriesReached",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "errorStateEntered",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "name": "onStateEntered",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onStateExited",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onRetryTimerTimeout",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onConnectionTimeoutTimerTimeout",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onAuthTimeoutTimerTimeout",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "ConnectionStateManager.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
+                "className": "ErrorHandler",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "ErrorType",
+                        "values": [
+                            "NetworkError",
+                            "SslError",
+                            "ProtocolError",
+                            "AuthenticationError",
+                            "TimeoutError",
+                            "UnknownError"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "ErrorSeverity",
+                        "values": [
+                            "Critical",
+                            "Warning",
+                            "Info"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "RecoveryStrategy",
+                        "values": [
+                            "NoRecovery",
+                            "Retry",
+                            "Reconnect",
+                            "Fallback",
+                            "UserIntervention"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "ErrorHandler",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "ErrorInfo"
+                            }
+                        ],
+                        "name": "errorOccurred",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "ErrorInfo"
+                            },
+                            {
+                                "name": "strategy",
+                                "type": "RecoveryStrategy"
+                            }
+                        ],
+                        "name": "recoveryAttempted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "ErrorInfo"
+                            }
+                        ],
+                        "name": "recoverySucceeded",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "ErrorInfo"
+                            }
+                        ],
+                        "name": "recoveryFailed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "ErrorInfo"
+                            }
+                        ],
+                        "name": "criticalErrorOccurred",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "ErrorInfo"
+                            }
+                        ],
+                        "name": "userInterventionRequired",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "name": "onRetryTimerTimeout",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "ErrorHandler.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
+                "className": "HeartbeatManager",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "HeartbeatState",
+                        "values": [
+                            "Stopped",
+                            "Running",
+                            "WaitingResponse"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "ConnectionQuality",
+                        "values": [
+                            "Excellent",
+                            "Good",
+                            "Fair",
+                            "Poor",
+                            "Bad"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "HeartbeatManager",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "timestamp",
+                                "type": "QDateTime"
+                            }
+                        ],
+                        "name": "heartbeatSent",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "timestamp",
+                                "type": "QDateTime"
+                            },
+                            {
+                                "name": "latency",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "heartbeatReceived",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "heartbeatTimeout",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "quality",
+                                "type": "ConnectionQuality"
+                            }
+                        ],
+                        "name": "connectionQualityChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "latency",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "latencyChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "lossRate",
+                                "type": "double"
+                            }
+                        ],
+                        "name": "packetLossChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "maxMissedBeatsReached",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "name": "onHeartbeatTimer",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onTimeoutTimer",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onQualityCheckTimer",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "HeartbeatManager.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
                 "className": "NetworkClient",
                 "object": true,
                 "qualifiedClassName": "NetworkClient",
@@ -2631,6 +3494,236 @@
     {
         "classes": [
             {
+                "className": "ReconnectManager",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "ReconnectStrategy",
+                        "values": [
+                            "FixedInterval",
+                            "ExponentialBackoff",
+                            "LinearBackoff",
+                            "AdaptiveBackoff"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "ReconnectTrigger",
+                        "values": [
+                            "Manual",
+                            "ConnectionLost",
+                            "NetworkError",
+                            "AuthenticationFailed",
+                            "Timeout"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "ReconnectManager",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "trigger",
+                                "type": "ReconnectTrigger"
+                            },
+                            {
+                                "name": "reason",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "reconnectStarted",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "attempt",
+                                "type": "int"
+                            },
+                            {
+                                "name": "maxAttempts",
+                                "type": "int"
+                            },
+                            {
+                                "name": "delayMs",
+                                "type": "int"
+                            }
+                        ],
+                        "name": "reconnectAttempt",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "attempt",
+                                "type": "int"
+                            },
+                            {
+                                "name": "totalTime",
+                                "type": "qint64"
+                            }
+                        ],
+                        "name": "reconnectSucceeded",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "attempt",
+                                "type": "int"
+                            },
+                            {
+                                "name": "reason",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "reconnectFailed",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "maxAttemptsReached",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "name": "reconnectStopped",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "available",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "networkStatusChanged",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "name": "onReconnectTimer",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onConnectionTimeout",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "onNetworkStatusCheck",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "ReconnectManager.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
+                "className": "SSLConfigManager",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "Environment",
+                        "values": [
+                            "Development",
+                            "Production"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "CertificateVerificationMode",
+                        "values": [
+                            "Strict",
+                            "Relaxed",
+                            "Disabled"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "SSLConfigManager",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "env",
+                                "type": "Environment"
+                            }
+                        ],
+                        "name": "environmentChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "mode",
+                                "type": "CertificateVerificationMode"
+                            }
+                        ],
+                        "name": "verificationModeChanged",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "certificate",
+                                "type": "QSslCertificate"
+                            }
+                        ],
+                        "name": "trustedCertificateAdded",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "certificate",
+                                "type": "QSslCertificate"
+                            }
+                        ],
+                        "name": "trustedCertificateRemoved",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "SSLConfigManager.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
                 "className": "FileTransferManager",
                 "object": true,
                 "qualifiedClassName": "FileTransferManager",
@@ -2828,6 +3921,138 @@
             }
         ],
         "inputFile": "FileTransferManager.h",
+        "outputRevision": 68
+    },
+    {
+        "classes": [
+            {
+                "className": "LogManager",
+                "enums": [
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "LogType",
+                        "values": [
+                            "Connection",
+                            "SSL",
+                            "ErrorLog",
+                            "Heartbeat",
+                            "UI",
+                            "Performance",
+                            "Diagnostic",
+                            "DebugLog"
+                        ]
+                    },
+                    {
+                        "isClass": false,
+                        "isFlag": false,
+                        "name": "LogLevel",
+                        "values": [
+                            "DebugLevel",
+                            "InfoLevel",
+                            "WarningLevel",
+                            "ErrorLevel",
+                            "CriticalLevel"
+                        ]
+                    }
+                ],
+                "object": true,
+                "qualifiedClassName": "LogManager",
+                "signals": [
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "type",
+                                "type": "LogType"
+                            },
+                            {
+                                "name": "level",
+                                "type": "LogLevel"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "logWritten",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "type",
+                                "type": "LogType"
+                            },
+                            {
+                                "name": "oldFile",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "newFile",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "logRotated",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "name",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "value",
+                                "type": "double"
+                            },
+                            {
+                                "name": "unit",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "metricRecorded",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "error",
+                                "type": "QString"
+                            },
+                            {
+                                "name": "component",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "errorRecorded",
+                        "returnType": "void"
+                    }
+                ],
+                "slots": [
+                    {
+                        "access": "private",
+                        "name": "checkLogRotation",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "name": "cleanupOldLogs",
+                        "returnType": "void"
+                    }
+                ],
+                "superClasses": [
+                    {
+                        "access": "public",
+                        "name": "QObject"
+                    }
+                ]
+            }
+        ],
+        "inputFile": "LogManager.h",
         "outputRevision": 68
     },
     {

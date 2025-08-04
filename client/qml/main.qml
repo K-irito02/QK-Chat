@@ -37,8 +37,13 @@ ApplicationWindow {
     // 全局用户控制器
     UserController {
         id: userController
+    }
+    
+    // 监听用户控制器信号
+    Connections {
+        target: userController
         
-        onLoginSuccess: {
+        function onLoginSuccess() {
             console.log("登录成功")
             isLoggedIn = true
             // 调整窗口大小用于聊天界面
@@ -52,17 +57,17 @@ ApplicationWindow {
             y = (Screen.height - height) / 2
         }
         
-        onLoginFailed: {
+        function onLoginFailed(error) {
             console.log("登录失败:", error)
         }
         
-        onRegisterSuccess: {
+        function onRegisterSuccess(username, email, userId) {
             console.log("注册成功")
             prefillEmail = email
             showLogin = true
         }
         
-        onRegisterFailed: {
+        function onRegisterFailed(error) {
             console.log("注册失败:", error)
         }
     }

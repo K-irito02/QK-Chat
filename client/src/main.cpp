@@ -11,6 +11,8 @@
 #include <QObject>
 #include <QDir>
 #include <QDebug>
+#include <QFile>
+#include <QFileInfo>
 
 #include "controllers/UserController.h"
 #include "controllers/ChatController.h"
@@ -20,9 +22,66 @@
 #include "database/LocalDatabase.h"
 #include "utils/Validator.h"
 #include "utils/ThreadPool.h"
+#include "utils/LogManager.h"
 
 Q_DECLARE_LOGGING_CATEGORY(userController)
 Q_DECLARE_LOGGING_CATEGORY(networkClient)
+
+// 添加日志清理函数
+void clearLogFiles()
+{
+    QString appDir = QCoreApplication::applicationDirPath();
+    QString logDir = QDir(appDir).absoluteFilePath("../../../../logs/client");
+    
+    QDir dir(logDir);
+    if (!dir.exists()) {
+        qDebug() << "Log directory does not exist:" << logDir;
+        return;
+    }
+    
+    qDebug() << "Clearing log files in:" << logDir;
+    
+    int removedCount = 0;
+    
+    // 删除所有.log文件
+    QStringList filters;
+    filters << "*.log" << "*.log.*";
+    QFileInfoList logFiles = dir.entryInfoList(filters, QDir::Files);
+    
+    for (const QFileInfo &fileInfo : logFiles) {
+        if (QFile::remove(fileInfo.absoluteFilePath())) {
+            qDebug() << "Removed log file:" << fileInfo.fileName();
+            removedCount++;
+        }
+    }
+    
+    // 删除监控和诊断文件
+    QStringList additionalFiles = {"metrics.json", "monitoring_metrics.json"};
+    for (const QString &fileName : additionalFiles) {
+        QString filePath = dir.absoluteFilePath(fileName);
+        if (QFile::exists(filePath) && QFile::remove(filePath)) {
+            qDebug() << "Removed file:" << fileName;
+            removedCount++;
+        }
+    }
+    
+    // 删除诊断JSON文件
+    QFileInfoList diagnosticFiles = dir.entryInfoList(QStringList() << "diagnostic_*.json", QDir::Files);
+    for (const QFileInfo &fileInfo : diagnosticFiles) {
+        if (QFile::remove(fileInfo.absoluteFilePath())) {
+            qDebug() << "Removed diagnostic file:" << fileInfo.fileName();
+            removedCount++;
+        }
+    }
+    
+    qDebug() << "Log cleanup completed. Removed" << removedCount << "files";
+    
+    // 记录清理操作到日志
+    if (removedCount > 0) {
+        LogManager::instance()->writeDiagnosticLog("LogCleanup", "Completed", 
+            QString("Removed %1 log files").arg(removedCount));
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -31,6 +90,16 @@ int main(int argc, char *argv[])
     qputenv("QT_DEBUG_PLUGINS", "1");
     
     QGuiApplication app(argc, argv);
+    
+    // 在程序启动时自动清理日志文件
+    clearLogFiles();
+    
+    // 初始化日志管理器
+    LogManager::instance();
+    
+    // 记录程序启动信息
+    LogManager::instance()->writeDiagnosticLog("Application", "Started", 
+        QString("QK Chat Client v%1 started").arg(app.applicationVersion()));
     
     // 配置调试输出
     QLoggingCategory::setFilterRules("qkchat.client.*=true");

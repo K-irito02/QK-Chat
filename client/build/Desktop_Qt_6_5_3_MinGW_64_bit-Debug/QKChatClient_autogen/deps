@@ -49,6 +49,8 @@ QKChatClient_autogen/timestamp: \
 	D:/QT_Learn/Projects/QKChatApp/client/config/dev.ini \
 	D:/QT_Learn/Projects/QKChatApp/client/src/config/ConfigManager.cpp \
 	D:/QT_Learn/Projects/QKChatApp/client/src/config/ConfigManager.h \
+	D:/QT_Learn/Projects/QKChatApp/client/src/config/DevelopmentConfig.cpp \
+	D:/QT_Learn/Projects/QKChatApp/client/src/config/DevelopmentConfig.h \
 	D:/QT_Learn/Projects/QKChatApp/client/src/controllers/ChatController.cpp \
 	D:/QT_Learn/Projects/QKChatApp/client/src/controllers/ChatController.h \
 	D:/QT_Learn/Projects/QKChatApp/client/src/controllers/UserController.cpp \
@@ -60,19 +62,39 @@ QKChatClient_autogen/timestamp: \
 	D:/QT_Learn/Projects/QKChatApp/client/src/main.cpp \
 	D:/QT_Learn/Projects/QKChatApp/client/src/models/UserModel.cpp \
 	D:/QT_Learn/Projects/QKChatApp/client/src/models/UserModel.h \
+	D:/QT_Learn/Projects/QKChatApp/client/src/monitoring/ConnectionMonitor.cpp \
+	D:/QT_Learn/Projects/QKChatApp/client/src/monitoring/ConnectionMonitor.h \
+	D:/QT_Learn/Projects/QKChatApp/client/src/monitoring/DiagnosticTool.cpp \
+	D:/QT_Learn/Projects/QKChatApp/client/src/monitoring/DiagnosticTool.h \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/ConnectionPool.cpp \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/ConnectionPool.h \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/ConnectionStateManager.cpp \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/ConnectionStateManager.h \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/ErrorHandler.cpp \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/ErrorHandler.h \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/HeartbeatManager.cpp \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/HeartbeatManager.h \
 	D:/QT_Learn/Projects/QKChatApp/client/src/network/NetworkClient.cpp \
 	D:/QT_Learn/Projects/QKChatApp/client/src/network/NetworkClient.h \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/ReconnectManager.cpp \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/ReconnectManager.h \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/SSLConfigManager.cpp \
+	D:/QT_Learn/Projects/QKChatApp/client/src/network/SSLConfigManager.h \
 	D:/QT_Learn/Projects/QKChatApp/client/src/utils/FileTransferManager.cpp \
 	D:/QT_Learn/Projects/QKChatApp/client/src/utils/FileTransferManager.h \
+	D:/QT_Learn/Projects/QKChatApp/client/src/utils/LogManager.cpp \
+	D:/QT_Learn/Projects/QKChatApp/client/src/utils/LogManager.h \
 	D:/QT_Learn/Projects/QKChatApp/client/src/utils/ThreadPool.cpp \
 	D:/QT_Learn/Projects/QKChatApp/client/src/utils/ThreadPool.h \
 	D:/QT_Learn/Projects/QKChatApp/client/src/utils/Validator.cpp \
 	D:/QT_Learn/Projects/QKChatApp/client/src/utils/Validator.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QByteArray \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
+	D:/Qt/6.5.3/mingw_64/include/QtCore/QDir \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QFile \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QFileInfo \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QFlags \
+	D:/Qt/6.5.3/mingw_64/include/QtCore/QHash \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QIODevice \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QJsonDocument \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QJsonObject \
@@ -89,6 +111,7 @@ QKChatClient_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QSettings \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QSharedDataPointer \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QString \
+	D:/Qt/6.5.3/mingw_64/include/QtCore/QTextStream \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QThreadPool \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QTimer \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QUrl \
@@ -125,12 +148,14 @@ QKChatClient_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qcontainerinfo.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qcontainertools_impl.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qcontiguouscache.h \
+	D:/Qt/6.5.3/mingw_64/include/QtCore/qcoreevent.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qcryptographichash.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qdarwinhelpers.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qdatastream.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qdatetime.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qdeadlinetimer.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qdebug.h \
+	D:/Qt/6.5.3/mingw_64/include/QtCore/qdir.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qelapsedtimer.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qexceptionhandling.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qfile.h \
@@ -239,10 +264,13 @@ QKChatClient_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/include/QtGui/qtgui-config.h \
 	D:/Qt/6.5.3/mingw_64/include/QtGui/qtguiexports.h \
 	D:/Qt/6.5.3/mingw_64/include/QtGui/qtguiglobal.h \
+	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QAbstractSocket \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QNetworkAccessManager \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QNetworkReply \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QNetworkRequest \
+	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslCertificate \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslConfiguration \
+	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslError \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslPreSharedKeyAuthenticator \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslSocket \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qabstractsocket.h \
@@ -287,6 +315,14 @@ QKChatClient_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/include/QtSql/qtsql-config.h \
 	D:/Qt/6.5.3/mingw_64/include/QtSql/qtsqlexports.h \
 	D:/Qt/6.5.3/mingw_64/include/QtSql/qtsqlglobal.h \
+	D:/Qt/6.5.3/mingw_64/include/QtStateMachine/QState \
+	D:/Qt/6.5.3/mingw_64/include/QtStateMachine/QStateMachine \
+	D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qabstractstate.h \
+	D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qstate.h \
+	D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qstatemachine.h \
+	D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qstatemachineglobal.h \
+	D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qtstatemachine-config.h \
+	D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qtstatemachineexports.h \
 	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6/FindWrapAtomic.cmake \
 	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6/FindWrapVulkanHeaders.cmake \
 	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6/Qt6Config.cmake \
@@ -961,6 +997,14 @@ QKChatClient_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Sql/Qt6SqlTargets-relwithdebinfo.cmake \
 	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Sql/Qt6SqlTargets.cmake \
 	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Sql/Qt6SqlVersionlessTargets.cmake \
+	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineAdditionalTargetInfo.cmake \
+	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineConfig.cmake \
+	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineConfigVersion.cmake \
+	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineConfigVersionImpl.cmake \
+	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineDependencies.cmake \
+	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineTargets-relwithdebinfo.cmake \
+	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineTargets.cmake \
+	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine/Qt6StateMachineVersionlessTargets.cmake \
 	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6ZlibPrivate/Qt6ZlibPrivateAdditionalTargetInfo.cmake \
 	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6ZlibPrivate/Qt6ZlibPrivateConfig.cmake \
 	D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6ZlibPrivate/Qt6ZlibPrivateConfigVersion.cmake \

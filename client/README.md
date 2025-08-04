@@ -75,106 +75,109 @@ QK Chat 客户端是一个功能完整的即时通讯应用，采用现代化的
 client/
 ├── CMakeLists.txt          # CMake构建配置
 ├── CMakeLists.txt.user     # Qt Creator用户配置
-├── Resource.qrc            # Qt资源文件
 ├── README.md               # 项目说明文档
+├── Resource.qrc            # Qt资源文件
 ├── src/                    # 源代码目录
 │   ├── main.cpp           # 应用程序入口
 │   ├── controllers/       # 控制器层
-│   │   ├── UserController.h
-│   │   ├── UserController.cpp
+│   │   ├── ChatController.cpp
 │   │   ├── ChatController.h
-│   │   └── ChatController.cpp
+│   │   ├── UserController.cpp
+│   │   └── UserController.h
 │   ├── models/           # 数据模型层
-│   │   ├── UserModel.h
-│   │   └── UserModel.cpp
+│   │   ├── UserModel.cpp
+│   │   └── UserModel.h
 │   ├── database/         # 数据库层
-│   │   ├── LocalDatabase.h
-│   │   └── LocalDatabase.cpp
+│   │   ├── LocalDatabase.cpp
+│   │   └── LocalDatabase.h
 │   ├── network/          # 网络通信层
-│   │   ├── NetworkClient.h
-│   │   └── NetworkClient.cpp
+│   │   ├── NetworkClient.cpp
+│   │   └── NetworkClient.h
 │   ├── crypto/           # 加密模块
-│   │   ├── CryptoManager.h
-│   │   └── CryptoManager.cpp
-│   ├── utils/            # 工具类
-│   │   ├── Validator.h
-│   │   ├── Validator.cpp
-│   │   ├── FileTransferManager.h
-│   │   └── FileTransferManager.cpp
-│   └── config/           # 配置管理
-│       ├── ConfigManager.h
-│       └── ConfigManager.cpp
+│   │   ├── CryptoManager.cpp
+│   │   └── CryptoManager.h
+│   ├── config/           # 配置管理
+│   │   ├── ConfigManager.cpp
+│   │   └── ConfigManager.h
+│   └── utils/            # 工具类
+│       ├── FileTransferManager.cpp
+│       ├── FileTransferManager.h
+│       ├── ThreadPool.cpp
+│       ├── ThreadPool.h
+│       ├── Validator.cpp
+│       └── Validator.h
 ├── qml/                  # QML界面文件
-│   ├── main.qml         # 主窗口
+│   ├── ChatMainWindow.qml # 聊天主窗口
+│   ├── EmailVerificationDialog.qml # 邮箱验证对话框
 │   ├── LoginWindow.qml  # 登录界面
 │   ├── RegisterWindow.qml # 注册界面
-│   ├── ChatMainWindow.qml # 聊天主窗口
+│   ├── main.qml         # 主窗口
 │   └── components/      # 可复用组件
-│       ├── ChatWindow.qml     # 聊天窗口
-│       ├── MessageBubble.qml  # 消息气泡
-│       ├── ProfilePage.qml    # 个人资料页
-│       ├── ContactsPage.qml   # 联系人页
-│       ├── GroupsPage.qml     # 群组页
-│       ├── SettingsPage.qml   # 设置页
 │       ├── AddPage.qml        # 添加页
-│       ├── DefaultPage.qml    # 默认页
 │       ├── AvatarSelector.qml # 头像选择器
-│       ├── EmojiPicker.qml    # 表情选择器
+│       ├── ChatWindow.qml     # 聊天窗口
+│       ├── ContactsPage.qml   # 联系人页
 │       ├── CustomButton.qml   # 自定义按钮
 │       ├── CustomTextField.qml # 自定义输入框
+│       ├── DefaultPage.qml    # 默认页
+│       ├── EmojiPicker.qml    # 表情选择器
+│       ├── GroupsPage.qml     # 群组页
+│       ├── MessageBubble.qml  # 消息气泡
+│       ├── ProfilePage.qml    # 个人资料页
+│       ├── SettingsPage.qml   # 设置页
 │       └── SideBarButton.qml  # 侧边栏按钮
 ├── icons/                # 图标资源
-│   ├── logo.png          # 应用Logo
-│   ├── avatar1.png       # 头像1
-│   ├── avatar2.png       # 头像2
-│   ├── avatar3.png       # 头像3
-│   ├── avatar4.png       # 头像4
-│   ├── avatar5.png       # 头像5
-│   ├── user.png          # 用户图标
-│   ├── email.png         # 邮箱图标
-│   ├── lock.png          # 锁图标
-│   ├── eye.png           # 显示密码
-│   ├── eye-off.png       # 隐藏密码
-│   ├── captcha.png       # 验证码图标
-│   ├── edit.png          # 编辑图标
-│   ├── sun.png           # 浅色主题
-│   ├── moon.png          # 深色主题
-│   ├── home.png          # 首页图标
-│   ├── chat.png          # 聊天图标
-│   ├── group.png         # 群组图标
-│   ├── profile.png       # 个人资料图标
-│   ├── settings.png      # 设置图标
-│   ├── search.png        # 搜索图标
-│   ├── phone.png         # 电话图标
-│   ├── info.png          # 信息图标
-│   ├── delete.png        # 删除图标
-│   ├── add.png           # 添加图标
-│   ├── add.svg           # 添加SVG图标
-│   ├── chat-empty.png    # 空聊天状态
-│   ├── contacts-empty.png # 空联系人状态
-│   ├── groups-empty.png  # 空群组状态
 │   ├── add-contact.png   # 添加联系人
-│   ├── create-group.png  # 创建群组
-│   ├── join-group.png    # 加入群组
-│   ├── video.png         # 视频图标
-│   ├── more.png          # 更多选项
-│   ├── arrow-down.png    # 向下箭头
-│   ├── keyboard.png      # 键盘图标
-│   ├── emoji.png         # 表情图标
-│   ├── attach.png        # 附件图标
-│   ├── mic.png           # 麦克风图标
-│   ├── send.png          # 发送图标
-│   ├── arrow-right.png   # 向右箭头
-│   ├── message-sent.png  # 消息已发送
+│   ├── add.png          # 添加图标
+│   ├── add.svg          # 添加SVG图标
+│   ├── arrow-down.png   # 向下箭头
+│   ├── arrow-right.png  # 向右箭头
+│   ├── attach.png       # 附件图标
+│   ├── avatar1.png      # 头像1
+│   ├── avatar2.png      # 头像2
+│   ├── avatar3.png      # 头像3
+│   ├── avatar4.png      # 头像4
+│   ├── avatar5.png      # 头像5
+│   ├── captcha.png      # 验证码图标
+│   ├── chat-empty.png   # 空聊天状态
+│   ├── chat.png         # 聊天图标
+│   ├── contacts-empty.png # 空联系人状态
+│   ├── create-group.png # 创建群组
+│   ├── delete.png       # 删除图标
+│   ├── edit.png         # 编辑图标
+│   ├── email-verification.svg # 邮箱验证图标
+│   ├── email.png        # 邮箱图标
+│   ├── emoji.png        # 表情图标
+│   ├── exit.png         # 退出图标
+│   ├── eye-off.png      # 隐藏密码
+│   ├── eye.png          # 显示密码
+│   ├── file.png         # 文件图标
+│   ├── group.png        # 群组图标
+│   ├── groups-empty.png # 空群组状态
+│   ├── home.png         # 首页图标
+│   ├── info.png         # 信息图标
+│   ├── invite.png       # 邀请图标
+│   ├── join-group.png   # 加入群组
+│   ├── keyboard.png     # 键盘图标
+│   ├── lock.png         # 锁图标
+│   ├── logo.png         # 应用Logo
 │   ├── message-sending.png # 消息发送中
-│   ├── file.png          # 文件图标
-│   ├── invite.png        # 邀请图标
+│   ├── message-sent.png # 消息已发送
 │   ├── message-settings.png # 消息设置
-│   ├── privacy.png       # 隐私图标
-│   └── exit.png          # 退出图标
-├── config/              # 配置文件
-│   └── dev.ini         # 开发环境配置
-└── build/              # 构建输出目录
+│   ├── mic.png          # 麦克风图标
+│   ├── moon.png         # 深色主题
+│   ├── more.png         # 更多选项
+│   ├── phone.png        # 电话图标
+│   ├── privacy.png      # 隐私图标
+│   ├── profile.png      # 个人资料图标
+│   ├── search.png       # 搜索图标
+│   ├── send.png         # 发送图标
+│   ├── settings.png     # 设置图标
+│   ├── sun.png          # 浅色主题
+│   ├── user.png         # 用户图标
+│   └── video.png        # 视频图标
+└── config/              # 配置文件
+    └── dev.ini         # 开发环境配置
 ```
 
 ## 🚀 快速开始
@@ -389,4 +392,4 @@ show_tooltips=true
 **版本**：1.0.0  
 **最后更新**：2025年08月02日  
 **Qt版本**：6.5+  
-**C++标准**：C++17 
+**C++标准**：C++17

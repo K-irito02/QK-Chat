@@ -47,6 +47,7 @@ public:
     QString getCaFile() const;
     QString getSslCertificateFile() const;
     QString getSslPrivateKeyFile() const;
+    QString getSslPrivateKeyPassword() const;
     
     // 数据库配置
     QString getDatabaseType() const;

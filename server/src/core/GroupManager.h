@@ -42,8 +42,8 @@ public:
         bool requireApproval = false;       // 需要管理员审批
         bool muteAll = false;               // 全员禁言
         int maxMembers = 500;               // 最大成员数
-        QString joinCode;                   // 入群码
-        QDateTime joinCodeExpiry;           // 入群码过期时间
+        QString joinCode{};                 // 入群码
+        QDateTime joinCodeExpiry{};        // 入群码过期时间
     };
 
     explicit GroupManager(Database *database, QObject *parent = nullptr);

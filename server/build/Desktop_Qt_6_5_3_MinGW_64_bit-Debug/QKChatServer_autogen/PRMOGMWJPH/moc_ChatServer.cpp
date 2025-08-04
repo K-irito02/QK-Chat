@@ -8,7 +8,6 @@
 
 #include "../../../../src/core/ChatServer.h"
 #include <QtCore/qmetatype.h>
-#include <QtCore/QList>
 
 #if __has_include(<QtCore/qtmochelpers.h>)
 #include <QtCore/qtmochelpers.h>
@@ -46,26 +45,35 @@ static constexpr auto qt_meta_stringdata_CLASSChatServerENDCLASS = QtMocHelpers:
     "serverError",
     "error",
     "clientConnected",
-    "socketId",
+    "userId",
     "clientDisconnected",
+    "clientAuthenticated",
+    "userOnline",
+    "userOffline",
     "messageReceived",
     "fromUserId",
     "toUserId",
     "message",
-    "userOnline",
-    "userId",
-    "userOffline",
+    "messageProcessed",
+    "messageId",
+    "messageFailed",
+    "performanceAlert",
+    "systemOverloaded",
+    "healthStatusChanged",
+    "healthy",
+    "performSystemMaintenance",
+    "updateSystemStats",
+    "checkSystemHealth",
+    "onConnectionManagerEvent",
+    "onMessageEngineEvent",
+    "onThreadManagerEvent",
     "onNewConnection",
     "onClientDisconnected",
-    "onClientDataReceived",
-    "onSslErrors",
-    "QList<QSslError>",
-    "errors",
-    "cleanupConnections"
+    "onClientDataReceived"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSChatServerENDCLASS_t {
-    uint offsetsAndSizes[46];
+    uint offsetsAndSizes[64];
     char stringdata0[11];
     char stringdata1[14];
     char stringdata2[1];
@@ -73,22 +81,31 @@ struct qt_meta_stringdata_CLASSChatServerENDCLASS_t {
     char stringdata4[12];
     char stringdata5[6];
     char stringdata6[16];
-    char stringdata7[9];
+    char stringdata7[7];
     char stringdata8[19];
-    char stringdata9[16];
+    char stringdata9[20];
     char stringdata10[11];
-    char stringdata11[9];
-    char stringdata12[8];
+    char stringdata11[12];
+    char stringdata12[16];
     char stringdata13[11];
-    char stringdata14[7];
-    char stringdata15[12];
-    char stringdata16[16];
-    char stringdata17[21];
-    char stringdata18[21];
-    char stringdata19[12];
+    char stringdata14[9];
+    char stringdata15[8];
+    char stringdata16[17];
+    char stringdata17[10];
+    char stringdata18[14];
+    char stringdata19[17];
     char stringdata20[17];
-    char stringdata21[7];
-    char stringdata22[19];
+    char stringdata21[20];
+    char stringdata22[8];
+    char stringdata23[25];
+    char stringdata24[18];
+    char stringdata25[18];
+    char stringdata26[25];
+    char stringdata27[21];
+    char stringdata28[21];
+    char stringdata29[16];
+    char stringdata30[21];
+    char stringdata31[21];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSChatServerENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -101,22 +118,31 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSChatServerENDCLASS_t qt_meta_st
         QT_MOC_LITERAL(40, 11),  // "serverError"
         QT_MOC_LITERAL(52, 5),  // "error"
         QT_MOC_LITERAL(58, 15),  // "clientConnected"
-        QT_MOC_LITERAL(74, 8),  // "socketId"
-        QT_MOC_LITERAL(83, 18),  // "clientDisconnected"
-        QT_MOC_LITERAL(102, 15),  // "messageReceived"
-        QT_MOC_LITERAL(118, 10),  // "fromUserId"
-        QT_MOC_LITERAL(129, 8),  // "toUserId"
-        QT_MOC_LITERAL(138, 7),  // "message"
-        QT_MOC_LITERAL(146, 10),  // "userOnline"
-        QT_MOC_LITERAL(157, 6),  // "userId"
-        QT_MOC_LITERAL(164, 11),  // "userOffline"
-        QT_MOC_LITERAL(176, 15),  // "onNewConnection"
-        QT_MOC_LITERAL(192, 20),  // "onClientDisconnected"
-        QT_MOC_LITERAL(213, 20),  // "onClientDataReceived"
-        QT_MOC_LITERAL(234, 11),  // "onSslErrors"
-        QT_MOC_LITERAL(246, 16),  // "QList<QSslError>"
-        QT_MOC_LITERAL(263, 6),  // "errors"
-        QT_MOC_LITERAL(270, 18)   // "cleanupConnections"
+        QT_MOC_LITERAL(74, 6),  // "userId"
+        QT_MOC_LITERAL(81, 18),  // "clientDisconnected"
+        QT_MOC_LITERAL(100, 19),  // "clientAuthenticated"
+        QT_MOC_LITERAL(120, 10),  // "userOnline"
+        QT_MOC_LITERAL(131, 11),  // "userOffline"
+        QT_MOC_LITERAL(143, 15),  // "messageReceived"
+        QT_MOC_LITERAL(159, 10),  // "fromUserId"
+        QT_MOC_LITERAL(170, 8),  // "toUserId"
+        QT_MOC_LITERAL(179, 7),  // "message"
+        QT_MOC_LITERAL(187, 16),  // "messageProcessed"
+        QT_MOC_LITERAL(204, 9),  // "messageId"
+        QT_MOC_LITERAL(214, 13),  // "messageFailed"
+        QT_MOC_LITERAL(228, 16),  // "performanceAlert"
+        QT_MOC_LITERAL(245, 16),  // "systemOverloaded"
+        QT_MOC_LITERAL(262, 19),  // "healthStatusChanged"
+        QT_MOC_LITERAL(282, 7),  // "healthy"
+        QT_MOC_LITERAL(290, 24),  // "performSystemMaintenance"
+        QT_MOC_LITERAL(315, 17),  // "updateSystemStats"
+        QT_MOC_LITERAL(333, 17),  // "checkSystemHealth"
+        QT_MOC_LITERAL(351, 24),  // "onConnectionManagerEvent"
+        QT_MOC_LITERAL(376, 20),  // "onMessageEngineEvent"
+        QT_MOC_LITERAL(397, 20),  // "onThreadManagerEvent"
+        QT_MOC_LITERAL(418, 15),  // "onNewConnection"
+        QT_MOC_LITERAL(434, 20),  // "onClientDisconnected"
+        QT_MOC_LITERAL(455, 20)   // "onClientDataReceived"
     },
     "ChatServer",
     "serverStarted",
@@ -125,22 +151,31 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSChatServerENDCLASS_t qt_meta_st
     "serverError",
     "error",
     "clientConnected",
-    "socketId",
+    "userId",
     "clientDisconnected",
+    "clientAuthenticated",
+    "userOnline",
+    "userOffline",
     "messageReceived",
     "fromUserId",
     "toUserId",
     "message",
-    "userOnline",
-    "userId",
-    "userOffline",
+    "messageProcessed",
+    "messageId",
+    "messageFailed",
+    "performanceAlert",
+    "systemOverloaded",
+    "healthStatusChanged",
+    "healthy",
+    "performSystemMaintenance",
+    "updateSystemStats",
+    "checkSystemHealth",
+    "onConnectionManagerEvent",
+    "onMessageEngineEvent",
+    "onThreadManagerEvent",
     "onNewConnection",
     "onClientDisconnected",
-    "onClientDataReceived",
-    "onSslErrors",
-    "QList<QSslError>",
-    "errors",
-    "cleanupConnections"
+    "onClientDataReceived"
 };
 #undef QT_MOC_LITERAL
 #endif // !QT_MOC_HAS_STRING_DATA
@@ -152,29 +187,39 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSChatServerENDCLASS[] = {
       11,       // revision
        0,       // classname
        0,    0, // classinfo
-      13,   14, // methods
+      23,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-       8,       // signalCount
+      14,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,   92,    2, 0x06,    1 /* Public */,
-       3,    0,   93,    2, 0x06,    2 /* Public */,
-       4,    1,   94,    2, 0x06,    3 /* Public */,
-       6,    1,   97,    2, 0x06,    5 /* Public */,
-       8,    1,  100,    2, 0x06,    7 /* Public */,
-       9,    3,  103,    2, 0x06,    9 /* Public */,
-      13,    1,  110,    2, 0x06,   13 /* Public */,
-      15,    1,  113,    2, 0x06,   15 /* Public */,
+       1,    0,  152,    2, 0x06,    1 /* Public */,
+       3,    0,  153,    2, 0x06,    2 /* Public */,
+       4,    1,  154,    2, 0x06,    3 /* Public */,
+       6,    1,  157,    2, 0x06,    5 /* Public */,
+       8,    1,  160,    2, 0x06,    7 /* Public */,
+       9,    1,  163,    2, 0x06,    9 /* Public */,
+      10,    1,  166,    2, 0x06,   11 /* Public */,
+      11,    1,  169,    2, 0x06,   13 /* Public */,
+      12,    3,  172,    2, 0x06,   15 /* Public */,
+      16,    1,  179,    2, 0x06,   19 /* Public */,
+      18,    2,  182,    2, 0x06,   21 /* Public */,
+      19,    1,  187,    2, 0x06,   24 /* Public */,
+      20,    0,  190,    2, 0x06,   26 /* Public */,
+      21,    1,  191,    2, 0x06,   27 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-      16,    0,  116,    2, 0x08,   17 /* Private */,
-      17,    0,  117,    2, 0x08,   18 /* Private */,
-      18,    0,  118,    2, 0x08,   19 /* Private */,
-      19,    1,  119,    2, 0x08,   20 /* Private */,
-      22,    0,  122,    2, 0x08,   22 /* Private */,
+      23,    0,  194,    2, 0x08,   29 /* Private */,
+      24,    0,  195,    2, 0x08,   30 /* Private */,
+      25,    0,  196,    2, 0x08,   31 /* Private */,
+      26,    0,  197,    2, 0x08,   32 /* Private */,
+      27,    0,  198,    2, 0x08,   33 /* Private */,
+      28,    0,  199,    2, 0x08,   34 /* Private */,
+      29,    0,  200,    2, 0x08,   35 /* Private */,
+      30,    0,  201,    2, 0x08,   36 /* Private */,
+      31,    0,  202,    2, 0x08,   37 /* Private */,
 
  // signals: parameters
     QMetaType::Void,
@@ -182,15 +227,25 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSChatServerENDCLASS[] = {
     QMetaType::Void, QMetaType::QString,    5,
     QMetaType::Void, QMetaType::LongLong,    7,
     QMetaType::Void, QMetaType::LongLong,    7,
-    QMetaType::Void, QMetaType::LongLong, QMetaType::LongLong, QMetaType::QString,   10,   11,   12,
-    QMetaType::Void, QMetaType::LongLong,   14,
-    QMetaType::Void, QMetaType::LongLong,   14,
+    QMetaType::Void, QMetaType::LongLong,    7,
+    QMetaType::Void, QMetaType::LongLong,    7,
+    QMetaType::Void, QMetaType::LongLong,    7,
+    QMetaType::Void, QMetaType::LongLong, QMetaType::LongLong, QMetaType::QJsonObject,   13,   14,   15,
+    QMetaType::Void, QMetaType::QString,   17,
+    QMetaType::Void, QMetaType::QString, QMetaType::QString,   17,    5,
+    QMetaType::Void, QMetaType::QString,   15,
+    QMetaType::Void,
+    QMetaType::Void, QMetaType::Bool,   22,
 
  // slots: parameters
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void,
-    QMetaType::Void, 0x80000000 | 20,   21,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
+    QMetaType::Void,
     QMetaType::Void,
 
        0        // eod
@@ -218,27 +273,52 @@ Q_CONSTINIT const QMetaObject ChatServer::staticMetaObject = { {
         // method 'clientDisconnected'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
-        // method 'messageReceived'
+        // method 'clientAuthenticated'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
-        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'userOnline'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
         // method 'userOffline'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
+        // method 'messageReceived'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QJsonObject &, std::false_type>,
+        // method 'messageProcessed'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'messageFailed'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'performanceAlert'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'systemOverloaded'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'healthStatusChanged'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        // method 'performSystemMaintenance'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'updateSystemStats'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'checkSystemHealth'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onConnectionManagerEvent'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onMessageEngineEvent'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        // method 'onThreadManagerEvent'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onNewConnection'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onClientDisconnected'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onClientDataReceived'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        // method 'onSslErrors'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QList<QSslError> &, std::false_type>,
-        // method 'cleanupConnections'
         QtPrivate::TypeAndForceComplete<void, std::false_type>
     >,
     nullptr
@@ -255,26 +335,25 @@ void ChatServer::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 2: _t->serverError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         case 3: _t->clientConnected((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1]))); break;
         case 4: _t->clientDisconnected((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1]))); break;
-        case 5: _t->messageReceived((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<qint64>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3]))); break;
+        case 5: _t->clientAuthenticated((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1]))); break;
         case 6: _t->userOnline((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1]))); break;
         case 7: _t->userOffline((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1]))); break;
-        case 8: _t->onNewConnection(); break;
-        case 9: _t->onClientDisconnected(); break;
-        case 10: _t->onClientDataReceived(); break;
-        case 11: _t->onSslErrors((*reinterpret_cast< std::add_pointer_t<QList<QSslError>>>(_a[1]))); break;
-        case 12: _t->cleanupConnections(); break;
+        case 8: _t->messageReceived((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<qint64>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QJsonObject>>(_a[3]))); break;
+        case 9: _t->messageProcessed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 10: _t->messageFailed((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 11: _t->performanceAlert((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 12: _t->systemOverloaded(); break;
+        case 13: _t->healthStatusChanged((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
+        case 14: _t->performSystemMaintenance(); break;
+        case 15: _t->updateSystemStats(); break;
+        case 16: _t->checkSystemHealth(); break;
+        case 17: _t->onConnectionManagerEvent(); break;
+        case 18: _t->onMessageEngineEvent(); break;
+        case 19: _t->onThreadManagerEvent(); break;
+        case 20: _t->onNewConnection(); break;
+        case 21: _t->onClientDisconnected(); break;
+        case 22: _t->onClientDataReceived(); break;
         default: ;
-        }
-    } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        switch (_id) {
-        default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
-        case 11:
-            switch (*reinterpret_cast<int*>(_a[1])) {
-            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
-            case 0:
-                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< QList<QSslError> >(); break;
-            }
-            break;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
         int *result = reinterpret_cast<int *>(_a[0]);
@@ -314,8 +393,8 @@ void ChatServer::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
             }
         }
         {
-            using _t = void (ChatServer::*)(qint64 , qint64 , const QString & );
-            if (_t _q_method = &ChatServer::messageReceived; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+            using _t = void (ChatServer::*)(qint64 );
+            if (_t _q_method = &ChatServer::clientAuthenticated; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 5;
                 return;
             }
@@ -331,6 +410,48 @@ void ChatServer::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
             using _t = void (ChatServer::*)(qint64 );
             if (_t _q_method = &ChatServer::userOffline; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 7;
+                return;
+            }
+        }
+        {
+            using _t = void (ChatServer::*)(qint64 , qint64 , const QJsonObject & );
+            if (_t _q_method = &ChatServer::messageReceived; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 8;
+                return;
+            }
+        }
+        {
+            using _t = void (ChatServer::*)(const QString & );
+            if (_t _q_method = &ChatServer::messageProcessed; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 9;
+                return;
+            }
+        }
+        {
+            using _t = void (ChatServer::*)(const QString & , const QString & );
+            if (_t _q_method = &ChatServer::messageFailed; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 10;
+                return;
+            }
+        }
+        {
+            using _t = void (ChatServer::*)(const QString & );
+            if (_t _q_method = &ChatServer::performanceAlert; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 11;
+                return;
+            }
+        }
+        {
+            using _t = void (ChatServer::*)();
+            if (_t _q_method = &ChatServer::systemOverloaded; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 12;
+                return;
+            }
+        }
+        {
+            using _t = void (ChatServer::*)(bool );
+            if (_t _q_method = &ChatServer::healthStatusChanged; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 13;
                 return;
             }
         }
@@ -356,13 +477,13 @@ int ChatServer::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 13)
+        if (_id < 23)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 13;
+        _id -= 23;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 13)
-            qt_static_metacall(this, _c, _id, _a);
-        _id -= 13;
+        if (_id < 23)
+            *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
+        _id -= 23;
     }
     return _id;
 }
@@ -401,9 +522,9 @@ void ChatServer::clientDisconnected(qint64 _t1)
 }
 
 // SIGNAL 5
-void ChatServer::messageReceived(qint64 _t1, qint64 _t2, const QString & _t3)
+void ChatServer::clientAuthenticated(qint64 _t1)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t3))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 5, _a);
 }
 
@@ -419,5 +540,46 @@ void ChatServer::userOffline(qint64 _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 7, _a);
+}
+
+// SIGNAL 8
+void ChatServer::messageReceived(qint64 _t1, qint64 _t2, const QJsonObject & _t3)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t3))) };
+    QMetaObject::activate(this, &staticMetaObject, 8, _a);
+}
+
+// SIGNAL 9
+void ChatServer::messageProcessed(const QString & _t1)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 9, _a);
+}
+
+// SIGNAL 10
+void ChatServer::messageFailed(const QString & _t1, const QString & _t2)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
+    QMetaObject::activate(this, &staticMetaObject, 10, _a);
+}
+
+// SIGNAL 11
+void ChatServer::performanceAlert(const QString & _t1)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 11, _a);
+}
+
+// SIGNAL 12
+void ChatServer::systemOverloaded()
+{
+    QMetaObject::activate(this, &staticMetaObject, 12, nullptr);
+}
+
+// SIGNAL 13
+void ChatServer::healthStatusChanged(bool _t1)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 13, _a);
 }
 QT_WARNING_POP

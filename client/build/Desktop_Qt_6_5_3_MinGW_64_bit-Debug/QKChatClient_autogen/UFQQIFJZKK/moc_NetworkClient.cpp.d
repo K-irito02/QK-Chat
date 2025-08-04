@@ -1,11 +1,20 @@
 D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatClient_autogen/UFQQIFJZKK/moc_NetworkClient.cpp: D:/QT_Learn/Projects/QKChatApp/client/src/network/NetworkClient.h \
   D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatClient_autogen/moc_predefs.h \
+  D:/QT_Learn/Projects/QKChatApp/client/src/network/ConnectionStateManager.h \
+  D:/QT_Learn/Projects/QKChatApp/client/src/network/ErrorHandler.h \
+  D:/QT_Learn/Projects/QKChatApp/client/src/network/HeartbeatManager.h \
+  D:/QT_Learn/Projects/QKChatApp/client/src/network/ReconnectManager.h \
+  D:/QT_Learn/Projects/QKChatApp/client/src/network/SSLConfigManager.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QFlags \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QIODevice \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QList \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QLoggingCategory \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMap \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMetaType \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QMutex \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QObject \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QQueue \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QSharedDataPointer \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QString \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QTimer \
@@ -40,6 +49,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcontainerinfo.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcontainertools_impl.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcontiguouscache.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qcoreevent.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcryptographichash.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdarwinhelpers.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdatastream.h \
@@ -62,12 +72,15 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlist.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlocale.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlogging.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qloggingcategory.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmalloc.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmap.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmath.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmetacontainer.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qmetaobject.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmetatype.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qminmax.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qmutex.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qnamespace.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qnumeric.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qobject.h \
@@ -77,6 +90,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qoverload.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qpair.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qprocessordetection.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qqueue.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qrefcount.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qscopedpointer.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qscopeguard.h \
@@ -111,6 +125,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtnoop.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtpreprocessorsupport.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtresource.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qtsan_impl.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qttranslation.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qttypetraits.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtversion.h \
@@ -124,10 +139,13 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qvarlengtharray.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qversiontagging.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qxptype_traits.h \
+  D:/Qt/6.5.3/mingw_64/include/QtNetwork/QAbstractSocket \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QNetworkAccessManager \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QNetworkReply \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QNetworkRequest \
+  D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslCertificate \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslConfiguration \
+  D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslError \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslPreSharedKeyAuthenticator \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslSocket \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qabstractsocket.h \
@@ -145,6 +163,14 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qtnetwork-config.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qtnetworkexports.h \
   D:/Qt/6.5.3/mingw_64/include/QtNetwork/qtnetworkglobal.h \
+  D:/Qt/6.5.3/mingw_64/include/QtStateMachine/QState \
+  D:/Qt/6.5.3/mingw_64/include/QtStateMachine/QStateMachine \
+  D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qabstractstate.h \
+  D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qstate.h \
+  D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qstatemachine.h \
+  D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qstatemachineglobal.h \
+  D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qtstatemachine-config.h \
+  D:/Qt/6.5.3/mingw_64/include/QtStateMachine/qtstatemachineexports.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include-fixed/limits.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include-fixed/syslimits.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/algorithm \

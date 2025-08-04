@@ -391,6 +391,9 @@ Qt6Quick_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Quick
 //The directory containing a CMake configuration file for Qt6Sql.
 Qt6Sql_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Sql
 
+//The directory containing a CMake configuration file for Qt6StateMachine.
+Qt6StateMachine_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6StateMachine
+
 //The directory containing a CMake configuration file for Qt6WidgetsTools.
 Qt6WidgetsTools_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WidgetsTools
 
@@ -1130,6 +1133,8 @@ QT_FEATURE_publicsuffix_system:INTERNAL=OFF
 QT_FEATURE_pulseaudio:INTERNAL=OFF
 //Qt feature: pushbutton (from target Qt6::Widgets)
 QT_FEATURE_pushbutton:INTERNAL=ON
+//Qt feature: qeventtransition (from target Qt6::StateMachine)
+QT_FEATURE_qeventtransition:INTERNAL=ON
 //Qt feature: qml_animation (from target Qt6::Qml)
 QT_FEATURE_qml_animation:INTERNAL=ON
 //Qt feature: qml_debug (from target Qt6::Qml)
@@ -1326,6 +1331,8 @@ QT_FEATURE_stack_protector_strong:INTERNAL=OFF
 QT_FEATURE_stackedwidget:INTERNAL=ON
 //Qt feature: standarditemmodel (from target Qt6::Gui)
 QT_FEATURE_standarditemmodel:INTERNAL=ON
+//Qt feature: statemachine (from target Qt6::StateMachine)
+QT_FEATURE_statemachine:INTERNAL=ON
 //Qt feature: static (from target Qt6::Core)
 QT_FEATURE_static:INTERNAL=OFF
 //Qt feature: statusbar (from target Qt6::Widgets)

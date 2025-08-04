@@ -1,5 +1,6 @@
 #include "Database.h"
 #include "../config/ServerConfig.h"
+#include "../utils/LogManager.h"
 #include <QSqlDriver>
 #include <QSqlRecord>
 #include <QSqlError>
@@ -37,22 +38,27 @@ Database::~Database()
 bool Database::initialize()
 {
     QMutexLocker locker(&_mutex);
-    
+
     if (_isConnected) {
+        LogManager::instance()->writeDatabaseLog("INIT_SKIP", "Database already connected", "Database");
         return true;
     }
-    
+
+    LogManager::instance()->writeDatabaseLog("INIT_START", "Starting database initialization", "Database");
+
     // 检查可用的数据库驱动
     QStringList availableDrivers = QSqlDatabase::drivers();
-    qCInfo(database) << "Available database drivers:" << availableDrivers;
-    
+    LogManager::instance()->writeDatabaseLog("DRIVER_CHECK",
+                                           QString("Available drivers: %1").arg(availableDrivers.join(", ")),
+                                           "Database");
+
     if (!availableDrivers.contains("QMYSQL")) {
         QString error = "QMYSQL driver not available. Available drivers: " + availableDrivers.join(", ");
-        qCCritical(database) << error;
+        LogManager::instance()->writeErrorLog(error, "Database");
         emit databaseError(error);
         return false;
     }
-    
+
     // 从配置中获取数据库连接参数
     ServerConfig *config = ServerConfig::instance();
     _host = config->getDatabaseHost();
@@ -60,8 +66,11 @@ bool Database::initialize()
     _databaseName = config->getDatabaseName();
     _username = config->getDatabaseUsername();
     _password = config->getDatabasePassword();
-    
-    qCInfo(database) << "Attempting to connect to database:" << _host << ":" << _port << "/" << _databaseName;
+
+    LogManager::instance()->writeDatabaseLog("CONNECTION_ATTEMPT",
+                                           QString("Host: %1:%2, Database: %3, User: %4")
+                                           .arg(_host).arg(_port).arg(_databaseName).arg(_username),
+                                           "Database");
     
     // 创建数据库连接
     _database = QSqlDatabase::addDatabase("QMYSQL", _connectionName);
@@ -77,21 +86,24 @@ bool Database::initialize()
     
     if (!_database.open()) {
         QString error = QString("Failed to connect to database: %1").arg(_database.lastError().text());
-        qCCritical(database) << error;
+        LogManager::instance()->writeErrorLog(error, "Database");
+        LogManager::instance()->writeDatabaseLog("CONNECTION_FAILED", error, "Database");
         emit databaseError(error);
         return false;
     }
-    
+
     _isConnected = true;
-    
+
     // 设置字符集
     QSqlQuery query(_database);
     query.exec("SET NAMES utf8mb4");
     query.exec("SET CHARACTER SET utf8mb4");
-    
-    qCInfo(database) << "Database connected successfully to" << _host << ":" << _port;
+
+    LogManager::instance()->writeDatabaseLog("CONNECTION_SUCCESS",
+                                           QString("Connected to %1:%2").arg(_host).arg(_port),
+                                           "Database");
     emit connectionRestored();
-    
+
     return true;
 }
 
@@ -1003,18 +1015,25 @@ bool Database::executeQuery(QSqlQuery &query)
         QString error = QString("SQL execution failed: %1 - %2")
                        .arg(query.lastError().text())
                        .arg(query.lastQuery());
-        qCWarning(database) << error;
+        LogManager::instance()->writeErrorLog(error, "Database");
+        LogManager::instance()->writeDatabaseLog("QUERY_FAILED",
+                                                QString("Error: %1, Query: %2").arg(query.lastError().text(), query.lastQuery()),
+                                                "Database");
         emit databaseError(error);
-        
+
         // 如果是连接错误，尝试重连
         if (query.lastError().type() == QSqlError::ConnectionError) {
             _isConnected = false;
+            LogManager::instance()->writeDatabaseLog("CONNECTION_LOST", "Database connection lost", "Database");
             emit connectionLost();
         }
-        
+
         return false;
     }
-    
+
+    LogManager::instance()->writeDatabaseLog("QUERY_SUCCESS",
+                                           QString("Query executed: %1").arg(query.lastQuery()),
+                                           "Database");
     return true;
 }
 
@@ -1028,22 +1047,28 @@ QString Database::getConnectionName() const
 int Database::getTotalUserCount() const
 {
     QMutexLocker locker(&_mutex);
-    
+
     if (!isConnected()) {
         // 在const方法中不能调用非const方法，所以我们需要特殊处理
         Database* nonConstThis = const_cast<Database*>(this);
         if (!nonConstThis->initialize()) {
+            LogManager::instance()->writeErrorLog("Failed to initialize database in getTotalUserCount", "Database");
             return 0;
         }
     }
-    
+
     QSqlQuery query(_database);
     query.prepare("SELECT COUNT(*) FROM users");
-    
-    if (query.exec() && query.next()) {
-        return query.value(0).toInt();
+
+    // 使用executeQuery来确保错误处理
+    Database* nonConstThis = const_cast<Database*>(this);
+    if (nonConstThis->executeQuery(query) && query.next()) {
+        int count = query.value(0).toInt();
+        LogManager::instance()->writeDatabaseLog("GET_TOTAL_USER_COUNT", QString("Total users: %1").arg(count), "Database");
+        return count;
     }
-    
+
+    LogManager::instance()->writeErrorLog("Failed to get total user count", "Database");
     return 0;
 }
 
@@ -1052,42 +1077,52 @@ int Database::getTotalUserCount() const
 int Database::getOnlineUserCount() const
 {
     QMutexLocker locker(&_mutex);
-    
+
     if (!isConnected()) {
         Database* nonConstThis = const_cast<Database*>(this);
         if (!nonConstThis->initialize()) {
+            LogManager::instance()->writeErrorLog("Failed to initialize database in getOnlineUserCount", "Database");
             return 0;
         }
     }
-    
+
     QSqlQuery query(_database);
     query.prepare("SELECT COUNT(DISTINCT user_id) FROM user_sessions WHERE expires_at > NOW()");
-    
-    if (query.exec() && query.next()) {
-        return query.value(0).toInt();
+
+    Database* nonConstThis = const_cast<Database*>(this);
+    if (nonConstThis->executeQuery(query) && query.next()) {
+        int count = query.value(0).toInt();
+        LogManager::instance()->writeDatabaseLog("GET_ONLINE_USER_COUNT", QString("Online users: %1").arg(count), "Database");
+        return count;
     }
-    
+
+    LogManager::instance()->writeErrorLog("Failed to get online user count", "Database");
     return 0;
 }
 
 qint64 Database::getTotalMessageCount() const
 {
     QMutexLocker locker(&_mutex);
-    
+
     if (!isConnected()) {
         Database* nonConstThis = const_cast<Database*>(this);
         if (!nonConstThis->initialize()) {
+            LogManager::instance()->writeErrorLog("Failed to initialize database in getTotalMessageCount", "Database");
             return 0;
         }
     }
-    
+
     QSqlQuery query(_database);
     query.prepare("SELECT COUNT(*) FROM messages");
-    
-    if (query.exec() && query.next()) {
-        return query.value(0).toLongLong();
+
+    Database* nonConstThis = const_cast<Database*>(this);
+    if (nonConstThis->executeQuery(query) && query.next()) {
+        qint64 count = query.value(0).toLongLong();
+        LogManager::instance()->writeDatabaseLog("GET_TOTAL_MESSAGE_COUNT", QString("Total messages: %1").arg(count), "Database");
+        return count;
     }
-    
+
+    LogManager::instance()->writeErrorLog("Failed to get total message count", "Database");
     return 0;
 }
 

@@ -11,7 +11,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 # 查找Qt6组件
-find_package(Qt6 REQUIRED COMPONENTS 
+find_package(Qt6 REQUIRED COMPONENTS
     Core
     Qml
     Quick
@@ -21,6 +21,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Concurrent
     Multimedia
     OpenGL
+    StateMachine
 )
 
 qt_standard_project_setup()
@@ -33,11 +34,21 @@ set(SOURCES
     src/models/UserModel.cpp
     src/database/LocalDatabase.cpp
     src/network/NetworkClient.cpp
+    src/network/SSLConfigManager.cpp
+    src/network/ConnectionStateManager.cpp
+    src/network/ErrorHandler.cpp
+    src/network/ReconnectManager.cpp
+    src/network/HeartbeatManager.cpp
+    src/network/ConnectionPool.cpp
     src/utils/Validator.cpp
     src/utils/FileTransferManager.cpp
     src/utils/ThreadPool.cpp
+    src/utils/LogManager.cpp
     src/crypto/CryptoManager.cpp
     src/config/ConfigManager.cpp
+    src/config/DevelopmentConfig.cpp
+    src/monitoring/ConnectionMonitor.cpp
+    src/monitoring/DiagnosticTool.cpp
 )
 
 # 定义头文件
@@ -47,11 +58,21 @@ set(HEADERS
     src/models/UserModel.h
     src/database/LocalDatabase.h
     src/network/NetworkClient.h
+    src/network/SSLConfigManager.h
+    src/network/ConnectionStateManager.h
+    src/network/ErrorHandler.h
+    src/network/ReconnectManager.h
+    src/network/HeartbeatManager.h
+    src/network/ConnectionPool.h
     src/utils/Validator.h
     src/utils/FileTransferManager.h
     src/utils/ThreadPool.h
+    src/utils/LogManager.h
     src/crypto/CryptoManager.h
     src/config/ConfigManager.h
+    src/config/DevelopmentConfig.h
+    src/monitoring/ConnectionMonitor.h
+    src/monitoring/DiagnosticTool.h
 )
 
 # 定义QML文件
@@ -118,6 +139,7 @@ target_link_libraries(QKChatClient PRIVATE
     Qt6::Concurrent
     Qt6::Multimedia
     Qt6::OpenGL
+    Qt6::StateMachine
 )
 
 # =============================================================================
@@ -139,6 +161,7 @@ target_include_directories(QKChatClient PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/src/crypto
     ${CMAKE_CURRENT_SOURCE_DIR}/src/config
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/monitoring
 )
 
 # 设置编译选项

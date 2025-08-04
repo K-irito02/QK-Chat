@@ -13,7 +13,7 @@
 Q_DECLARE_LOGGING_CATEGORY(databaseOptimizer)
 
 class Database;
-class CacheManager;
+class CacheManagerV2;
 
 class DatabaseOptimizer : public QObject
 {
@@ -66,7 +66,7 @@ public:
         QDateTime lastUsed;
     };
 
-    explicit DatabaseOptimizer(Database *database, CacheManager *cacheManager, QObject *parent = nullptr);
+    explicit DatabaseOptimizer(Database *database, CacheManagerV2 *cacheManager, QObject *parent = nullptr);
     ~DatabaseOptimizer();
 
     // 初始化和配置
@@ -131,7 +131,7 @@ private slots:
 
 private:
     Database *m_database;
-    CacheManager *m_cacheManager;
+    CacheManagerV2 *m_cacheManager;
     QSqlDatabase m_db;
 
     // 配置

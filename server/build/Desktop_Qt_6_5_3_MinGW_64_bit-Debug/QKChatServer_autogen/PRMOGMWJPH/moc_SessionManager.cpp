@@ -97,12 +97,12 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSSessionManagerENDCLASS[] = {
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
        1,    2,   32,    2, 0x06,    1 /* Public */,
        5,    1,   37,    2, 0x06,    4 /* Public */,
-       6,    1,   40,    2, 0x06,    6 /* Public */,
+       6,    2,   40,    2, 0x06,    6 /* Public */,
 
  // signals: parameters
     QMetaType::Void, QMetaType::LongLong, QMetaType::QString,    3,    4,
     QMetaType::Void, QMetaType::QString,    4,
-    QMetaType::Void, QMetaType::QString,    4,
+    QMetaType::Void, QMetaType::LongLong, QMetaType::QString,    3,    4,
 
        0        // eod
 };
@@ -125,6 +125,7 @@ Q_CONSTINIT const QMetaObject SessionManager::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'sessionExpired'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>
     >,
     nullptr
@@ -138,7 +139,7 @@ void SessionManager::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
         switch (_id) {
         case 0: _t->sessionCreated((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
         case 1: _t->sessionRemoved((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 2: _t->sessionExpired((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 2: _t->sessionExpired((*reinterpret_cast< std::add_pointer_t<qint64>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::IndexOfMethod) {
@@ -158,7 +159,7 @@ void SessionManager::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _
             }
         }
         {
-            using _t = void (SessionManager::*)(const QString & );
+            using _t = void (SessionManager::*)(qint64 , const QString & );
             if (_t _q_method = &SessionManager::sessionExpired; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 2;
                 return;
@@ -212,9 +213,9 @@ void SessionManager::sessionRemoved(const QString & _t1)
 }
 
 // SIGNAL 2
-void SessionManager::sessionExpired(const QString & _t1)
+void SessionManager::sessionExpired(qint64 _t1, const QString & _t2)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 2, _a);
 }
 QT_WARNING_POP

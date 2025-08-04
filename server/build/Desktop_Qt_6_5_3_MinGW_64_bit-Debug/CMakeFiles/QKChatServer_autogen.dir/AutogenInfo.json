@@ -329,6 +329,12 @@
 		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsAdditionalTargetInfo.cmake",
 		"D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets/Qt6WebSocketsVersionlessTargets.cmake",
 		"C:/Program Files/CMake/share/cmake-4.0/Modules/GNUInstallDirs.cmake",
+		"C:/Program Files/CMake/share/cmake-4.0/Modules/FindThreads.cmake",
+		"C:/Program Files/CMake/share/cmake-4.0/Modules/CheckLibraryExists.cmake",
+		"C:/Program Files/CMake/share/cmake-4.0/Modules/CheckIncludeFileCXX.cmake",
+		"C:/Program Files/CMake/share/cmake-4.0/Modules/CheckCXXSourceCompiles.cmake",
+		"C:/Program Files/CMake/share/cmake-4.0/Modules/FindPackageHandleStandardArgs.cmake",
+		"C:/Program Files/CMake/share/cmake-4.0/Modules/FindPackageMessage.cmake",
 		"D:/QT_Learn/Projects/QKChatApp/server/config/dev.conf",
 		"D:/QT_Learn/Projects/QKChatApp/server/data/mysql_init.sql",
 		"D:/QT_Learn/Projects/QKChatApp/server/certs/server.crt",
@@ -389,6 +395,12 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ArchitectureOptimizer.h",
+			"MU",
+			"PRMOGMWJPH/moc_ArchitectureOptimizer.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ChatClientConnection.h",
 			"MU",
 			"PRMOGMWJPH/moc_ChatClientConnection.cpp",
@@ -404,6 +416,12 @@
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ConnectionManager.h",
 			"MU",
 			"PRMOGMWJPH/moc_ConnectionManager.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/EnhancedChatServer.h",
+			"MU",
+			"PRMOGMWJPH/moc_EnhancedChatServer.cpp",
 			null
 		],
 		[
@@ -425,15 +443,33 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/RobustnessManager.h",
+			"MU",
+			"PRMOGMWJPH/moc_RobustnessManager.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/SessionManager.h",
 			"MU",
 			"PRMOGMWJPH/moc_SessionManager.cpp",
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/StackTraceCollector.h",
+			"MU",
+			"PRMOGMWJPH/moc_StackTraceCollector.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ThreadManager.h",
 			"MU",
 			"PRMOGMWJPH/moc_ThreadManager.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ThreadSafetyEnhancements.h",
+			"MU",
+			"PRMOGMWJPH/moc_ThreadSafetyEnhancements.cpp",
 			null
 		],
 		[
@@ -533,6 +569,7 @@
 	"MOC_DEFINITIONS" : 
 	[
 		"DEBUG_MODE",
+		"ENABLE_ENHANCEMENTS",
 		"LOG_LEVEL_DEBUG",
 		"MINGW_HAS_SECURE_API=1",
 		"QKCHAT_SERVER_VERSION=\"1.0.0\"",
@@ -658,6 +695,11 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ArchitectureOptimizer.cpp",
+			"MU",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ChatClientConnection.cpp",
 			"MU",
 			null
@@ -669,6 +711,11 @@
 		],
 		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ConnectionManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/EnhancedChatServer.cpp",
 			"MU",
 			null
 		],
@@ -688,12 +735,27 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/RobustnessManager.cpp",
+			"MU",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/SessionManager.cpp",
 			"MU",
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/StackTraceCollector.cpp",
+			"MU",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ThreadManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/core/ThreadSafetyEnhancements.cpp",
 			"MU",
 			null
 		],

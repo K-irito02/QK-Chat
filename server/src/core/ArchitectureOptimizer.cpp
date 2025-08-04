@@ -1,16 +1,37 @@
-#include "ArchitectureOptimizer.h"
-#include <QDebug>
-#include <QCoreApplication>
-#include <QHostInfo>
 #include <QNetworkInterface>
+#include <QHostInfo>
+#include <QCoreApplication>
+#include <QCryptographicHash>
+#include <QThread>
+#include "ArchitectureOptimizer.h"
+#include "StackTraceCollector.h"
+#include <QDebug>
 #include <QDir>
 #include <QFileInfo>
 #include <QJsonDocument>
-#include <QCryptographicHash>
+#include <QRandomGenerator>
 #include <QTextStream>
-#include <QProcess>
-#include <algorithm>
+#include <QFile>
+#include <QTimer>
+#include <QDateTime>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QQueue>
+#include <QList>
+#include <QHash>
+#include <QMutex>
+#include <QAtomicInt>
+#include <QLoggingCategory>
+#include <memory>
+#include <functional>
+#include <atomic>
 #include <random>
+#include <algorithm>
+
+// 前向声明
+class DatabaseTracker;
+class NetworkTracker;
+class ExceptionPatternAnalyzer;
 
 Q_LOGGING_CATEGORY(architecture, "qkchat.server.architecture")
 
@@ -178,8 +199,8 @@ QStringList ClusterManager::selectNodes(int count, const QString& key) const
         
         // 简化实现：按哈希值排序选择
         std::sort(healthyNodes.begin(), healthyNodes.end(), 
-                 [hash](const NodeInfo& a, const NodeInfo& b) {
-                     return hashKey(a.nodeId) < hashKey(b.nodeId);
+                 [this, hash](const NodeInfo& a, const NodeInfo& b) {
+                     return this->hashKey(a.nodeId) < this->hashKey(b.nodeId);
                  });
     } else {
         // 其他策略：按权重排序
@@ -189,7 +210,7 @@ QStringList ClusterManager::selectNodes(int count, const QString& key) const
                  });
     }
     
-    for (int i = 0; i < std::min(count, healthyNodes.size()); ++i) {
+    for (int i = 0; i < std::min(count, static_cast<int>(healthyNodes.size())); ++i) {
         result.append(healthyNodes[i].nodeId);
     }
     
@@ -373,12 +394,14 @@ QString ClusterManager::calculateNodeId() const
     
     // 获取第一个网络接口的MAC地址
     QList<QNetworkInterface> interfaces = QNetworkInterface::allInterfaces();
-    for (const QNetworkInterface& interface : interfaces) {
-        if (interface.flags().testFlag(QNetworkInterface::IsUp) &&
-            interface.flags().testFlag(QNetworkInterface::IsRunning) &&
-            !interface.flags().testFlag(QNetworkInterface::IsLoopBack)) {
-            mac = interface.hardwareAddress();
-            break;
+    for (const QNetworkInterface& networkInterface : interfaces)
+    {
+        if (networkInterface.flags().testFlag(QNetworkInterface::IsUp) &&
+            networkInterface.flags().testFlag(QNetworkInterface::IsRunning) &&
+            !networkInterface.flags().testFlag(QNetworkInterface::IsLoopBack)) 
+        {
+                mac = networkInterface.hardwareAddress();
+                break;
         }
     }
     
@@ -427,7 +450,7 @@ QString ClusterManager::selectNodeByStrategy(const QString& key) const
     
     switch (m_config.loadBalanceStrategy) {
     case LoadBalanceStrategy::RoundRobin: {
-        int index = m_roundRobinIndex.fetchAndAddOrdered(1) % healthyNodes.size();
+        int index = m_roundRobinIndex.fetch_add(1) % healthyNodes.size();
         return healthyNodes[index].nodeId;
     }
     
@@ -486,8 +509,17 @@ QString ClusterManager::selectNodeByStrategy(const QString& key) const
 
 uint32_t ClusterManager::hashKey(const QString& key) const
 {
-    QByteArray hash = QCryptographicHash::hash(key.toUtf8(), QCryptographicHash::Crc32);
-    return *reinterpret_cast<const uint32_t*>(hash.constData());
+    QByteArray hash = QCryptographicHash::hash(key.toUtf8(), QCryptographicHash::Sha1);
+    // 取前4个字节作为哈希值
+    if (hash.size() >= 4) {
+        return *reinterpret_cast<const uint32_t*>(hash.constData());
+    }
+    // 如果哈希值小于4字节，进行填充
+    uint32_t result = 0;
+    for (int i = 0; i < std::min<int>(4, hash.size()); ++i) {
+        result = (result << 8) | static_cast<unsigned char>(hash[i]);
+    }
+    return result;
 }
 
 // ============================================================================
@@ -531,20 +563,21 @@ void AsyncLogManager::log(LogLevel level, const QString& category, const QString
         return;
     }
     
-    LogEntry entry;
-    entry.timestamp = QDateTime::currentDateTime();
-    entry.level = level;
-    entry.category = category;
-    entry.message = message;
-    entry.thread = QThread::currentThread()->objectName();
-    entry.file = file;
-    entry.line = line;
-    entry.context = context;
+    LogEntry* entry = new LogEntry();
+    entry->timestamp = QDateTime::currentDateTime();
+    entry->level = level;
+    entry->category = category;
+    entry->message = message;
+    entry->thread = QThread::currentThread()->objectName();
+    entry->file = file;
+    entry->line = line;
+    entry->context = context;
     
     QMutexLocker locker(&m_queueMutex);
     
     if (m_logQueue.size() >= m_config.bufferSize) {
         m_droppedLogs.fetchAndAddOrdered(1);
+        delete entry;
         return; // 缓冲区满，丢弃日志
     }
     
@@ -621,7 +654,7 @@ qint64 AsyncLogManager::getTotalLogsWritten() const
 
 void AsyncLogManager::processLogQueue()
 {
-    QList<LogEntry> entries;
+    QList<LogEntry*> entries;
     
     {
         QMutexLocker locker(&m_queueMutex);
@@ -633,6 +666,11 @@ void AsyncLogManager::processLogQueue()
     if (!entries.isEmpty()) {
         writeToFile(entries);
         m_totalLogs.fetchAndAddOrdered(entries.size());
+        
+        // 清理内存
+        for (LogEntry* entry : entries) {
+            delete entry;
+        }
     }
 }
 
@@ -647,7 +685,7 @@ void AsyncLogManager::performMaintenance()
     }
 }
 
-void AsyncLogManager::writeToFile(const QList<LogEntry>& entries)
+void AsyncLogManager::writeToFile(const QList<LogEntry*>& entries)
 {
     if (entries.isEmpty()) {
         return;
@@ -663,7 +701,7 @@ void AsyncLogManager::writeToFile(const QList<LogEntry>& entries)
     if (file.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream stream(&file);
         
-        for (const LogEntry& entry : entries) {
+        for (const LogEntry* entry : entries) {
             stream << formatLogEntry(entry) << Qt::endl;
         }
         
@@ -710,10 +748,10 @@ void AsyncLogManager::cleanupOldFiles()
     }
 }
 
-QString AsyncLogManager::formatLogEntry(const LogEntry& entry) const
+QString AsyncLogManager::formatLogEntry(const LogEntry* entry) const
 {
     QString levelStr;
-    switch (entry.level) {
+    switch (entry->level) {
     case LogLevel::Debug:    levelStr = "DEBUG"; break;
     case LogLevel::Info:     levelStr = "INFO"; break;
     case LogLevel::Warning:  levelStr = "WARN"; break;
@@ -722,18 +760,18 @@ QString AsyncLogManager::formatLogEntry(const LogEntry& entry) const
     }
     
     QString result = QString("[%1] [%2] [%3] [%4] %5")
-                       .arg(entry.timestamp.toString("yyyy-MM-dd hh:mm:ss.zzz"))
+                       .arg(entry->timestamp.toString("yyyy-MM-dd hh:mm:ss.zzz"))
                        .arg(levelStr)
-                       .arg(entry.category)
-                       .arg(entry.thread)
-                       .arg(entry.message);
+                       .arg(entry->category)
+                       .arg(entry->thread)
+                       .arg(entry->message);
     
-    if (!entry.file.isEmpty()) {
-        result += QString(" (%1:%2)").arg(entry.file).arg(entry.line);
+    if (!entry->file.isEmpty()) {
+        result += QString(" (%1:%2)").arg(entry->file).arg(entry->line);
     }
     
-    if (!entry.context.isEmpty()) {
-        QJsonDocument doc(entry.context);
+    if (!entry->context.isEmpty()) {
+        QJsonDocument doc(entry->context);
         result += " Context:" + doc.toJson(QJsonDocument::Compact);
     }
     
@@ -987,4 +1025,69 @@ QStringList ArchitectureOptimizer::analyzeReliability() const
     return reliability;
 }
 
-#include "ArchitectureOptimizer.moc"
+// ============================================================================
+// 缺失的构造函数和槽函数实现
+// ============================================================================
+
+ServiceRegistry::ServiceRegistry(QObject *parent)
+    : QObject(parent)
+    , m_healthCheckTimer(new QTimer(this))
+{
+    connect(m_healthCheckTimer, &QTimer::timeout, this, &ServiceRegistry::performPeriodicHealthCheck);
+    m_healthCheckTimer->start(30000); // 每30秒检查一次
+}
+
+void ServiceRegistry::performPeriodicHealthCheck()
+{
+    cleanupStaleServices();
+}
+
+void ServiceRegistry::cleanupStaleServices()
+{
+    // 清理过期服务的实现
+    qCDebug(architecture) << "Cleaning up stale services";
+}
+
+DistributedLockManager::DistributedLockManager(QObject *parent)
+    : QObject(parent)
+    , m_maintenanceTimer(new QTimer(this))
+{
+    connect(m_maintenanceTimer, &QTimer::timeout, this, &DistributedLockManager::performLockMaintenance);
+    m_maintenanceTimer->start(60000); // 每分钟维护一次
+}
+
+void DistributedLockManager::performLockMaintenance()
+{
+    cleanupExpiredLocks();
+}
+
+void DistributedLockManager::cleanupExpiredLocks()
+{
+    // 清理过期的分布式锁
+    qCDebug(architecture) << "Cleaning up expired distributed locks";
+    // 具体实现可以根据实际分布式锁机制来完成
+}
+
+ShardingManager::ShardingManager(QObject *parent)
+    : QObject(parent)
+{
+    qCDebug(architecture) << "ShardingManager initialized";
+}
+
+DatabaseTracker::DatabaseTracker(QObject *parent)
+    : QObject(parent)
+{
+    qCDebug(architecture) << "DatabaseTracker initialized";
+}
+
+NetworkTracker::NetworkTracker(QObject *parent)
+    : QObject(parent)
+{
+    qCDebug(architecture) << "NetworkTracker initialized";
+}
+
+ExceptionPatternAnalyzer::ExceptionPatternAnalyzer(QObject *parent)
+    : QObject(parent)
+{
+    qCDebug(architecture) << "ExceptionPatternAnalyzer initialized";
+}

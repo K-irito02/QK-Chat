@@ -13,6 +13,10 @@
 #include <QElapsedTimer>
 #include <QThread>
 #include <QWaitCondition>
+#include <QDateTime>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QRandomGenerator>
 #include <memory>
 #include <chrono>
 #include <mutex>
@@ -20,7 +24,11 @@
 #include <condition_variable>
 #include <atomic>
 #include <unordered_map>
+#include <unordered_set>
+#include <queue>
 #include <stack>
+#include <vector>
+#include <functional>
 
 Q_DECLARE_LOGGING_CATEGORY(threadSafety)
 
@@ -47,6 +55,9 @@ public:
     void registerLockWait(const QString& lockName, QThread* thread);
     void checkDeadlock();
     void setMaxWaitTime(int milliseconds) { m_maxWaitTime = milliseconds; }
+    
+    // 统计信息
+    QJsonObject getStatistics() const;
 
 signals:
     void deadlockDetected(const QStringList& involvedThreads);
@@ -72,6 +83,8 @@ private:
                            const std::unordered_map<QThread*, QThread*>& waitGraph,
                            std::unordered_set<QThread*>& visited,
                            std::unordered_set<QThread*>& recursionStack);
+    void updateWaitGraph(const QString& lockName, QThread* thread);
+    void updateStatistics(const QString& lockName, qint64 waitTime);
 };
 
 /**
@@ -97,7 +110,44 @@ public:
         QAtomicInt writeWaits{0};
         QAtomicInt timeouts{0};
     };
-    Stats getStats() const { return m_stats; }
+    Stats getStats() const;
+    
+    // 锁包装器类
+    class ReadLocker {
+    public:
+        explicit ReadLocker(SmartRWLock* lock) : m_lock(lock) {
+            if (m_lock) m_lock->lockForRead();
+        }
+        ~ReadLocker() {
+            if (m_lock) m_lock->unlock();
+        }
+        void unlock() {
+            if (m_lock) {
+                m_lock->unlock();
+                m_lock = nullptr;
+            }
+        }
+    private:
+        SmartRWLock* m_lock;
+    };
+    
+    class WriteLocker {
+    public:
+        explicit WriteLocker(SmartRWLock* lock) : m_lock(lock) {
+            if (m_lock) m_lock->lockForWrite();
+        }
+        ~WriteLocker() {
+            if (m_lock) m_lock->unlock();
+        }
+        void unlock() {
+            if (m_lock) {
+                m_lock->unlock();
+                m_lock = nullptr;
+            }
+        }
+    private:
+        SmartRWLock* m_lock;
+    };
 
 private:
     QString m_name;
@@ -186,6 +236,8 @@ public:
     explicit ConnectionPoolEnhancer(QObject *parent = nullptr);
     
     void setConfig(const PoolConfig& config) { m_config = config; }
+    bool acquireConnection(int timeoutMs);
+    void releaseConnection();
     bool shouldAllocateConnection() const;
     bool shouldRejectRequest() const;
     void recordConnectionSuccess();
@@ -194,6 +246,19 @@ public:
     
     CircuitState getCircuitState() const { return m_circuitState; }
     double getCurrentLoad() const;
+    
+    // 统计信息
+    struct PoolStats {
+        QAtomicInt totalRequests{0};
+        QAtomicInt successfulRequests{0};
+        QAtomicInt failedRequests{0};
+        QAtomicInt timeouts{0};
+        QAtomicInt backpressureDrops{0};
+        QAtomicInt currentQueueSize{0};
+        QAtomicInt acquiredConnections{0};
+        CircuitState circuitBreakerState{CircuitState::Closed};
+    };
+    PoolStats getStats() const;
 
 signals:
     void circuitBreakerOpened();
@@ -212,6 +277,16 @@ private:
     QAtomicInt m_pendingRequests{0};
     QDateTime m_circuitOpenTime;
     QTimer* m_circuitTimer;
+    
+    // 统计变量
+    QAtomicInt m_totalRequests{0};
+    QAtomicInt m_successfulRequests{0};
+    QAtomicInt m_failedRequests{0};
+    QAtomicInt m_timeouts{0};
+    QAtomicInt m_backpressureDrops{0};
+    QAtomicInt m_queueSize{0};
+    QAtomicInt m_acquiredConnections{0};
+    std::chrono::steady_clock::time_point m_lastFailureTime;
 };
 
 /**
@@ -239,6 +314,23 @@ public:
     
     void setMaxSessions(int maxSessions) { m_maxSessions = maxSessions; }
     void setSessionTimeout(int timeoutSeconds) { m_sessionTimeout = timeoutSeconds; }
+    
+    // 配置结构
+    struct SSLConfig {
+        int maxCacheSize{1000};
+        std::chrono::milliseconds sessionTimeout{std::chrono::hours(1)};
+    };
+    void setConfig(const SSLConfig& config);
+    
+    // 统计信息
+    struct SSLStats {
+        QAtomicInt totalSessions{0};
+        QAtomicInt reusedSessions{0};
+        QAtomicInt expiredSessions{0};
+        QAtomicInt cacheHits{0};
+        QAtomicInt cacheMisses{0};
+    };
+    SSLStats getStats() const;
 
 signals:
     void sessionStored(const QByteArray& sessionId);
@@ -253,12 +345,18 @@ private:
     static SSLSessionManager* s_instance;
     static QMutex s_instanceMutex;
     
-    mutable SmartRWLock m_sessionsLock;
-    QHash<QByteArray, SessionInfo> m_sessions;
+    mutable SmartRWLock m_lock;
+    QHash<QString, SessionInfo> m_sessionCache;
     QTimer* m_cleanupTimer;
     
+    SSLConfig m_config;
     int m_maxSessions{1000};
     int m_sessionTimeout{3600}; // 1小时
+    
+    // 统计变量
+    QAtomicInt m_totalSessions{0};
+    QAtomicInt m_reusedSessions{0};
+    QAtomicInt m_expiredSessions{0};
 };
 
 /**
@@ -303,6 +401,8 @@ signals:
 
 private slots:
     void updateRates();
+    void updateArrivalRate();
+    void updateProcessingRate();
 
 private:
     int m_maxQueueSize;
@@ -317,6 +417,15 @@ private:
     QTimer* m_rateTimer;
     QAtomicInt m_messagesLastSecond{0};
     QAtomicInt m_processedLastSecond{0};
+    
+    // 速率统计
+    QAtomicInt m_arrivalCount{0};
+    QAtomicInt m_processingCount{0};
+    QDateTime m_lastArrivalUpdate;
+    QDateTime m_lastProcessingUpdate;
+    
+    // 当前级别
+    std::atomic<BackpressureLevel> m_currentLevel{BackpressureLevel::Normal};
     
     BackpressureLevel calculateLevel() const;
 };
@@ -340,6 +449,20 @@ public:
         std::atomic<qint64> responseCount{0};
         std::atomic<int> maxResponseTime{0};
     };
+    
+    struct StatsSnapshot {
+        qint64 totalMessages{0};
+        qint64 processedMessages{0};
+        qint64 failedMessages{0};
+        qint64 totalConnections{0};
+        qint64 activeConnections{0};
+        qint64 authenticatedConnections{0};
+        
+        // 性能统计
+        qint64 totalResponseTime{0};
+        qint64 responseCount{0};
+        int maxResponseTime{0};
+    };
 
     AtomicStatsCounter() = default;
     
@@ -355,7 +478,7 @@ public:
     void updateResponseTime(int responseTime);
     
     // 获取快照（原子读取）
-    Stats getSnapshot() const;
+    StatsSnapshot getSnapshot() const;
     void reset();
 
 private:

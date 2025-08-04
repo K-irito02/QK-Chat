@@ -80,9 +80,8 @@ bool Database::initialize()
     _database.setUserName(_username);
     _database.setPassword(_password);
     
-    // 设置连接选项
-    _database.setConnectOptions(QString("MYSQL_OPT_CONNECT_TIMEOUT=%1;MYSQL_OPT_READ_TIMEOUT=%2")
-                               .arg(_connectTimeout).arg(_readTimeout));
+    // 设置连接选项 - 减少超时时间防止阻塞
+    _database.setConnectOptions(QString("MYSQL_OPT_CONNECT_TIMEOUT=3;MYSQL_OPT_READ_TIMEOUT=5"));
     
     if (!_database.open()) {
         QString error = QString("Failed to connect to database: %1").arg(_database.lastError().text());

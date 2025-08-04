@@ -14,10 +14,24 @@
 #include <QElapsedTimer>
 #include <memory>
 #include <functional>
-#include <execinfo.h>
-#include <cxxabi.h>
 #include <signal.h>
 #include <csignal>
+
+// 平台特定的头文件包含
+#ifdef _WIN32
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #define NOMINMAX
+    #include <windows.h>
+    #include <dbghelp.h>
+    #include <psapi.h>
+    #pragma comment(lib, "dbghelp.lib")
+    #pragma comment(lib, "psapi.lib")
+#else
+    // Linux/Unix 平台
+    #include <execinfo.h>
+    #include <cxxabi.h>
+#endif
 
 Q_DECLARE_LOGGING_CATEGORY(stackTrace)
 
@@ -325,6 +339,8 @@ public:
         QDateTime handshakeTime;
         int handshakeDuration{0};
         bool sessionReused{false};
+        
+        SSLInfo() : handshakeDuration(0), sessionReused(false) {}
     };
 
     explicit NetworkTracker(QObject *parent = nullptr);

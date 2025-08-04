@@ -79,13 +79,13 @@ public:
     void shutdownEnhancements();
     
     // 重写父类方法以集成增强功能
-    bool startServer(const QString& host = "0.0.0.0", int port = 8443) override;
-    void stopServer() override;
+    bool startServer(const QString& host = "0.0.0.0", int port = 8443);
+    void stopServer();
     
     // 消息发送优化（使用无锁客户端管理）
-    bool sendMessageToUser(qint64 userId, const QJsonObject& message) override;
-    void broadcastMessage(const QJsonObject& message) override;
-    void broadcastToAuthenticated(const QJsonObject& message) override;
+    bool sendMessageToUser(qint64 userId, const QJsonObject& message);
+    void broadcastMessage(const QJsonObject& message);
+    void broadcastToAuthenticated(const QJsonObject& message);
     
     // 增强功能访问接口
     LockWaitMonitor* lockMonitor() const;
@@ -102,13 +102,16 @@ public:
     QJsonObject getHealthReport() const;
     QJsonObject getPerformanceReport() const;
     QJsonObject getSecurityReport() const;
+    QJsonObject collectSystemMetrics() const;
+    QJsonObject collectNetworkMetrics() const;
+    QJsonObject collectDatabaseMetrics() const;
     
     // 优化建议
     QStringList getOptimizationSuggestions() const;
     bool applyOptimization(const QString& optimization);
     
     // 故障处理
-    void handleSystemFailure(FailureType type, const QString& component, const QString& description);
+    void handleSystemFailure(RobustnessFailureType type, const QString& component, const QString& description);
     void triggerEmergencyMode();
     void exitEmergencyMode();
 
@@ -202,9 +205,6 @@ private:
     
     // 工具方法
     QString generateNodeId() const;
-    QJsonObject collectSystemMetrics() const;
-    QJsonObject collectNetworkMetrics() const;
-    QJsonObject collectDatabaseMetrics() const;
     
     // 优化建议实现
     bool optimizeThreadPoolConfiguration();

@@ -3,6 +3,8 @@
 #include <QJsonDocument>
 #include <QNetworkInterface>
 #include <QRandomGenerator>
+#include <QCoreApplication>
+#include <QHostInfo>
 
 Q_LOGGING_CATEGORY(enhancedChatServer, "qkchat.server.enhanced")
 
@@ -240,18 +242,18 @@ QJsonObject EnhancedChatServer::getEnhancedStatistics() const
     if (m_atomicStats) {
         auto atomicSnapshot = m_atomicStats->getSnapshot();
         QJsonObject atomicStats;
-        atomicStats["totalMessages"] = static_cast<qint64>(atomicSnapshot.totalMessages.load());
-        atomicStats["processedMessages"] = static_cast<qint64>(atomicSnapshot.processedMessages.load());
-        atomicStats["failedMessages"] = static_cast<qint64>(atomicSnapshot.failedMessages.load());
-        atomicStats["totalConnections"] = static_cast<qint64>(atomicSnapshot.totalConnections.load());
-        atomicStats["activeConnections"] = static_cast<qint64>(atomicSnapshot.activeConnections.load());
-        atomicStats["authenticatedConnections"] = static_cast<qint64>(atomicSnapshot.authenticatedConnections.load());
+        atomicStats["totalMessages"] = static_cast<qint64>(atomicSnapshot.totalMessages);
+        atomicStats["processedMessages"] = static_cast<qint64>(atomicSnapshot.processedMessages);
+        atomicStats["failedMessages"] = static_cast<qint64>(atomicSnapshot.failedMessages);
+        atomicStats["totalConnections"] = static_cast<qint64>(atomicSnapshot.totalConnections);
+        atomicStats["activeConnections"] = static_cast<qint64>(atomicSnapshot.activeConnections);
+        atomicStats["authenticatedConnections"] = static_cast<qint64>(atomicSnapshot.authenticatedConnections);
         
-        if (atomicSnapshot.responseCount.load() > 0) {
-            atomicStats["averageResponseTime"] = static_cast<qint64>(atomicSnapshot.totalResponseTime.load()) / 
-                                                 static_cast<qint64>(atomicSnapshot.responseCount.load());
+        if (atomicSnapshot.responseCount > 0) {
+            atomicStats["averageResponseTime"] = static_cast<qint64>(atomicSnapshot.totalResponseTime) / 
+                                                 static_cast<qint64>(atomicSnapshot.responseCount);
         }
-        atomicStats["maxResponseTime"] = atomicSnapshot.maxResponseTime.load();
+        atomicStats["maxResponseTime"] = atomicSnapshot.maxResponseTime;
         
         stats["atomic"] = atomicStats;
     }
@@ -378,11 +380,11 @@ QJsonObject EnhancedChatServer::getSecurityReport() const
     // 认证连接统计
     if (m_atomicStats) {
         auto stats = m_atomicStats->getSnapshot();
-        security["authenticatedConnections"] = static_cast<qint64>(stats.authenticatedConnections.load());
-        security["totalConnections"] = static_cast<qint64>(stats.totalConnections.load());
+        security["authenticatedConnections"] = static_cast<qint64>(stats.authenticatedConnections);
+        security["totalConnections"] = static_cast<qint64>(stats.totalConnections);
         
-        double authRatio = stats.totalConnections.load() > 0 ? 
-                          static_cast<double>(stats.authenticatedConnections.load()) / stats.totalConnections.load() : 0.0;
+        double authRatio = stats.totalConnections > 0 ? 
+                          static_cast<double>(stats.authenticatedConnections) / stats.totalConnections : 0.0;
         security["authenticationRatio"] = authRatio;
     }
     
@@ -451,9 +453,9 @@ bool EnhancedChatServer::applyOptimization(const QString& optimization)
     }
 }
 
-void EnhancedChatServer::handleSystemFailure(FailureType type, const QString& component, const QString& description)
+void EnhancedChatServer::handleSystemFailure(RobustnessFailureType type, const QString& component, const QString& description)
 {
-    FailureInfo failure;
+    RobustnessFailureInfo failure;
     failure.type = type;
     failure.component = component;
     failure.description = description;
@@ -601,8 +603,8 @@ void EnhancedChatServer::setupFailureRecoveryActions()
     }
     
     // 数据库故障恢复
-    RecoveryAction dbRecovery;
-    dbRecovery.strategy = RecoveryStrategy::RetryWithBackoff;
+    RobustnessRecoveryAction dbRecovery;
+    dbRecovery.strategy = RobustnessRecoveryStrategy::RetryWithBackoff;
     dbRecovery.action = [this]() -> bool {
         // TODO: 实现数据库重连逻辑
         return true;
@@ -610,17 +612,17 @@ void EnhancedChatServer::setupFailureRecoveryActions()
     dbRecovery.maxRetries = 3;
     dbRecovery.backoffDelay = std::chrono::milliseconds(1000);
     
-    m_robustnessManager->registerRecoveryAction(FailureType::DatabaseFailure, "Database", dbRecovery);
+    m_robustnessManager->registerRecoveryAction(RobustnessFailureType::DatabaseFailure, "Database", dbRecovery);
     
     // 网络故障恢复
-    RecoveryAction networkRecovery;
-    networkRecovery.strategy = RecoveryStrategy::Restart;
+    RobustnessRecoveryAction networkRecovery;
+    networkRecovery.strategy = RobustnessRecoveryStrategy::Restart;
     networkRecovery.action = [this]() -> bool {
         // TODO: 实现网络组件重启逻辑
         return true;
     };
     
-    m_robustnessManager->registerRecoveryAction(FailureType::NetworkFailure, "Network", networkRecovery);
+    m_robustnessManager->registerRecoveryAction(RobustnessFailureType::NetworkFailure, "Network", networkRecovery);
 }
 
 void EnhancedChatServer::registerHealthCheckers()
@@ -828,6 +830,80 @@ double SystemHealthEvaluator::evaluateThreadHealth(const QJsonObject& threadStat
 {
     // 简化的线程健康评估
     return 1.0;
+}
+
+// ============================================================================
+// 缺失的槽函数实现
+// ============================================================================
+
+void EnhancedChatServer::onDeadlockDetected(const QStringList& threads)
+{
+    qCWarning(enhancedChatServer) << "Deadlock detected in threads:" << threads;
+}
+
+void EnhancedChatServer::onLongWaitDetected(const QString& lockName, int waitTime)
+{
+    qCWarning(enhancedChatServer) << "Long wait detected for lock:" << lockName << "wait time:" << waitTime << "ms";
+}
+
+void EnhancedChatServer::onBackpressureLevelChanged(BackpressureController::BackpressureLevel level)
+{
+    qCInfo(enhancedChatServer) << "Backpressure level changed to:" << static_cast<int>(level);
+}
+
+void EnhancedChatServer::onCircuitBreakerOpened(const QString& circuitName)
+{
+    qCWarning(enhancedChatServer) << "Circuit breaker opened:" << circuitName;
+}
+
+void EnhancedChatServer::onMemoryWarning(double usagePercent)
+{
+    qCWarning(enhancedChatServer) << "Memory warning:" << usagePercent << "%";
+}
+
+void EnhancedChatServer::onThreadStarvationDetected(const QString& threadName)
+{
+    qCWarning(enhancedChatServer) << "Thread starvation detected:" << threadName;
+}
+
+void EnhancedChatServer::onPerformanceDegradation(PerformanceDegradationManager::DegradationLevel level)
+{
+    qCWarning(enhancedChatServer) << "Performance degradation level:" << static_cast<int>(level);
+}
+
+void EnhancedChatServer::onConfigChanged(const QString& filePath, const QJsonObject& config)
+{
+    qCInfo(enhancedChatServer) << "Config changed:" << filePath;
+}
+
+void EnhancedChatServer::onCriticalExceptionDetected(const ExceptionInfo& exception)
+{
+    qCCritical(enhancedChatServer) << "Critical exception detected:" << exception.message;
+}
+
+void EnhancedChatServer::onExceptionPatternDetected(const ExceptionPatternAnalyzer::ExceptionPattern& pattern)
+{
+    qCWarning(enhancedChatServer) << "Exception pattern detected:" << pattern.patternId;
+}
+
+void EnhancedChatServer::onSignalCrash(const StackTrace& trace)
+{
+    qCCritical(enhancedChatServer) << "Signal crash detected:" << trace.traceId;
+}
+
+void EnhancedChatServer::onNodeStatusChanged(const QString& nodeId, bool healthy)
+{
+    qCInfo(enhancedChatServer) << "Node status changed:" << nodeId << "healthy:" << healthy;
+}
+
+void EnhancedChatServer::onClusterStateChanged(bool healthy)
+{
+    qCInfo(enhancedChatServer) << "Cluster state changed:" << "healthy:" << healthy;
+}
+
+void EnhancedChatServer::onShardMigrated(const QString& shardId, const QString& fromNode, const QString& toNode)
+{
+    qCInfo(enhancedChatServer) << "Shard migrated:" << shardId << "from" << fromNode << "to" << toNode;
 }
 
 #include "EnhancedChatServer.moc"

@@ -624,16 +624,16 @@ RobustnessManager::~RobustnessManager()
     qCInfo(robustness) << "RobustnessManager destroyed";
 }
 
-void RobustnessManager::registerRecoveryAction(FailureType type, const QString& component, const RecoveryAction& action)
+void RobustnessManager::registerRecoveryAction(RobustnessFailureType type, const QString& component, const RobustnessRecoveryAction& action)
 {
-    QPair<FailureType, QString> key(type, component);
+    QPair<RobustnessFailureType, QString> key(type, component);
     m_recoveryActions[key] = action;
     
     qCInfo(robustness) << "Recovery action registered for" << static_cast<int>(type) 
                        << component << "strategy:" << static_cast<int>(action.strategy);
 }
 
-void RobustnessManager::reportFailure(const FailureInfo& failure)
+void RobustnessManager::reportFailure(const RobustnessFailureInfo& failure)
 {
     {
         QMutexLocker locker(&m_failureMutex);
@@ -657,9 +657,9 @@ void RobustnessManager::reportFailure(const FailureInfo& failure)
     executeRecovery(failure.type, failure.component);
 }
 
-bool RobustnessManager::executeRecovery(FailureType type, const QString& component)
+bool RobustnessManager::executeRecovery(RobustnessFailureType type, const QString& component)
 {
-    QPair<FailureType, QString> key(type, component);
+    QPair<RobustnessFailureType, QString> key(type, component);
     auto it = m_recoveryActions.find(key);
     
     if (it == m_recoveryActions.end()) {
@@ -667,7 +667,7 @@ bool RobustnessManager::executeRecovery(FailureType type, const QString& compone
         return false;
     }
     
-    RecoveryAction& action = it.value();
+    RobustnessRecoveryAction& action = it.value();
     m_recoveryCount[type].fetchAndAddOrdered(1);
     
     emit recoveryTriggered(type, component);
@@ -820,6 +820,8 @@ void RobustnessManager::handlePerformanceDegradation()
     qCInfo(robustness) << "Performance degradation handled";
 }
 
+void RobustnessManager::handleConfigChanged() {}
+
 void RobustnessManager::updateSystemHealth()
 {
     QMutexLocker locker(&m_healthMutex);
@@ -856,7 +858,7 @@ void RobustnessManager::cleanupFailureHistory()
 {
     QMutexLocker locker(&m_failureMutex);
     
-    QDateTime cutoff = QDateTime::currentDateTime().addDays(-7); // 保留7天的故障历史
+    QDateTime cutoff = QDateTime::currentDateTime().addSecs(3600 * -7); // 保留7天的故障历史
     
     while (!m_failureHistory.isEmpty() && m_failureHistory.head().timestamp < cutoff) {
         m_failureHistory.dequeue();

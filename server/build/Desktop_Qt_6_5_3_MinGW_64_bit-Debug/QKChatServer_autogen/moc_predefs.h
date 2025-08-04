@@ -57,6 +57,7 @@
 #define __INT_LEAST8_MAX__ 0x7f
 #define __cpp_capture_star_this 201603L
 #define __SHRT_MAX__ 0x7fff
+#define ENABLE_ENHANCEMENTS 1
 #define __LDBL_MAX__ 1.18973149535723176502126385303097021e+4932L
 #define __FLT64X_MAX_10_EXP__ 4932
 #define __cpp_if_constexpr 201606L

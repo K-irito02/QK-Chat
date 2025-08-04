@@ -22,7 +22,7 @@ Q_DECLARE_LOGGING_CATEGORY(robustness)
 /**
  * @brief 故障类型枚举
  */
-enum class FailureType {
+enum class RobustnessFailureType {
     DatabaseFailure,      // 数据库故障
     NetworkFailure,       // 网络故障
     ThreadPoolFailure,    // 线程池故障
@@ -35,7 +35,7 @@ enum class FailureType {
 /**
  * @brief 恢复策略枚举
  */
-enum class RecoveryStrategy {
+enum class RobustnessRecoveryStrategy {
     Restart,              // 重启组件
     Fallback,             // 降级处理
     CircuitBreaker,       // 熔断保护
@@ -47,8 +47,8 @@ enum class RecoveryStrategy {
 /**
  * @brief 故障信息结构
  */
-struct FailureInfo {
-    FailureType type;
+struct RobustnessFailureInfo {
+    RobustnessFailureType type;
     QString component;
     QString description;
     QDateTime timestamp;
@@ -60,8 +60,8 @@ struct FailureInfo {
 /**
  * @brief 恢复动作结构
  */
-struct RecoveryAction {
-    RecoveryStrategy strategy;
+struct RobustnessRecoveryAction {
+    RobustnessRecoveryStrategy strategy;
     std::function<bool()> action;
     int maxRetries{3};
     int currentRetries{0};
@@ -332,9 +332,9 @@ public:
     ~RobustnessManager();
     
     // 故障恢复
-    void registerRecoveryAction(FailureType type, const QString& component, const RecoveryAction& action);
-    void reportFailure(const FailureInfo& failure);
-    bool executeRecovery(FailureType type, const QString& component);
+    void registerRecoveryAction(RobustnessFailureType type, const QString& component, const RobustnessRecoveryAction& action);
+    void reportFailure(const RobustnessFailureInfo& failure);
+    bool executeRecovery(RobustnessFailureType type, const QString& component);
     
     // 健康检查
     void registerHealthChecker(const QString& component, std::function<bool()> checker);
@@ -353,9 +353,9 @@ public:
     QJsonObject getRecoveryStatistics() const;
 
 signals:
-    void failureDetected(const FailureInfo& failure);
-    void recoveryTriggered(FailureType type, const QString& component);
-    void recoveryCompleted(FailureType type, const QString& component, bool success);
+    void failureDetected(const RobustnessFailureInfo& failure);
+    void recoveryTriggered(RobustnessFailureType type, const QString& component);
+    void recoveryCompleted(RobustnessFailureType type, const QString& component, bool success);
     void systemHealthChanged(const SystemHealth& health);
 
 private slots:
@@ -364,11 +364,12 @@ private slots:
     void handleMemoryAlert();
     void handleThreadStarvation();
     void handlePerformanceDegradation();
+    void handleConfigChanged();
 
 private:
     // 故障恢复
-    QHash<QPair<FailureType, QString>, RecoveryAction> m_recoveryActions;
-    QQueue<FailureInfo> m_failureHistory;
+    QHash<QPair<RobustnessFailureType, QString>, RobustnessRecoveryAction> m_recoveryActions;
+    QQueue<RobustnessFailureInfo> m_failureHistory;
     mutable QMutex m_failureMutex;
     
     // 健康检查
@@ -385,13 +386,13 @@ private:
     HotConfigManager* m_configManager;
     
     // 统计信息
-    QHash<FailureType, QAtomicInt> m_failureCount;
-    QHash<FailureType, QAtomicInt> m_recoveryCount;
-    QHash<FailureType, QAtomicInt> m_recoverySuccess;
+    QHash<RobustnessFailureType, QAtomicInt> m_failureCount;
+    QHash<RobustnessFailureType, QAtomicInt> m_recoveryCount;
+    QHash<RobustnessFailureType, QAtomicInt> m_recoverySuccess;
     
     void initializeSubManagers();
     void setupSignalConnections();
-    void executeRecoveryAction(const RecoveryAction& action, const FailureInfo& failure);
+    void executeRecoveryAction(const RobustnessRecoveryAction& action, const RobustnessFailureInfo& failure);
     void updateSystemHealth();
     void cleanupFailureHistory();
 };

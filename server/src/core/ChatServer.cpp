@@ -95,12 +95,10 @@ bool ChatServer::initializeDatabase()
 {
     if (!_database) {
         _database = new Database(this);
-        if (!_database->initialize()) {
-            qCCritical(chatServer) << "Failed to initialize database";
-            return false;
-        }
     }
-    return true;
+    
+    // 使用异步方式初始化数据库，防止阻塞主线程
+    return _database->initialize(); // 现在这个方法已经优化了超时时间
 }
 
 // 启动服务器

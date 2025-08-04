@@ -10,14 +10,44 @@
 #include <QLoggingCategory>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QNetworkInterface>
 #include <QHostInfo>
+#include <QRandomGenerator>
+#include <QThread>
+#include <QQueue>
+#include <QList>
 #include <memory>
 #include <functional>
 #include <atomic>
 #include <random>
 
 Q_DECLARE_LOGGING_CATEGORY(architecture)
+
+/**
+ * @brief 日志级别枚举
+ */
+enum class LogLevel {
+    Debug = 0,
+    Info = 1,
+    Warning = 2,
+    Error = 3,
+    Critical = 4
+};
+
+/**
+ * @brief 日志条目结构体
+ */
+struct LogEntry {
+    QDateTime timestamp;
+    LogLevel level;
+    QString category;
+    QString message;
+    QString thread;
+    QString file;
+    int line{0};
+    QJsonObject context;
+};
 
 /**
  * @brief 节点角色枚举
@@ -299,55 +329,37 @@ class AsyncLogManager : public QObject
     Q_OBJECT
 
 public:
-    enum class LogLevel {
-        Debug = 0,
-        Info = 1,
-        Warning = 2,
-        Error = 3,
-        Critical = 4
-    };
-
-    struct LogEntry {
-        QDateTime timestamp;
-        LogLevel level;
-        QString category;
-        QString message;
-        QString thread;
-        QString file;
-        int line{0};
-        QJsonObject context;
-    };
-
     struct LogConfig {
         QString logDirectory{"./logs"};
         QString filePattern{"server_%1.log"};  // %1 = date
-        int maxFileSize{100 * 1024 * 1024};    // 100MB
-        int maxFiles{30};                       // 保留30个文件
-        int flushInterval{1000};                // 1秒刷新
-        int bufferSize{10000};                  // 缓冲区大小
-        bool enableCompression{true};           // 启用压缩
-        LogLevel minLevel{LogLevel::Info};      // 最低级别
+        int maxFileSize{10 * 1024 * 1024}; // 10MB
+        int maxFiles{10};
+        int bufferSize{10000};              // 缓冲区大小
+        bool enableCompression{true};
+        bool enableAsyncWrite{true};
+        int flushInterval{5000}; // 5秒
+        LogLevel minLevel{LogLevel::Info};
     };
 
     explicit AsyncLogManager(QObject *parent = nullptr);
     ~AsyncLogManager();
     
-    // 配置管理
     void setConfig(const LogConfig& config);
     LogConfig getConfig() const { return m_config; }
     
-    // 日志记录
+    // 日志记录接口
     void log(LogLevel level, const QString& category, const QString& message,
              const QString& file = QString(), int line = 0,
              const QJsonObject& context = QJsonObject());
     
+    // 便捷方法
     void debug(const QString& category, const QString& message, const QJsonObject& context = QJsonObject());
     void info(const QString& category, const QString& message, const QJsonObject& context = QJsonObject());
     void warning(const QString& category, const QString& message, const QJsonObject& context = QJsonObject());
     void error(const QString& category, const QString& message, const QJsonObject& context = QJsonObject());
     void critical(const QString& category, const QString& message, const QJsonObject& context = QJsonObject());
     
-    // 控制
+    // 控制接口
     void start();
     void stop();
     void flush();
@@ -357,7 +369,7 @@ public:
     qint64 getTotalLogsWritten() const;
 
 signals:
-    void logWritten(const LogEntry& entry);
+    void logWritten(const LogEntry* entry);
     void logError(const QString& error);
 
 private slots:
@@ -366,7 +378,7 @@ private slots:
 
 private:
     LogConfig m_config;
-    QQueue<LogEntry> m_logQueue;
+    QQueue<LogEntry*> m_logQueue;
     QMutex m_queueMutex;
     QTimer* m_flushTimer;
     QTimer* m_maintenanceTimer;
@@ -376,10 +388,10 @@ private:
     QAtomicInt m_droppedLogs{0};
     bool m_isRunning{false};
     
-    void writeToFile(const QList<LogEntry>& entries);
+    void writeToFile(const QList<LogEntry*>& entries);
     void rotateLogFile();
     void cleanupOldFiles();
-    QString formatLogEntry(const LogEntry& entry) const;
+    QString formatLogEntry(const LogEntry* entry) const;
     QString getLogFileName() const;
     void ensureLogDirectory() const;
 };

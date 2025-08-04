@@ -297,6 +297,9 @@ CMAKE_TAPI:FILEPATH=CMAKE_TAPI-NOTFOUND
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
+//Enable server enhancements
+ENABLE_ENHANCEMENTS:BOOL=ON
+
 //Path to a library.
 LIB_EAY:FILEPATH=LIB_EAY-NOTFOUND
 
@@ -372,6 +375,9 @@ Qt6Quick_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Quick
 
 //The directory containing a CMake configuration file for Qt6Sql.
 Qt6Sql_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6Sql
+
+//The directory containing a CMake configuration file for Qt6WebSockets.
+Qt6WebSockets_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WebSockets
 
 //The directory containing a CMake configuration file for Qt6WidgetsTools.
 Qt6WidgetsTools_DIR:PATH=D:/Qt/6.5.3/mingw_64/lib/cmake/Qt6WidgetsTools

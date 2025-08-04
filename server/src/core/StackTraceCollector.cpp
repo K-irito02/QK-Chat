@@ -7,7 +7,13 @@
 #include <QDir>
 #include <QCryptographicHash>
 #include <QRandomGenerator>
-#include <dlfcn.h>
+#include <csignal>
+
+#ifdef Q_OS_WIN
+#include <windows.h>
+#include <dbghelp.h>
+#pragma comment(lib, "dbghelp.lib")
+#endif
 
 Q_LOGGING_CATEGORY(stackTrace, "qkchat.server.stacktrace")
 
@@ -292,7 +298,24 @@ QList<StackFrame> StackTraceCollector::captureStackFrames() const
 {
     QList<StackFrame> frames;
     
-#ifdef Q_OS_LINUX
+#ifdef _WIN32
+    // Windows 平台实现
+    HANDLE process = GetCurrentProcess();
+    SymInitialize(process, nullptr, TRUE);
+    
+    void* stack[64];
+    WORD frameCount = CaptureStackBackTrace(0, 64, stack, nullptr);
+    
+    for (WORD i = 0; i < frameCount; ++i) {
+        StackFrame frame = parseStackFrame(stack[i]);
+        if (!frame.function.isEmpty()) {
+            frames.append(frame);
+        }
+    }
+    
+    SymCleanup(process);
+#elif defined(Q_OS_LINUX)
+    // Linux 平台实现
     void* buffer[m_traceDepth];
     int nptrs = backtrace(buffer, m_traceDepth);
     
@@ -320,7 +343,35 @@ StackFrame StackTraceCollector::parseStackFrame(void* address) const
     StackFrame frame;
     frame.address = QString("0x%1").arg(reinterpret_cast<quintptr>(address), 0, 16);
     
-#ifdef Q_OS_LINUX
+#ifdef _WIN32
+    // Windows 平台实现
+    if (m_symbolResolution) {
+        HANDLE process = GetCurrentProcess();
+        DWORD64 displacement = 0;
+        SYMBOL_INFO* symbol = (SYMBOL_INFO*)malloc(sizeof(SYMBOL_INFO) + MAX_SYM_NAME * sizeof(TCHAR));
+        symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+        symbol->MaxNameLen = MAX_SYM_NAME;
+        
+        if (SymFromAddr(process, (DWORD64)address, &displacement, symbol)) {
+            frame.function = QString::fromLocal8Bit(symbol->Name);
+            frame.demangledName = demangleSymbol(frame.function);
+        }
+        
+        free(symbol);
+        
+        // 获取模块信息
+        HMODULE module;
+        if (GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, 
+                             (LPCTSTR)address, &module)) {
+            char moduleName[MAX_PATH];
+            if (GetModuleFileNameA(module, moduleName, MAX_PATH)) {
+                frame.module = QString::fromLocal8Bit(moduleName);
+                frame.file = QFileInfo(frame.module).baseName();
+            }
+        }
+    }
+#elif defined(Q_OS_LINUX)
+    // Linux 平台实现
     if (m_symbolResolution) {
         Dl_info dlInfo;
         if (dladdr(address, &dlInfo)) {
@@ -342,7 +393,19 @@ StackFrame StackTraceCollector::parseStackFrame(void* address) const
 
 QString StackTraceCollector::demangleSymbol(const QString& mangledName) const
 {
-#ifdef Q_OS_LINUX
+#ifdef _WIN32
+    // Windows 平台 - 使用 UnDecorateSymbolName
+    if (mangledName.startsWith("?")) {
+        char undecorated[1024];
+        if (UnDecorateSymbolName(mangledName.toLocal8Bit().constData(), 
+                                undecorated, sizeof(undecorated), 
+                                UNDNAME_COMPLETE)) {
+            return QString::fromLocal8Bit(undecorated);
+        }
+    }
+    return mangledName;
+#elif defined(Q_OS_LINUX)
+    // Linux 平台实现
     if (mangledName.startsWith("_Z")) {
         int status = 0;
         char* demangled = abi::__cxa_demangle(mangledName.toLocal8Bit().constData(), 
@@ -353,8 +416,10 @@ QString StackTraceCollector::demangleSymbol(const QString& mangledName) const
             return result;
         }
     }
-#endif
     return mangledName;
+#else
+    return mangledName;
+#endif
 }
 
 QString StackTraceCollector::generateTraceId() const
@@ -604,7 +669,7 @@ void ThreadPoolTracker::cleanupTaskHistory()
 {
     QMutexLocker locker(&m_dataMutex);
     
-    QDateTime cutoff = QDateTime::currentDateTime().addHours(-24); // 保留24小时
+    QDateTime cutoff = QDateTime::currentDateTime().addSecs(3600 * -24); // 保留24小时
     
     while (!m_taskHistory.isEmpty() && m_taskHistory.head().startTime < cutoff) {
         m_taskHistory.dequeue();
@@ -706,7 +771,7 @@ void SignalHandler::handleCrash(int signal)
                                                "System", "Crash", signalName);
     
     // 恢复默认信号处理
-    signal(signal, SIG_DFL);
+    ::signal(signal, SIG_DFL);
     raise(signal);
 }
 

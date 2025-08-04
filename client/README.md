@@ -59,6 +59,7 @@ QK Chat 客户端是一个功能完整的即时通讯应用，采用现代化的
 - **配置管理**：应用设置持久化存储
 - **错误处理**：完善的错误提示和恢复机制
 - **性能优化**：多级缓存和数据库优化
+- **诊断工具**：内置连接监控和诊断功能
 
 ## 🏗️ 技术架构
 
@@ -92,20 +93,45 @@ client/
 │   │   └── LocalDatabase.h
 │   ├── network/          # 网络通信层
 │   │   ├── NetworkClient.cpp
-│   │   └── NetworkClient.h
+│   │   ├── NetworkClient.h
+│   │   ├── ConnectionPool.cpp
+│   │   ├── ConnectionPool.h
+│   │   ├── ConnectionStateManager.cpp
+│   │   ├── ConnectionStateManager.h
+│   │   ├── ErrorHandler.cpp
+│   │   ├── ErrorHandler.h
+│   │   ├── HeartbeatManager.cpp
+│   │   ├── HeartbeatManager.h
+│   │   ├── ReconnectManager.cpp
+│   │   ├── ReconnectManager.h
+│   │   ├── SSLConfigManager.cpp
+│   │   └── SSLConfigManager.h
 │   ├── crypto/           # 加密模块
 │   │   ├── CryptoManager.cpp
 │   │   └── CryptoManager.h
 │   ├── config/           # 配置管理
 │   │   ├── ConfigManager.cpp
-│   │   └── ConfigManager.h
+│   │   ├── ConfigManager.h
+│   │   ├── DevelopmentConfig.cpp
+│   │   └── DevelopmentConfig.h
+│   ├── monitoring/       # 监控和诊断
+│   │   ├── ConnectionMonitor.cpp
+│   │   ├── ConnectionMonitor.h
+│   │   ├── DiagnosticTool.cpp
+│   │   └── DiagnosticTool.h
 │   └── utils/            # 工具类
 │       ├── FileTransferManager.cpp
 │       ├── FileTransferManager.h
 │       ├── ThreadPool.cpp
 │       ├── ThreadPool.h
 │       ├── Validator.cpp
-│       └── Validator.h
+│       ├── Validator.h
+│       ├── LogManager.cpp
+│       ├── LogManager.h
+│       ├── LogViewer.h
+│       ├── MonitorManager.cpp
+│       ├── MonitorManager.h
+│       └── DiagnosticManager.h
 ├── qml/                  # QML界面文件
 │   ├── ChatMainWindow.qml # 聊天主窗口
 │   ├── EmailVerificationDialog.qml # 邮箱验证对话框
@@ -176,14 +202,18 @@ client/
 │   ├── sun.png          # 浅色主题
 │   ├── user.png         # 用户图标
 │   └── video.png        # 视频图标
-└── config/              # 配置文件
-    └── dev.ini         # 开发环境配置
+├── config/              # 配置文件
+│   ├── dev.ini         # 开发环境配置
+│   └── logging.conf    # 日志配置
+├── tests/              # 测试文件
+│   └── DiagnosticToolTest.cpp # 诊断工具测试
+└── build/              # 构建输出目录
 ```
 
 ## 🚀 快速开始
 
 ### 环境要求
-- **Qt 6.5+**：Qt Core, Qml, Quick, Network, Sql, QuickControls2, Multimedia
+- **Qt 6.5+**：Qt Core, Qml, Quick, Network, Sql, QuickControls2, Multimedia, Concurrent, OpenGL, StateMachine
 - **CMake 3.16+**：构建系统
 - **C++17**：编译器支持
 - **OpenSSL 1.1.1+**：SSL/TLS支持
@@ -204,13 +234,14 @@ client/
 - Qt6::Network
 - Qt6::Sql
 - Qt6::QuickControls2
+- Qt6::Concurrent
 - Qt6::Multimedia
 - Qt6::OpenGL
+- Qt6::StateMachine
 
 #### 可选依赖
 - OpenSSL 1.1.1+ (SSL/TLS支持)
 - SQLite3 (本地数据库)
-
 
 ## 📱 功能使用
 
@@ -272,34 +303,27 @@ client/
 ```ini
 [Network]
 server_host=localhost
-server_port=8888
-ssl_enabled=true
-connection_timeout=10000
-reconnect_interval=5000
+server_port=8443
+file_transfer_port=8444
+timeout=30000
+auto_reconnect=true
 heartbeat_interval=30000
-max_retry_attempts=3
 ```
 
 ### 数据库配置
 ```ini
 [Database]
-local_db_path=./data/local.db
-cache_size=100MB
-max_message_history=1000
-auto_cleanup_days=30
-encrypt_database=true
+cache_path=database/local_cache.db
+max_messages=10000
+cleanup_days=90
 ```
 
 ### 安全配置
 ```ini
 [Security]
-encryption_enabled=true
-key_rotation_interval=24h
 remember_password=false
 auto_login=false
 encrypt_local_data=true
-password_min_length=8
-require_special_chars=true
 ```
 
 ### UI配置
@@ -309,10 +333,17 @@ theme=light
 primary_color=#2196F3
 accent_color=#FF4081
 language=zh_CN
-window_width=1200
-window_height=800
-enable_animations=true
-show_tooltips=true
+window_width=400
+window_height=600
+```
+
+### 日志配置
+```ini
+[Logging]
+level=INFO
+file_path=logs/client.log
+max_file_size=5MB
+max_files=3
 ```
 
 ## 🛠️ 开发指南
@@ -324,6 +355,7 @@ show_tooltips=true
 4. **网络通信**：在 `src/network/` 中扩展网络功能
 5. **加密功能**：在 `src/crypto/` 中实现加密算法
 6. **文件处理**：在 `src/utils/` 中添加工具类
+7. **监控诊断**：在 `src/monitoring/` 中添加诊断功能
 
 ### 代码规范
 - **命名规范**：遵循Qt风格（PascalCase类名，camelCase方法名）
@@ -351,6 +383,7 @@ show_tooltips=true
 - 消息压缩
 - 断点续传
 - 智能重连机制
+- 心跳检测
 
 ### 内存优化
 - 对象复用
@@ -385,11 +418,31 @@ show_tooltips=true
 - **权限控制**：最小权限原则
 - **数据清理**：自动清理过期数据
 
+## 🔍 诊断和监控
+
+### 连接监控
+- **实时连接状态**：监控网络连接状态
+- **连接质量**：延迟和丢包率检测
+- **自动重连**：智能重连机制
+- **错误诊断**：详细的错误信息记录
+
+### 性能监控
+- **内存使用**：实时内存使用监控
+- **CPU使用率**：性能瓶颈检测
+- **网络流量**：数据传输统计
+- **响应时间**：操作响应时间监控
+
+### 日志系统
+- **分级日志**：DEBUG、INFO、WARNING、ERROR
+- **日志轮转**：自动日志文件管理
+- **日志查看器**：内置日志查看工具
+- **远程日志**：支持远程日志收集
+
 ---
 
 **QK Chat 客户端** - 安全、高效、现代化的聊天体验 🚀
 
 **版本**：1.0.0  
-**最后更新**：2025年08月02日  
+**最后更新**：2025年08月04日  
 **Qt版本**：6.5+  
 **C++标准**：C++17

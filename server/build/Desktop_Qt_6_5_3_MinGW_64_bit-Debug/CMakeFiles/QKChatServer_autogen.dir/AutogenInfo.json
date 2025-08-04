@@ -503,6 +503,12 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/network/NonBlockingConnectionManager.h",
+			"MU",
+			"UFQQIFJZKK/moc_NonBlockingConnectionManager.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/network/ProtocolParser.h",
 			"MU",
 			"UFQQIFJZKK/moc_ProtocolParser.cpp",
@@ -554,6 +560,12 @@
 			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.h",
 			"MU",
 			"VSCBVMNR7M/moc_LogManager.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/StackTraceLogger.h",
+			"MU",
+			"VSCBVMNR7M/moc_StackTraceLogger.cpp",
 			null
 		],
 		[
@@ -786,6 +798,11 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/network/NonBlockingConnectionManager.cpp",
+			"MU",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/network/ProtocolParser.cpp",
 			"MU",
 			null
@@ -822,6 +839,11 @@
 		],
 		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/StackTraceLogger.cpp",
 			"MU",
 			null
 		],

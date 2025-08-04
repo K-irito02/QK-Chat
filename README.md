@@ -66,7 +66,8 @@ client/
 ├── README.md          # 项目说明
 ├── Resource.qrc       # Qt资源文件
 ├── config/            # 配置文件
-│   └── dev.ini
+│   ├── dev.ini       # 开发环境配置
+│   └── logging.conf  # 日志配置
 ├── icons/             # 图标资源
 │   ├── add-contact.png
 │   ├── add.png
@@ -122,17 +123,78 @@ client/
 │   ├── EmailVerificationDialog.qml # 邮箱验证对话框
 │   ├── LoginWindow.qml    # 登录窗口
 │   ├── RegisterWindow.qml # 注册窗口
-│   ├── components/    # 界面组件
-│   └── main.qml       # 主界面
-└── src/               # 源代码
-    ├── config/        # 配置管理
-    ├── controllers/   # 控制器层
-    ├── crypto/        # 加密模块
-    ├── database/      # 本地数据库
-    ├── main.cpp       # 程序入口
-    ├── models/        # 数据模型
-    ├── network/       # 网络通信
-    └── utils/         # 工具类
+│   ├── main.qml       # 主界面
+│   └── components/    # 界面组件
+│       ├── AddPage.qml        # 添加页
+│       ├── AvatarSelector.qml # 头像选择器
+│       ├── ChatWindow.qml     # 聊天窗口
+│       ├── ContactsPage.qml   # 联系人页
+│       ├── CustomButton.qml   # 自定义按钮
+│       ├── CustomTextField.qml # 自定义输入框
+│       ├── DefaultPage.qml    # 默认页
+│       ├── EmojiPicker.qml    # 表情选择器
+│       ├── GroupsPage.qml     # 群组页
+│       ├── MessageBubble.qml  # 消息气泡
+│       ├── ProfilePage.qml    # 个人资料页
+│       ├── SettingsPage.qml   # 设置页
+│       └── SideBarButton.qml  # 侧边栏按钮
+├── src/               # 源代码
+│   ├── main.cpp       # 程序入口
+│   ├── config/        # 配置管理
+│   │   ├── ConfigManager.cpp
+│   │   ├── ConfigManager.h
+│   │   ├── DevelopmentConfig.cpp
+│   │   └── DevelopmentConfig.h
+│   ├── controllers/   # 控制器层
+│   │   ├── ChatController.cpp
+│   │   ├── ChatController.h
+│   │   ├── UserController.cpp
+│   │   └── UserController.h
+│   ├── models/        # 数据模型
+│   │   ├── UserModel.cpp
+│   │   └── UserModel.h
+│   ├── database/      # 本地数据库
+│   │   ├── LocalDatabase.cpp
+│   │   └── LocalDatabase.h
+│   ├── network/       # 网络通信
+│   │   ├── NetworkClient.cpp
+│   │   ├── NetworkClient.h
+│   │   ├── ConnectionPool.cpp
+│   │   ├── ConnectionPool.h
+│   │   ├── ConnectionStateManager.cpp
+│   │   ├── ConnectionStateManager.h
+│   │   ├── ErrorHandler.cpp
+│   │   ├── ErrorHandler.h
+│   │   ├── HeartbeatManager.cpp
+│   │   ├── HeartbeatManager.h
+│   │   ├── ReconnectManager.cpp
+│   │   ├── ReconnectManager.h
+│   │   ├── SSLConfigManager.cpp
+│   │   └── SSLConfigManager.h
+│   ├── crypto/        # 加密模块
+│   │   ├── CryptoManager.cpp
+│   │   └── CryptoManager.h
+│   ├── monitoring/    # 监控和诊断
+│   │   ├── ConnectionMonitor.cpp
+│   │   ├── ConnectionMonitor.h
+│   │   ├── DiagnosticTool.cpp
+│   │   └── DiagnosticTool.h
+│   └── utils/         # 工具类
+│       ├── FileTransferManager.cpp
+│       ├── FileTransferManager.h
+│       ├── ThreadPool.cpp
+│       ├── ThreadPool.h
+│       ├── Validator.cpp
+│       ├── Validator.h
+│       ├── LogManager.cpp
+│       ├── LogManager.h
+│       ├── LogViewer.h
+│       ├── MonitorManager.cpp
+│       ├── MonitorManager.h
+│       └── DiagnosticManager.h
+├── tests/             # 测试文件
+│   └── DiagnosticToolTest.cpp # 诊断工具测试
+└── build/             # 构建输出目录
 ```
 
 ### 服务器架构
@@ -142,23 +204,106 @@ server/
 ├── CMakeLists.txt.user
 ├── README.md          # 项目说明
 ├── config/            # 配置文件
-│   ├── database_config.sql
-│   ├── dev.conf
-│   ├── redis.conf
-│   └── ssl_config.cnf
+│   ├── dev.conf      # 开发环境配置
+│   ├── database_config.sql # 数据库配置
+│   ├── redis.conf    # Redis配置
+│   └── ssl_config.cnf # SSL配置
 ├── data/              # 数据文件
 │   └── mysql_init.sql # 数据库初始化脚本
+├── certs/             # SSL证书
+├── tests/             # 测试文件
+│   ├── CacheSystemTest.h # 缓存系统测试
+│   └── PerformanceTest.h # 性能测试
+├── build/             # 构建输出目录
 └── src/               # 源代码
-    ├── admin/         # 管理界面
-    ├── cache/         # 缓存系统
-    ├── config/        # 配置管理
-    ├── core/          # 核心服务
-    ├── crypto/        # 加密模块
-    ├── database/      # 数据库层
     ├── main.cpp       # 程序入口
+    ├── admin/         # 管理界面
+    │   ├── AdminWindow.cpp
+    │   ├── AdminWindow.h
+    │   ├── DashboardWidget.cpp
+    │   ├── DashboardWidget.h
+    │   ├── LoginDialog.cpp
+    │   ├── LoginDialog.h
+    │   └── LoginDialog.ui
+    ├── cache/         # 缓存系统
+    │   ├── CacheManagerV2.cpp
+    │   ├── CacheManagerV2.h
+    │   ├── CachePreloader.cpp
+    │   ├── CachePreloader.h
+    │   ├── CacheStrategyManager.cpp
+    │   ├── CacheStrategyManager.h
+    │   ├── MultiLevelCache.cpp
+    │   └── MultiLevelCache.h
+    ├── config/        # 配置管理
+    │   ├── ServerConfig.cpp
+    │   └── ServerConfig.h
+    ├── core/          # 核心服务
+    │   ├── ChatServer.cpp
+    │   ├── ChatServer.h
+    │   ├── EnhancedChatServer.cpp
+    │   ├── EnhancedChatServer.h
+    │   ├── ArchitectureOptimizer.cpp
+    │   ├── ArchitectureOptimizer.h
+    │   ├── StackTraceCollector.cpp
+    │   ├── StackTraceCollector.h
+    │   ├── ThreadSafetyEnhancements.cpp
+    │   ├── ThreadSafetyEnhancements.h
+    │   ├── RobustnessManager.cpp
+    │   ├── RobustnessManager.h
+    │   ├── MessageHandlers.cpp
+    │   ├── MessageHandlers.h
+    │   ├── ConnectionManager.cpp
+    │   ├── ConnectionManager.h
+    │   ├── ChatClientConnection.cpp
+    │   ├── ChatClientConnection.h
+    │   ├── SessionManager.cpp
+    │   ├── SessionManager.h
+    │   ├── MessageEngine.cpp
+    │   ├── MessageEngine.h
+    │   ├── ThreadManager.cpp
+    │   ├── ThreadManager.h
+    │   ├── GroupManager.cpp
+    │   └── GroupManager.h
+    ├── crypto/        # 加密模块
+    │   ├── CryptoManager.cpp
+    │   └── CryptoManager.h
+    ├── database/      # 数据库层
+    │   ├── Database.cpp
+    │   ├── Database.h
+    │   ├── DatabaseOptimizer.cpp
+    │   ├── DatabaseOptimizer.h
+    │   ├── DatabasePool.cpp
+    │   └── DatabasePool.h
     ├── network/       # 网络协议
+    │   ├── NonBlockingConnectionManager.cpp
+    │   ├── NonBlockingConnectionManager.h
+    │   ├── NetworkEventHandler.cpp
+    │   ├── NetworkEventHandler.h
+    │   ├── QSslServer.cpp
+    │   ├── QSslServer.h
+    │   ├── ProtocolParser.cpp
+    │   └── ProtocolParser.h
     ├── services/      # 服务层
+    │   ├── EmailTemplate.cpp
+    │   ├── EmailTemplate.h
+    │   ├── EmailService.cpp
+    │   └── EmailService.h
     └── utils/         # 工具类
+        ├── StackTraceLogger.cpp
+        ├── StackTraceLogger.h
+        ├── ThreadPool.cpp
+        ├── ThreadPool.h
+        ├── AutoRecovery.cpp
+        ├── AutoRecovery.h
+        ├── PerformanceProfiler.h
+        ├── SystemMonitor.h
+        ├── LockFreeStructures.h
+        ├── LogManager.cpp
+        ├── LogManager.h
+        ├── AdminManager.cpp
+        ├── AdminManager.h
+        ├── AdminAuth.cpp
+        └── AdminAuth.h
 ```
 
 ### 系统要求
@@ -171,15 +316,16 @@ server/
 
 ### 依赖项
 
-#### 必需依赖
-- Qt6 Core, Qml, Quick, Network, Sql
+#### 客户端必需依赖
+- Qt6 Core, Qml, Quick, Network, Sql, QuickControls2, Concurrent, Multimedia, OpenGL, StateMachine
 - OpenSSL 1.1.1+ (用于加密功能)
 - CMake 3.16+
 
-#### 可选依赖
-- MySQL 8.0+ (服务器端)
+#### 服务器端必需依赖
+- Qt6 Core, Widgets, Network, Sql, Concurrent, WebSockets
+- MySQL 8.0+ (数据库服务)
 - Redis 6.0+ (缓存服务)
-
+- OpenSSL 1.1.1+ (SSL/TLS支持)
 
 ## 🔧 配置说明
 
@@ -188,16 +334,35 @@ server/
 ```ini
 [Network]
 server_host=localhost
-server_port=8888
-ssl_enabled=true
+server_port=8443
+file_transfer_port=8444
+timeout=30000
+auto_reconnect=true
+heartbeat_interval=30000
+
+[UI]
+theme=light
+primary_color=#2196F3
+accent_color=#FF4081
+language=zh_CN
+window_width=400
+window_height=600
 
 [Database]
-local_db_path=./data/local.db
-cache_size=100MB
+cache_path=database/local_cache.db
+max_messages=10000
+cleanup_days=90
 
 [Security]
-encryption_enabled=true
-key_rotation_interval=24h
+remember_password=false
+auto_login=false
+encrypt_local_data=true
+
+[Logging]
+level=INFO
+file_path=logs/client.log
+max_file_size=5MB
+max_files=3
 ```
 
 ### 服务器配置
@@ -205,26 +370,68 @@ key_rotation_interval=24h
 ```ini
 [Server]
 host=0.0.0.0
-port=8888
+port=8443
+admin_port=8080
 max_connections=1000
-ssl_certificate=./config/ssl/cert.pem
-ssl_private_key=./config/ssl/key.pem
+thread_pool_size=8
 
 [Database]
+type=mysql
 host=localhost
 port=3306
 database=qkchat_db
 username=qkchat_user
-password=your_password
+password=3143285505
+pool_size=10
+connection_timeout=30
 
-[Cache]
-redis_host=localhost
-redis_port=6379
-max_memory=512MB
+[Redis]
+host=localhost
+port=6379
+password=
+database=0
+connection_timeout=5
 
 [Security]
+ssl_enabled=true
+cert_file=certs/server.crt
+key_file=certs/server.key
 admin_username=admin
 admin_password=QKchat2024!
+session_timeout=1800
+password_hash_rounds=12
+
+[SMTP]
+host=smtp.qq.com
+port=587
+username=saokiritoasuna00@qq.com
+password=ssvbzaqvotjcchjh
+encryption=tls
+from_email=saokiritoasuna00@qq.com
+from_name=QK Chat
+
+[FileStorage]
+upload_path=../../../../uploads
+max_file_size=100MB
+allowed_types=image/*,video/*,audio/*,application/pdf,text/*
+avatar_path=../../../../uploads/avatars
+files_path=../../../../uploads/files
+images_path=../../../../uploads/images
+
+[Logging]
+level=INFO
+file_path=../../../../logs/server.log
+max_file_size=10MB
+max_files=5
+
+[RateLimit]
+login_attempts=5
+time_window=15
+
+[Session]
+jwt_secret=your_jwt_secret_key_here_32_chars
+jwt_expiry=24h
+refresh_token_expiry=7d
 ```
 
 ### 管理员账号
@@ -235,7 +442,6 @@ admin_password=QKchat2024!
 - **显示名称**: `系统管理员`
 
 ⚠️ **重要**: 首次登录后请立即修改默认密码！
-
 
 ## 📚 开发指南
 

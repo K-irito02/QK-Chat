@@ -38,15 +38,18 @@ void DashboardWidget::setChatServer(ChatServer *server)
 {
     _chatServer = server;
     
-    // 只有在服务器真正运行后才开始更新
-    if (_chatServer && _chatServer->isRunning()) {
+    // 延迟启动统计信息更新，避免界面卡顿
+    if (_chatServer) {
         // 如果定时器已经在运行，先停止
         if (_updateTimer->isActive()) {
             _updateTimer->stop();
         }
         
-        updateStatistics();
-        _updateTimer->start(10000); // 每10秒更新一次
+        // 延迟1秒后开始更新，避免界面初始化时的卡顿
+        QTimer::singleShot(1000, this, [this]() {
+            updateStatistics();
+            _updateTimer->start(10000); // 每10秒更新一次
+        });
     }
 }
 
@@ -164,7 +167,12 @@ void DashboardWidget::updateStatistics()
     QMutexLocker locker(&updateMutex);
 
     try {
-        qDebug() << "[DashboardWidget] Updating statistics...";
+        // 减少调试输出，避免日志过多
+        static int updateCount = 0;
+        updateCount++;
+        if (updateCount % 6 == 0) { // 每分钟输出一次日志
+            qDebug() << "[DashboardWidget] Updating statistics...";
+        }
 
         // 更新在线用户数
         int onlineUsers = 0;
@@ -177,7 +185,6 @@ void DashboardWidget::updateStatistics()
         if (_onlineUsersLabel) {
             _onlineUsersLabel->setText(QString::number(onlineUsers));
         }
-        qDebug() << "[DashboardWidget] Online users:" << onlineUsers;
 
         // 更新总用户数
         int totalUsers = 0;
@@ -190,7 +197,6 @@ void DashboardWidget::updateStatistics()
         if (_totalUsersLabel) {
             _totalUsersLabel->setText(QString::number(totalUsers));
         }
-        qDebug() << "[DashboardWidget] Total users:" << totalUsers;
 
         // 更新消息数量
         int messagesCount = 0;
@@ -203,7 +209,6 @@ void DashboardWidget::updateStatistics()
         if (_messagesCountLabel) {
             _messagesCountLabel->setText(QString::number(messagesCount));
         }
-        qDebug() << "[DashboardWidget] Messages count:" << messagesCount;
 
         // 更新运行时间
         QString uptime = "0:00:00";
@@ -216,7 +221,6 @@ void DashboardWidget::updateStatistics()
         if (_uptimeLabel) {
             _uptimeLabel->setText(uptime);
         }
-        qDebug() << "[DashboardWidget] Uptime:" << uptime;
 
         // 更新CPU使用率 - 添加超时保护
         int cpuUsage = 0;
@@ -233,7 +237,6 @@ void DashboardWidget::updateStatistics()
         if (_cpuProgressBar) {
             _cpuProgressBar->setValue(cpuUsage);
         }
-        qDebug() << "[DashboardWidget] CPU usage:" << cpuUsage << "%";
 
         // 更新内存使用率 - 添加超时保护
         int memoryUsage = 0;
@@ -250,9 +253,10 @@ void DashboardWidget::updateStatistics()
         if (_memoryProgressBar) {
             _memoryProgressBar->setValue(memoryUsage);
         }
-        qDebug() << "[DashboardWidget] Memory usage:" << memoryUsage << "%";
 
-        qDebug() << "[DashboardWidget] Statistics update completed";
+        if (updateCount % 6 == 0) { // 每分钟输出一次日志
+            qDebug() << "[DashboardWidget] Statistics update completed";
+        }
     } catch (const std::exception& e) {
         qWarning() << "[DashboardWidget] Exception in updateStatistics:" << e.what();
     } catch (...) {

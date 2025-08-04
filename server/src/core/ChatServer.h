@@ -92,7 +92,7 @@ public:
     ~ChatServer();
 
     // 服务器控制
-    bool startServer(const QString& host = "0.0.0.0", int port = 8443);
+    bool startServer();
     void stopServer();
     void restartServer();
     bool isRunning() const;
@@ -135,14 +135,25 @@ public:
     
     // 数据库初始化
     bool initializeDatabase();
+    
+    // 客户端管理
+    QString getClientAddress(const QString& clientId) const;
+    void sendJsonMessage(const QString& clientId, const QJsonObject& message);
+    void sendErrorResponse(const QString& clientId, const QString& error, const QString& details = QString());
+    
+    // SSL配置
+    bool configureSsl();
+    
+    // 系统信息
+    QJsonObject getServerStatus() const;
 
 signals:
     void serverStarted();
     void serverStopped();
     void serverError(const QString& error);
     
-    void clientConnected(qint64 userId);
-    void clientDisconnected(qint64 userId);
+    void clientConnected(const QString& clientId, const QString& address);
+    void clientDisconnected(const QString& clientId, const QString& address);
     void clientAuthenticated(qint64 userId);
     void userOnline(qint64 userId);
     void userOffline(qint64 userId);
@@ -154,22 +165,28 @@ signals:
     void performanceAlert(const QString& message);
     void systemOverloaded();
     void healthStatusChanged(bool healthy);
+    
+    void databaseError(const QString& error);
+    void databaseConnected();
 
 private slots:
     // 系统维护
     void performSystemMaintenance();
+    void performCleanup();
     void updateSystemStats();
     void checkSystemHealth();
     
     // 组件事件处理
     void onConnectionManagerEvent();
     void onMessageEngineEvent();
-     void onThreadManagerEvent();
+    void onThreadManagerEvent();
 
-private slots:
-    void onNewConnection();
-    void onClientDisconnected();
-    void onClientDataReceived();
+    // 客户端连接处理
+    void onClientConnected(QSslSocket* socket);
+    void onClientDisconnected(QSslSocket* socket);
+    void handleClientData(const QString& clientId);
+    void handleClientDisconnected(const QString& clientId);
+    void handleSocketError(const QString& clientId, QAbstractSocket::SocketError error);
 
 private:
     // 核心组件
@@ -181,8 +198,19 @@ private:
     QTimer* _cleanupTimer;
     
     // 客户端连接管理
-    QHash<QSslSocket*, std::shared_ptr<ChatClientConnection>> _clients;
-    QHash<qint64, std::shared_ptr<ChatClientConnection>> _userConnections;
+    struct ClientInfo {
+        QSslSocket* socket;
+        QString clientId;
+        QString address;
+        quint16 port;
+        QDateTime connectedTime;
+        QDateTime lastActivity;
+        bool isAuthenticated;
+        qint64 userId;
+        QString username;
+    };
+    
+    QHash<QString, ClientInfo> _clients;
     mutable QMutex _clientsMutex;
     
     // 配置和状态
@@ -248,21 +276,22 @@ private:
     void handleSystemError(const QString& error);
     
     // 客户端管理
-      void onSslErrors(const QList<QSslError>& errors);
-      void cleanupConnections();
+    void onSslErrors(const QList<QSslError>& errors);
+    void onPeerVerifyError(const QSslError& error);
+    void cleanupConnections();
     void removeClient(QSslSocket* socket);
-    void processClientMessage(ChatClientConnection* client, const QByteArray& data);
+    void processClientMessage(const QString& clientId, const QVariantMap& data);
     
     // 消息处理
-    void handleLogoutRequest(ChatClientConnection* client);
-    void handleMessageRequest(ChatClientConnection* client, const QVariantMap& data);
-    void handleHeartbeat(ChatClientConnection* client);
-    void handleRegisterRequest(ChatClientConnection* client, const QVariantMap& data);
-    void handleEmailVerificationRequest(ChatClientConnection* client, const QVariantMap& data);
-    void handleSendEmailVerificationRequest(ChatClientConnection* client, const QVariantMap& data);
-    void handleEmailCodeVerificationRequest(ChatClientConnection* client, const QVariantMap& data);
-    void handleResendVerificationRequest(ChatClientConnection* client, const QVariantMap& data);
-    void handleLoginRequest(ChatClientConnection* client, const QVariantMap& data);
+    void handleLogoutRequest(const QString& clientId);
+    void handleMessageRequest(const QString& clientId, const QVariantMap& data);
+    void handleHeartbeat(const QString& clientId);
+    void handleRegisterRequest(const QString& clientId, const QVariantMap& data);
+    void handleEmailVerificationRequest(const QString& clientId, const QVariantMap& data);
+    void handleSendEmailVerificationRequest(const QString& clientId, const QVariantMap& data);
+    void handleEmailCodeVerificationRequest(const QString& clientId, const QVariantMap& data);
+    void handleResendVerificationRequest(const QString& clientId, const QVariantMap& data);
+    void handleLoginRequest(const QString& clientId, const QJsonObject& request);
     
     // 工具方法
     QString formatUptime() const;

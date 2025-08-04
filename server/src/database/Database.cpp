@@ -1,6 +1,7 @@
 #include "Database.h"
 #include "../config/ServerConfig.h"
 #include "../utils/LogManager.h"
+#include "../utils/StackTraceLogger.h"
 #include <QSqlDriver>
 #include <QSqlRecord>
 #include <QSqlError>
@@ -83,11 +84,16 @@ bool Database::initialize()
     // 设置连接选项 - 减少超时时间防止阻塞
     _database.setConnectOptions(QString("MYSQL_OPT_CONNECT_TIMEOUT=3;MYSQL_OPT_READ_TIMEOUT=5"));
     
+    // 使用非阻塞连接方式，设置超时
     if (!_database.open()) {
         QString error = QString("Failed to connect to database: %1").arg(_database.lastError().text());
         LogManager::instance()->writeErrorLog(error, "Database");
         LogManager::instance()->writeDatabaseLog("CONNECTION_FAILED", error, "Database");
         emit databaseError(error);
+        
+        // 记录堆栈追踪日志
+        StackTraceLogger::instance().logStackTrace("DATABASE_CONNECTION_FAILED", "Database::initialize");
+        
         return false;
     }
 

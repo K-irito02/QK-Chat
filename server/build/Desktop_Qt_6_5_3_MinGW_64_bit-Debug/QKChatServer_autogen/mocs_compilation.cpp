@@ -24,6 +24,7 @@
 #include "M7KQ2GL7XF/moc_DatabaseOptimizer.cpp"
 #include "M7KQ2GL7XF/moc_DatabasePool.cpp"
 #include "UFQQIFJZKK/moc_NetworkEventHandler.cpp"
+#include "UFQQIFJZKK/moc_NonBlockingConnectionManager.cpp"
 #include "UFQQIFJZKK/moc_ProtocolParser.cpp"
 #include "UFQQIFJZKK/moc_QSslServer.cpp"
 #include "GQ6NBGVJMG/moc_EmailService.cpp"

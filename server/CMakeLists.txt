@@ -71,12 +71,14 @@ set(SOURCES
     src/network/ProtocolParser.cpp
     src/network/QSslServer.cpp
     src/network/NetworkEventHandler.cpp
+    src/network/NonBlockingConnectionManager.cpp
     src/services/EmailService.cpp
     src/services/EmailTemplate.cpp
     src/utils/AdminAuth.cpp
     src/utils/AdminManager.cpp
     src/utils/LogManager.cpp
     src/utils/AutoRecovery.cpp
+    src/utils/StackTraceLogger.cpp
     src/config/ServerConfig.cpp
     src/utils/ThreadPool.cpp
 )
@@ -117,12 +119,14 @@ set(HEADERS
     src/network/ProtocolParser.h
     src/network/QSslServer.h
     src/network/NetworkEventHandler.h
+    src/network/NonBlockingConnectionManager.h
     src/services/EmailService.h
     src/services/EmailTemplate.h
     src/utils/AdminAuth.h
     src/utils/AdminManager.h
     src/utils/LogManager.h
     src/utils/AutoRecovery.h
+    src/utils/StackTraceLogger.h
     src/config/ServerConfig.h
     src/utils/ThreadPool.h
     src/utils/LockFreeStructures.h
@@ -222,6 +226,7 @@ if(WIN32)
         ws2_32.lib
         dbghelp.lib
         psapi.lib
+        pdh.lib
     )
 endif()
 

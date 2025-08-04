@@ -100,6 +100,8 @@ QKChatServer_autogen/timestamp: \
 	D:/QT_Learn/Projects/QKChatApp/server/src/main.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/network/NetworkEventHandler.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/network/NetworkEventHandler.h \
+	D:/QT_Learn/Projects/QKChatApp/server/src/network/NonBlockingConnectionManager.cpp \
+	D:/QT_Learn/Projects/QKChatApp/server/src/network/NonBlockingConnectionManager.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/network/ProtocolParser.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/network/ProtocolParser.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/network/QSslServer.cpp \
@@ -117,6 +119,8 @@ QKChatServer_autogen/timestamp: \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/LockFreeStructures.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.h \
+	D:/QT_Learn/Projects/QKChatApp/server/src/utils/StackTraceLogger.cpp \
+	D:/QT_Learn/Projects/QKChatApp/server/src/utils/StackTraceLogger.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/ThreadPool.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/ThreadPool.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QAtomicInt \
@@ -363,6 +367,7 @@ QKChatServer_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslPreSharedKeyAuthenticator \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslSocket \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QTcpServer \
+	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QTcpSocket \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qabstractsocket.h \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qhostaddress.h \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qhostinfo.h \

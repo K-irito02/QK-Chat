@@ -118,7 +118,7 @@ bool EnhancedChatServer::startServer(const QString& host, int port)
     }
     
     // 启动父类服务器
-    if (!ChatServer::startServer(host, port)) {
+    if (!ChatServer::startServer()) {
         qCCritical(enhancedChatServer) << "Failed to start base server";
         return false;
     }

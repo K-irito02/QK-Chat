@@ -224,7 +224,7 @@ int ServerConfig::getDatabasePort() const
 
 QString ServerConfig::getDatabaseName() const
 {
-    return getValue("Database/name", "qkchat_db").toString();
+    return getValue("Database/name", "qkchat").toString();
 }
 
 QString ServerConfig::getDatabaseUsername() const
@@ -307,6 +307,37 @@ int ServerConfig::getMaxLogFiles() const
     return getValue("Logging/max_files", 5).toInt();
 }
 
+// SMTP配置方法
+QString ServerConfig::getSmtpHost() const
+{
+    return getValue("SMTP/host", "smtp.qq.com").toString();
+}
+
+int ServerConfig::getSmtpPort() const
+{
+    return getValue("SMTP/port", 587).toInt();
+}
+
+QString ServerConfig::getSmtpUsername() const
+{
+    return getValue("SMTP/username", "saokiritoasuna00@qq.com").toString();
+}
+
+QString ServerConfig::getSmtpPassword() const
+{
+    return getValue("SMTP/password", "ssvbzaqvotjcchjh").toString();
+}
+
+QString ServerConfig::getSmtpFromEmail() const
+{
+    return getValue("SMTP/from_email", "saokiritoasuna00@qq.com").toString();
+}
+
+QString ServerConfig::getSmtpFromName() const
+{
+    return getValue("SMTP/from_name", "QK Chat").toString();
+}
+
 void ServerConfig::initializeDefaults()
 {
     // 如果没有设置对象，创建临时的默认配置
@@ -334,7 +365,7 @@ void ServerConfig::initializeDefaults()
     _configCache["Database/type"] = "mysql";
     _configCache["Database/host"] = "localhost";
     _configCache["Database/port"] = 3306;
-    _configCache["Database/name"] = "qkchat_db";
+    _configCache["Database/name"] = "qkchat";
     _configCache["Database/username"] = "qkchat_user";
     _configCache["Database/password"] = "3143285505";
     _configCache["Database/pool_size"] = 10;
@@ -350,6 +381,14 @@ void ServerConfig::initializeDefaults()
     _configCache["Logging/file"] = "../logs/server.log";
     _configCache["Logging/max_file_size"] = 10485760; // 10MB
     _configCache["Logging/max_files"] = 5;
+    
+    // SMTP配置默认值
+    _configCache["SMTP/host"] = "smtp.qq.com";
+    _configCache["SMTP/port"] = 587;
+    _configCache["SMTP/username"] = "saokiritoasuna00@qq.com";
+    _configCache["SMTP/password"] = "ssvbzaqvotjcchjh";
+    _configCache["SMTP/from_email"] = "saokiritoasuna00@qq.com";
+    _configCache["SMTP/from_name"] = "QK Chat";
 }
 
 QString ServerConfig::getDefaultConfigPath() const

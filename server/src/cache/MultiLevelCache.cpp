@@ -1,4 +1,6 @@
 #include "MultiLevelCache.h"
+#include "RedisClient.h"
+#include "../config/ServerConfig.h"
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonArray>
@@ -288,67 +290,114 @@ public:
     explicit L3DistributedCache(const CacheConfig& config)
         : m_config(config)
         , m_enabled(config.l3Enabled)
+        , m_redisClient(nullptr)
     {
-        // 这里应该初始化Redis连接
-        // 为了简化，暂时使用模拟实现
+        if (m_enabled) {
+            initializeRedisConnection();
+        }
+    }
+
+    ~L3DistributedCache() {
+        if (m_redisClient) {
+            delete m_redisClient;
+        }
     }
     
     bool set(const QString& key, const QVariant& value, const CacheMetadata& metadata) {
-        if (!m_enabled) return false;
-        
-        // Redis SET 操作的模拟实现
-        // 实际实现应该使用Redis客户端库
-        m_mockCache[key] = {value, metadata};
-        return true;
-    }
-    
-    std::optional<QVariant> get(const QString& key) {
-        if (!m_enabled) return std::nullopt;
-        
-        // Redis GET 操作的模拟实现
-        auto it = m_mockCache.find(key);
-        if (it != m_mockCache.end()) {
-            if (!it->second.second.isExpired()) {
-                return it->second.first;
-            } else {
-                m_mockCache.erase(it);
+        if (!m_enabled || !m_redisClient || !m_redisClient->isConnected()) {
+            qCDebug(multiLevelCache) << "L3 cache not available for set operation";
+            return false;
+        }
+
+        // 计算TTL
+        int ttlSeconds = -1;
+        if (metadata.expiresAt.isValid()) {
+            qint64 msecs = QDateTime::currentDateTime().msecsTo(metadata.expiresAt);
+            ttlSeconds = static_cast<int>(msecs / 1000);
+            if (ttlSeconds <= 0) {
+                return false; // 已过期
             }
         }
-        
+
+        bool success = m_redisClient->set(key, value, ttlSeconds);
+        if (success) {
+            qCDebug(multiLevelCache) << "Successfully stored key in L3 cache:" << key;
+        } else {
+            qCWarning(multiLevelCache) << "Failed to store key in L3 cache:" << key << m_redisClient->getLastError();
+        }
+
+        return success;
+    }
+
+    std::optional<QVariant> get(const QString& key) {
+        if (!m_enabled || !m_redisClient || !m_redisClient->isConnected()) {
+            qCDebug(multiLevelCache) << "L3 cache not available for get operation";
+            return std::nullopt;
+        }
+
+        QVariant value = m_redisClient->get(key);
+        if (value.isValid()) {
+            qCDebug(multiLevelCache) << "Retrieved key from L3 cache:" << key;
+            return value;
+        }
+
         return std::nullopt;
     }
     
     bool remove(const QString& key) {
-        if (!m_enabled) return false;
-        
-        return m_mockCache.erase(key) > 0;
-    }
-    
-    bool exists(const QString& key) const {
-        if (!m_enabled) return false;
-        
-        auto it = m_mockCache.find(key);
-        return it != m_mockCache.end() && !it->second.second.isExpired();
-    }
-    
-    void clear() {
-        m_mockCache.clear();
-    }
-    
-    QStringList keys() const {
-        QStringList result;
-        for (const auto& pair : m_mockCache) {
-            result << pair.first;
+        if (!m_enabled || !m_redisClient || !m_redisClient->isConnected()) {
+            return false;
         }
-        return result;
+
+        return m_redisClient->remove(key);
+    }
+
+    bool exists(const QString& key) const {
+        if (!m_enabled || !m_redisClient || !m_redisClient->isConnected()) {
+            return false;
+        }
+
+        return m_redisClient->exists(key);
+    }
+
+    void clear() {
+        if (m_redisClient && m_redisClient->isConnected()) {
+            m_redisClient->flushDatabase();
+        }
+    }
+
+    QStringList keys() const {
+        // Redis KEYS命令在生产环境中不推荐使用，这里返回空列表
+        return QStringList();
     }
 
 private:
+    void initializeRedisConnection() {
+        ServerConfig* config = ServerConfig::instance();
+
+        m_redisClient = new RedisClient();
+
+        QString host = config->getRedisHost();
+        int port = config->getRedisPort();
+        QString password = config->getRedisPassword();
+        int database = config->getRedisDatabase();
+
+        qCInfo(multiLevelCache) << "Initializing Redis connection to:" << host << ":" << port;
+
+        bool connected = m_redisClient->connectToServer(host, port, password, database);
+        if (connected) {
+            qCInfo(multiLevelCache) << "Successfully connected to Redis server";
+        } else {
+            qCWarning(multiLevelCache) << "Failed to connect to Redis server:" << m_redisClient->getLastError();
+            delete m_redisClient;
+            m_redisClient = nullptr;
+            m_enabled = false;
+        }
+    }
+
     CacheConfig m_config;
     bool m_enabled;
-    
-    // 模拟Redis存储
-    std::unordered_map<QString, std::pair<QVariant, CacheMetadata>> m_mockCache;
+    RedisClient* m_redisClient;
 };
 
 MultiLevelCache::MultiLevelCache(QObject *parent)

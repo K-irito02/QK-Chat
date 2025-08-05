@@ -71,6 +71,14 @@ public:
     int getMaxLoginAttempts() const;
     int getLockoutDuration() const;
     
+    // SMTP配置
+    QString getSmtpHost() const;
+    int getSmtpPort() const;
+    QString getSmtpUsername() const;
+    QString getSmtpPassword() const;
+    QString getSmtpFromEmail() const;
+    QString getSmtpFromName() const;
+    
     // 日志配置
     QString getLogLevel() const;
     QString getLogFile() const;

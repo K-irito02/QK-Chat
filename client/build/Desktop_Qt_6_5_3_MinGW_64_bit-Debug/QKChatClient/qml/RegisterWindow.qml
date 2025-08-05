@@ -12,11 +12,14 @@ Page {
     signal registrationSuccess(string username, string email, int userId)
     
     property alias userController: userController
-    property bool isVerificationMode: false
     property string registeredEmail: ""
-    property int countdown: 0
-    property string feedbackMessage: ""
-    property color feedbackColor: "black"
+    property bool emailVerified: false
+    property string statusMessage: ""
+    property color statusColor: "black"
+
+    // 独立的加载状态
+    property bool sendingCode: false
+    property bool verifyingCode: false
     
     UserController {
         id: userController
@@ -153,24 +156,24 @@ Page {
                     }
                 }
                 
-                // 邮箱输入
+                // 邮箱输入区域
                 RowLayout {
-                    spacing: 8
+                    Layout.fillWidth: true
+                    spacing: 10
+
                     CustomTextField {
                         id: emailField
                         Layout.fillWidth: true
-                        placeholderText: isVerificationMode ? "验证码" : "邮箱地址"
-                        iconSource: isVerificationMode ? "qrc:/icons/lock.png" : "qrc:/icons/email.png"
-                        maximumLength: isVerificationMode ? 6 : -1
-                        inputMethodHints: Qt.ImhNone
-                        
+                        placeholderText: "邮箱地址"
+                        iconSource: "qrc:/icons/email.png"
+
                         property string validationError: ""
-                        
+
                         onCustomTextChanged: {
                             if (text.length > 0) {
                                 var validator = Qt.createQmlObject("import QKChatClient 1.0; Validator {}", registerPage);
                                 if (validator) {
-                                    validationError = isVerificationMode ? "" : validator.getEmailError(text);
+                                    validationError = validator.getEmailError(text);
                                     errorMessage = validationError;
                                 }
                             } else {
@@ -178,26 +181,67 @@ Page {
                                 validationError = "";
                             }
                         }
-                        
+
                         onCustomEditingFinished: {
-                            if (!isVerificationMode && text.length > 0 && validationError === "") {
+                            if (text.length > 0 && validationError === "") {
                                 userController.checkEmailAvailability(text);
                             }
                         }
                     }
-                    ComboBox {
-                        id: actionButton
-                        Layout.preferredWidth: 100
-                        model: isVerificationMode ? ["确认", "返回", "发送"] : ["发送", "清空"]
-                        currentIndex: 0
-                        enabled: countdown <= 0
-                        displayText: currentText + (countdown > 0 ? " (" + countdown + "s)" : "")
-                        onActivated: handleAction(currentText)
+
+                    CustomButton {
+                        id: sendCodeButton
+                        Layout.preferredWidth: 120
+                        text: sendingCode ? "发送中..." : "发送验证码"
+                        enabled: !sendingCode &&
+                                emailField.text.length > 0 &&
+                                emailField.validationError === ""
+
+                        onClicked: {
+                            if (emailField.text.length > 0 && emailField.validationError === "") {
+                                registeredEmail = emailField.text
+                                sendingCode = true
+                                console.log("Starting email verification for:", registeredEmail)
+                                userController.sendEmailVerification(registeredEmail)
+                            }
+                        }
                     }
-                    Text {
-                        text: feedbackMessage
-                        color: feedbackColor
-                        font.pixelSize: 12
+                }
+
+                // 验证码输入区域
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 10
+
+                    CustomTextField {
+                        id: verificationCodeField
+                        Layout.fillWidth: true
+                        placeholderText: "请输入6位验证码"
+                        iconSource: "qrc:/icons/lock.png"
+                        maximumLength: 6
+                        enabled: registeredEmail.length > 0
+
+                        onCustomTextChanged: {
+                            // 清除错误信息
+                            errorMessage = ""
+                        }
+                    }
+
+                    CustomButton {
+                        id: verifyCodeButton
+                        Layout.preferredWidth: 120
+                        text: verifyingCode ? "验证中..." : "验证"
+                        enabled: !verifyingCode &&
+                                verificationCodeField.text.length === 6 &&
+                                registeredEmail.length > 0
+
+                        onClicked: {
+                            if (verificationCodeField.text.length === 6 && registeredEmail.length > 0) {
+                                verifyingCode = true
+                                console.log("Starting code verification for:", registeredEmail, "Code:", verificationCodeField.text)
+                                userController.verifyEmailCode(registeredEmail, verificationCodeField.text)
+                            }
+                        }
                     }
                 }
                 
@@ -270,10 +314,23 @@ Page {
                 visible: passwordField.activeFocus || passwordField.text.length > 0
             }
             
-            // 错误信息显示
+            // 状态信息显示
             Text {
                 Layout.fillWidth: true
                 Layout.topMargin: 4
+                Layout.bottomMargin: 2
+                text: statusMessage
+                color: statusColor
+                font.pixelSize: 12
+                visible: statusMessage.length > 0
+                wrapMode: Text.WordWrap
+                horizontalAlignment: Text.AlignHCenter
+            }
+
+            // 错误信息显示
+            Text {
+                Layout.fillWidth: true
+                Layout.topMargin: 2
                 Layout.bottomMargin: 4
                 text: userController.errorMessage
                 color: Material.color(Material.Red)
@@ -289,16 +346,17 @@ Page {
                 Layout.fillWidth: true
                 Layout.topMargin: 6
                 text: userController.isLoading ? "注册中..." : "注册"
-                enabled: !userController.isLoading && 
-                        usernameField.text.length > 0 && 
-                        emailField.text.length > 0 && 
-                        passwordField.text.length > 0 && 
+                enabled: !userController.isLoading &&
+                        usernameField.text.length > 0 &&
+                        emailField.text.length > 0 &&
+                        passwordField.text.length > 0 &&
                         confirmPasswordField.text.length > 0 &&
                         usernameField.validationError === "" &&
                         passwordField.validationError === "" &&
-                        confirmPasswordField.errorMessage === ""
+                        confirmPasswordField.errorMessage === "" &&
+                        emailVerified  // 必须完成邮箱验证
                 isPrimary: true
-                
+
                 onClicked: performRegister();
             }
             
@@ -356,33 +414,40 @@ Page {
         }
         
         function onEmailVerificationSent(success, message) {
+            sendingCode = false  // 重置发送状态
+            console.log("Email verification sent result:", success, message)
+
             if (success) {
-                feedbackMessage = "发送成功"
-                feedbackColor = "green"
-                if (!isVerificationMode) {
-                    isVerificationMode = true
-                    emailField.text = ""
-                    actionButton.currentIndex = 0
-                } else {
-                    startCountdown(50)
-                }
+                statusMessage = "验证码已发送到您的邮箱，请查收"
+                statusColor = "green"
+                // 启用验证码输入框
+                verificationCodeField.enabled = true
+                verificationCodeField.forceActiveFocus()
             } else {
-                feedbackMessage = "发送失败"
-                feedbackColor = "red"
+                statusMessage = "发送失败: " + message
+                statusColor = "red"
+                emailField.errorMessage = message
             }
         }
-        
+
         function onEmailCodeVerified() {
-            feedbackMessage = "验证成功"
-            feedbackColor = "green"
-            performRegister()
+            verifyingCode = false  // 重置验证状态
+            console.log("Email code verification successful")
+
+            statusMessage = "邮箱验证成功！"
+            statusColor = "green"
+            emailVerified = true
+            // 验证成功后，不自动注册，让用户手动点击注册按钮
         }
-        
+
         function onEmailCodeVerificationFailed(error) {
-            feedbackMessage = "验证失败"
-            feedbackColor = "red"
-            emailField.errorMessage = "验证码错误，请重试"
-            actionButton.currentIndex = 2  // "发送"
+            verifyingCode = false  // 重置验证状态
+            console.log("Email code verification failed:", error)
+
+            statusMessage = "验证失败: " + error
+            statusColor = "red"
+            verificationCodeField.errorMessage = "验证码错误，请重试"
+            emailVerified = false
         }
     }
     
@@ -391,51 +456,22 @@ Page {
         usernameField.forceActiveFocus();
     }
 
-    Timer {
-        id: countdownTimer
-        interval: 1000
-        repeat: true
-        onTriggered: {
-            countdown--
-            if (countdown <= 0) {
-                stop()
-                actionButton.enabled = true
-            }
-        }
+    // 重置表单状态
+    function resetEmailVerification() {
+        emailVerified = false
+        registeredEmail = ""
+        statusMessage = ""
+        sendingCode = false
+        verifyingCode = false
+        verificationCodeField.text = ""
+        verificationCodeField.enabled = false
     }
 
-    function startCountdown(seconds) {
-        countdown = seconds
-        actionButton.enabled = false
-        countdownTimer.start()
-    }
-
-    function handleAction(action) {
-        feedbackMessage = ""
-        emailField.errorMessage = ""
-        
-        if (!isVerificationMode) {
-            if (action === "发送") {
-                if (emailField.text.length > 0 && emailField.validationError === "") {
-                    registeredEmail = emailField.text
-                    userController.sendEmailVerification(registeredEmail)
-                }
-            } else if (action === "清空") {
-                emailField.text = ""
-            }
-        } else {
-            if (action === "确认") {
-                if (emailField.text.length > 0) {
-                    userController.verifyEmailCode(registeredEmail, emailField.text)
-                    startCountdown(50)
-                }
-            } else if (action === "返回") {
-                isVerificationMode = false
-                emailField.text = registeredEmail
-                actionButton.currentIndex = 0
-            } else if (action === "发送") {
-                userController.resendEmailVerification(registeredEmail)
-            }
-        }
+    // 清除状态信息
+    function clearStatus() {
+        statusMessage = ""
+        statusColor = "black"
+        sendingCode = false
+        verifyingCode = false
     }
 }

@@ -46,6 +46,9 @@ public:
     
     bool isReady() const;
     QString getLastError() const;
+    
+    // 获取服务状态
+    QJsonObject getServiceStatus() const;
 
 signals:
     void emailSent(const QString& recipient);

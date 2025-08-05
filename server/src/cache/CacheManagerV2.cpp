@@ -6,6 +6,21 @@
 
 Q_LOGGING_CATEGORY(cacheManagerV2, "qkchat.server.cachemanagerv2")
 
+CacheManagerV2* CacheManagerV2::instance()
+{
+    static CacheManagerV2* instance = nullptr;
+    static QMutex mutex;
+    
+    if (!instance) {
+        QMutexLocker locker(&mutex);
+        if (!instance) {
+            instance = new CacheManagerV2();
+        }
+    }
+    
+    return instance;
+}
+
 CacheManagerV2::CacheManagerV2(QObject *parent)
     : QObject(parent)
     , m_cleanupTimer(new QTimer(this))

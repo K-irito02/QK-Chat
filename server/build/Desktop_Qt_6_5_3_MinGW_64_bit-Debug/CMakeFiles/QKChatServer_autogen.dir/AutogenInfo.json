@@ -389,6 +389,12 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/RedisClient.h",
+			"MU",
+			"QICLR22GGH/moc_RedisClient.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/config/ServerConfig.h",
 			"MU",
 			"6DQYUKT47J/moc_ServerConfig.cpp",
@@ -563,9 +569,21 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/RedisEmailVerification.h",
+			"MU",
+			"VSCBVMNR7M/moc_RedisEmailVerification.cpp",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/StackTraceLogger.h",
 			"MU",
 			"VSCBVMNR7M/moc_StackTraceLogger.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/SystemMonitor.h",
+			"MU",
+			"VSCBVMNR7M/moc_SystemMonitor.cpp",
 			null
 		],
 		[
@@ -698,6 +716,11 @@
 		],
 		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/MultiLevelCache.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/cache/RedisClient.cpp",
 			"MU",
 			null
 		],
@@ -843,7 +866,17 @@
 			null
 		],
 		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/RedisEmailVerification.cpp",
+			"MU",
+			null
+		],
+		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/StackTraceLogger.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/SystemMonitor.cpp",
 			"MU",
 			null
 		],

@@ -266,7 +266,7 @@ private:
     QAtomicInt m_deadlockDetectionEnabled{0};
     QAtomicInt m_deadlockDetected{0};
     QStringList m_deadlockReport;
-    QMutex m_deadlockMutex;
+    mutable QMutex m_deadlockMutex;
     
     // 内部方法
     void collectSystemMetrics();

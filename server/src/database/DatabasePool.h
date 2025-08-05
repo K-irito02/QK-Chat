@@ -135,6 +135,9 @@ public:
         QDateTime lastActivity;
     };
 
+    // 单例模式
+    static DatabasePool* instance();
+    
     explicit DatabasePool(QObject *parent = nullptr);
     ~DatabasePool();
 

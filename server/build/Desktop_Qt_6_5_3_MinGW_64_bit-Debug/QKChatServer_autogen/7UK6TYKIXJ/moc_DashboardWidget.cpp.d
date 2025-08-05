@@ -1,5 +1,6 @@
 D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/7UK6TYKIXJ/moc_DashboardWidget.cpp: D:/QT_Learn/Projects/QKChatApp/server/src/admin/DashboardWidget.h \
   D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/moc_predefs.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
   D:/Qt/6.5.3/mingw_64/include/QtCore/q20memory.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/q20type_traits.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qalgorithms.h \
@@ -16,6 +17,7 @@ D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qbytearrayalgorithms.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qbytearraylist.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qbytearrayview.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qcalendar.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qchar.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcompare.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcompare_impl.h \
@@ -28,6 +30,7 @@ D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcontiguouscache.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdarwinhelpers.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdatastream.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qdatetime.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdebug.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qexceptionhandling.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qflags.h \
@@ -44,6 +47,7 @@ D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qiterator.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qline.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlist.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qlocale.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlogging.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmalloc.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qmap.h \

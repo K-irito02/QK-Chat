@@ -6,8 +6,8 @@ SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
 
 -- 创建数据库
-CREATE DATABASE IF NOT EXISTS qkchat_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE qkchat_db;
+CREATE DATABASE IF NOT EXISTS qkchat CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE qkchat;
 
 -- 设置SQL模式
 SET sql_mode = 'STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO';
@@ -350,10 +350,10 @@ INSERT INTO users (username, email, password_hash, salt, display_name, status) V
 ('admin', 'admin@qkchat.com', SHA2(CONCAT('QKchat2024!', 'admin_salt'), 256), 'admin_salt', '系统管理员', 'active')
 ON DUPLICATE KEY UPDATE username=username;
 
--- 创建复合索引优化查询性能
-CREATE INDEX idx_user_sessions_user_expires ON user_sessions(user_id, expires_at);
-CREATE INDEX idx_friendships_user_status ON friendships(user_id, status);
-CREATE INDEX idx_group_members_group_role ON group_members(group_id, role);
+-- 注意：复合索引已在表定义中创建，这里不再重复创建
+-- user_sessions表已有 idx_user_expires (user_id, expires_at)
+-- friendships表已有 idx_user_status (user_id, status)  
+-- group_members表已有相应的索引
 
 -- 创建视图简化常用查询
 CREATE OR REPLACE VIEW active_users AS

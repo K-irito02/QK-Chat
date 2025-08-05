@@ -102,12 +102,14 @@ signals:
     void emailVerificationResendFailed(const QString &error);
     void emailCodeVerified();
     void emailCodeVerificationFailed(const QString &error);
+    void emailVerificationSent(bool success, const QString &message);
     
 private slots:
-    void onLoginResponse(bool success, const QString &message, const QString &token);
-    void onRegisterResponse(bool success, const QString &message, const QString &username, const QString &email, qint64 userId);
+    void onLoginResponse(bool success, const QString &message);
+    void onRegisterResponse(bool success, const QString &message);
     void onNetworkError(const QString &error);
     void onEmailVerificationSent(bool success, const QString &message);
+    void onEmailCodeVerificationResponse(bool success, const QString &message);
     void resetLoginAttempts();
     
     // 邮箱验证响应处理
@@ -119,6 +121,7 @@ private:
     void setErrorMessage(const QString &message);
     void increaseLoginAttempts();
     void generateCaptcha();
+    void ensureNetworkClient();  // 确保网络客户端已初始化
     
     UserModel *_userModel;
     LocalDatabase *_database;

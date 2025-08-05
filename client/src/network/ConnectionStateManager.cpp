@@ -131,6 +131,7 @@ void ConnectionStateManager::setupTransitions()
 
 ConnectionStateManager::ConnectionState ConnectionStateManager::getCurrentState() const
 {
+    qCDebug(connectionStateManager) << "getCurrentState() called, returning:" << getStateString(_currentState);
     return _currentState;
 }
 
@@ -197,7 +198,7 @@ void ConnectionStateManager::triggerEvent(ConnectionEvent event)
         
     case SslHandshaking:
         if (event == SslHandshakeCompleted) {
-            newState = Authenticating;
+            newState = Connected;  // 直接进入Connected状态，跳过认证
         } else if (event == ErrorOccurred || event == DisconnectRequested) {
             newState = Disconnected;
         }
@@ -253,8 +254,8 @@ void ConnectionStateManager::triggerEvent(ConnectionEvent event)
         } else if (oldState == Connected && newState != Connected) {
             emit connectionLost();
         } else if (newState == Authenticating) {
-            emit authenticationRequired();
-            startAuthTimeoutTimer();
+            // 对于邮箱验证等不需要认证的功能，直接进入Connected状态
+            // 这里不需要额外处理，因为newState已经是Connected了
         } else if (newState == Reconnecting) {
             incrementRetryAttempt();
             if (_currentRetryAttempt <= _maxRetryAttempts) {

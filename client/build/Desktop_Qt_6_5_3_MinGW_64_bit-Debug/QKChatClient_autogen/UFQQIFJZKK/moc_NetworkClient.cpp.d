@@ -8,6 +8,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QFlags \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QIODevice \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QJsonObject \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QList \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QLoggingCategory \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMap \
@@ -39,6 +40,8 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qbytearraylist.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qbytearrayview.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcalendar.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qcborcommon.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qcborvalue.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qchar.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcompare.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qcompare_impl.h \
@@ -69,6 +72,8 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qiodevicebase.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qiterable.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qiterator.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qjsonobject.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qjsonvalue.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlist.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlocale.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlogging.h \
@@ -92,6 +97,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qprocessordetection.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qqueue.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qrefcount.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qregularexpression.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qscopedpointer.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qscopeguard.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qset.h \
@@ -134,6 +140,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtypes.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qurl.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qutf8stringview.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/quuid.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qvariant.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qvariantmap.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qvarlengtharray.h \

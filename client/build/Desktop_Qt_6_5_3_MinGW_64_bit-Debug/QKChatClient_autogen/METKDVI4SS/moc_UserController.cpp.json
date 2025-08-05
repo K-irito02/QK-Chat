@@ -513,6 +513,21 @@
                     ],
                     "name": "emailCodeVerificationFailed",
                     "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "arguments": [
+                        {
+                            "name": "success",
+                            "type": "bool"
+                        },
+                        {
+                            "name": "message",
+                            "type": "QString"
+                        }
+                    ],
+                    "name": "emailVerificationSent",
+                    "returnType": "void"
                 }
             ],
             "slots": [
@@ -525,10 +540,6 @@
                         },
                         {
                             "name": "message",
-                            "type": "QString"
-                        },
-                        {
-                            "name": "token",
                             "type": "QString"
                         }
                     ],
@@ -545,18 +556,6 @@
                         {
                             "name": "message",
                             "type": "QString"
-                        },
-                        {
-                            "name": "username",
-                            "type": "QString"
-                        },
-                        {
-                            "name": "email",
-                            "type": "QString"
-                        },
-                        {
-                            "name": "userId",
-                            "type": "qint64"
                         }
                     ],
                     "name": "onRegisterResponse",
@@ -586,6 +585,21 @@
                         }
                     ],
                     "name": "onEmailVerificationSent",
+                    "returnType": "void"
+                },
+                {
+                    "access": "private",
+                    "arguments": [
+                        {
+                            "name": "success",
+                            "type": "bool"
+                        },
+                        {
+                            "name": "message",
+                            "type": "QString"
+                        }
+                    ],
+                    "name": "onEmailCodeVerificationResponse",
                     "returnType": "void"
                 },
                 {

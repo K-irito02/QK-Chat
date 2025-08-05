@@ -8,6 +8,21 @@
 
 Q_LOGGING_CATEGORY(databasePool, "qkchat.server.databasepool")
 
+DatabasePool* DatabasePool::instance()
+{
+    static DatabasePool* instance = nullptr;
+    static QMutex mutex;
+    
+    if (!instance) {
+        QMutexLocker locker(&mutex);
+        if (!instance) {
+            instance = new DatabasePool();
+        }
+    }
+    
+    return instance;
+}
+
 DatabasePool::DatabasePool(QObject *parent)
     : QObject(parent)
     , m_maintenanceTimer(new QTimer(this))

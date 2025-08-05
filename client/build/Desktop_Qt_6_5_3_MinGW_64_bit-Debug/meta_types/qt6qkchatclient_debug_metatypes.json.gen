@@ -2216,6 +2216,21 @@
                         ],
                         "name": "emailCodeVerificationFailed",
                         "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "success",
+                                "type": "bool"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "emailVerificationSent",
+                        "returnType": "void"
                     }
                 ],
                 "slots": [
@@ -2228,10 +2243,6 @@
                             },
                             {
                                 "name": "message",
-                                "type": "QString"
-                            },
-                            {
-                                "name": "token",
                                 "type": "QString"
                             }
                         ],
@@ -2248,18 +2259,6 @@
                             {
                                 "name": "message",
                                 "type": "QString"
-                            },
-                            {
-                                "name": "username",
-                                "type": "QString"
-                            },
-                            {
-                                "name": "email",
-                                "type": "QString"
-                            },
-                            {
-                                "name": "userId",
-                                "type": "qint64"
                             }
                         ],
                         "name": "onRegisterResponse",
@@ -2289,6 +2288,21 @@
                             }
                         ],
                         "name": "onEmailVerificationSent",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "success",
+                                "type": "bool"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "onEmailCodeVerificationResponse",
                         "returnType": "void"
                     },
                     {
@@ -3234,10 +3248,6 @@
                             {
                                 "name": "message",
                                 "type": "QString"
-                            },
-                            {
-                                "name": "token",
-                                "type": "QString"
                             }
                         ],
                         "name": "loginResponse",
@@ -3253,18 +3263,6 @@
                             {
                                 "name": "message",
                                 "type": "QString"
-                            },
-                            {
-                                "name": "username",
-                                "type": "QString"
-                            },
-                            {
-                                "name": "email",
-                                "type": "QString"
-                            },
-                            {
-                                "name": "userId",
-                                "type": "qint64"
                             }
                         ],
                         "name": "registerResponse",
@@ -3297,7 +3295,37 @@
                                 "type": "QString"
                             }
                         ],
+                        "name": "sendVerificationResponse",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "success",
+                                "type": "bool"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
                         "name": "resendVerificationResponse",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "success",
+                                "type": "bool"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "emailCodeVerificationResponse",
                         "returnType": "void"
                     },
                     {
@@ -3444,18 +3472,7 @@
                     },
                     {
                         "access": "private",
-                        "arguments": [
-                            {
-                                "name": "errors",
-                                "type": "QList<QSslError>"
-                            }
-                        ],
-                        "name": "onSslErrors",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "private",
-                        "name": "onReadyRead",
+                        "name": "onSocketReadyRead",
                         "returnType": "void"
                     },
                     {
@@ -3467,6 +3484,17 @@
                             }
                         ],
                         "name": "onSocketError",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "errors",
+                                "type": "QList<QSslError>"
+                            }
+                        ],
+                        "name": "onSslErrors",
                         "returnType": "void"
                     },
                     {

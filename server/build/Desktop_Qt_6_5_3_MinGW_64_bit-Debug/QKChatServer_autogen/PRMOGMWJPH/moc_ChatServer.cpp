@@ -293,7 +293,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSChatServerENDCLASS[] = {
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void, 0x80000000 | 35,   36,
-    QMetaType::Void, 0x80000000 | 35,   36,
+    QMetaType::Void, QMetaType::QString,    7,
     QMetaType::Void, QMetaType::QString,    7,
     QMetaType::Void, QMetaType::QString,    7,
     QMetaType::Void, QMetaType::QString, 0x80000000 | 41,    7,    5,
@@ -378,7 +378,7 @@ Q_CONSTINIT const QMetaObject ChatServer::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<QSslSocket *, std::false_type>,
         // method 'onClientDisconnected'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<QSslSocket *, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'handleClientData'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
@@ -423,7 +423,7 @@ void ChatServer::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 21: _t->onMessageEngineEvent(); break;
         case 22: _t->onThreadManagerEvent(); break;
         case 23: _t->onClientConnected((*reinterpret_cast< std::add_pointer_t<QSslSocket*>>(_a[1]))); break;
-        case 24: _t->onClientDisconnected((*reinterpret_cast< std::add_pointer_t<QSslSocket*>>(_a[1]))); break;
+        case 24: _t->onClientDisconnected((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         case 25: _t->handleClientData((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         case 26: _t->handleClientDisconnected((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         case 27: _t->handleSocketError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QAbstractSocket::SocketError>>(_a[2]))); break;
@@ -433,13 +433,6 @@ void ChatServer::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         switch (_id) {
         default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
         case 23:
-            switch (*reinterpret_cast<int*>(_a[1])) {
-            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
-            case 0:
-                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< QSslSocket* >(); break;
-            }
-            break;
-        case 24:
             switch (*reinterpret_cast<int*>(_a[1])) {
             default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
             case 0:

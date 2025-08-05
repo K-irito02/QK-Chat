@@ -112,14 +112,28 @@ void NetworkClient::disconnect()
 
 bool NetworkClient::isConnected() const
 {
-    // 对于基本的网络操作，SSL握手完成后就可以进行通信
+    // 检查基本的连接状态
+    bool socketConnected = (_sslSocket->state() == QAbstractSocket::ConnectedState);
+    
+    // 对于基本的网络操作，只要Socket连接就可以进行通信
+    // SSL加密是可选的，在握手过程中也可以发送数据
     ConnectionStateManager::ConnectionState currentState = _stateManager->getCurrentState();
-    bool sslReady = (currentState == ConnectionStateManager::Authenticating ||
-                     currentState == ConnectionStateManager::Connected);
+    bool sslReady = (currentState == ConnectionStateManager::Connected || 
+                     currentState == ConnectionStateManager::SslHandshaking);
 
-    return sslReady &&
-           _sslSocket->state() == QAbstractSocket::ConnectedState &&
-           _sslSocket->isEncrypted();
+    qCDebug(networkClient) << "isConnected() check - State:" << currentState 
+                           << "Socket state:" << _sslSocket->state() 
+                           << "Encrypted:" << _sslSocket->isEncrypted()
+                           << "SSL ready:" << sslReady
+                           << "Socket connected:" << socketConnected
+                           << "Final result:" << (socketConnected && sslReady);
+
+    return socketConnected && sslReady;
+}
+
+bool NetworkClient::isSslEncrypted() const
+{
+    return _sslSocket && _sslSocket->isEncrypted();
 }
 
 // 用户认证
@@ -316,32 +330,8 @@ void NetworkClient::onConnected()
     _isConnected = true;
     _readBuffer.clear();
 
-    qCInfo(networkClient) << "Connected to server successfully";
-    qCInfo(networkClient) << "Socket state:" << _sslSocket->state();
-    qCInfo(networkClient) << "SSL mode:" << _sslSocket->mode();
-    qCInfo(networkClient) << "Socket connected:" << _sslSocket->isValid();
-    qCInfo(networkClient) << "Socket open:" << _sslSocket->isOpen();
-
     // 通知状态管理器Socket已连接
     _stateManager->triggerEvent(ConnectionStateManager::SocketConnected);
-
-    // 记录连接详细信息
-    QString connectionDetails = QString("State: %1, Mode: %2, Valid: %3, Open: %4")
-        .arg(_sslSocket->state())
-        .arg(_sslSocket->mode())
-        .arg(_sslSocket->isValid())
-        .arg(_sslSocket->isOpen());
-
-    LogManager::instance()->writeConnectionLog("CONNECTED", connectionDetails);
-
-    // 记录SSL信息
-    if (_sslSocket->isEncrypted()) {
-        QSslCipher cipher = _sslSocket->sessionCipher();
-        QString sslInfo = QString("Cipher: %1, Protocol: %2")
-            .arg(cipher.name())
-            .arg(cipher.protocolString());
-        LogManager::instance()->writeSslLog("CONNECTION_ENCRYPTED", sslInfo);
-    }
 
     emit connected();
 
@@ -353,25 +343,8 @@ void NetworkClient::onConnected()
         emit _reconnectManager->reconnectSucceeded(attempt, totalTime);
     }
 
-    // 延迟启动心跳，给服务器时间准备
+    // 延迟启动心跳
     QTimer::singleShot(2000, this, &NetworkClient::startHeartbeat);
-
-    // 延迟发送初始数据，确保连接稳定
-    QTimer::singleShot(1000, this, [this]() {
-        qCInfo(networkClient) << "Connection stabilized, ready to send data";
-        LogManager::instance()->writeConnectionLog("STABILIZED", "Connection ready for data transmission");
-
-        // 发送一个简单的测试数据包
-        QVariantMap testData;
-        testData["type"] = "heartbeat";
-        testData["timestamp"] = QDateTime::currentMSecsSinceEpoch();
-
-        QByteArray testPacket = createPacket("heartbeat", testData);
-        qCInfo(networkClient) << "Sending test packet to verify connection stability";
-        qCInfo(networkClient) << "Test packet size:" << testPacket.size();
-        LogManager::instance()->writeConnectionLog("TEST_PACKET", QString("Size: %1 bytes").arg(testPacket.size()));
-        sendData(testPacket);
-    });
 }
 
 void NetworkClient::onDisconnected()
@@ -440,12 +413,28 @@ void NetworkClient::onSslErrors(const QList<QSslError> &errors)
     }
 }
 
-void NetworkClient::onReadyRead()
+void NetworkClient::onSocketReadyRead()
 {
     QByteArray newData = _sslSocket->readAll();
     _readBuffer.append(newData);
     
-    processIncomingData();
+    // 处理完整的数据包
+    while (_readBuffer.size() >= 4) {
+        // 读取长度前缀
+        qint32 packetLength = qFromBigEndian<qint32>(reinterpret_cast<const uchar*>(_readBuffer.constData()));
+        
+        // 检查是否有完整的数据包
+        if (_readBuffer.size() < packetLength + 4) {
+            break;
+        }
+        
+        // 提取数据包
+        QByteArray packet = _readBuffer.mid(4, packetLength);
+        _readBuffer.remove(0, packetLength + 4);
+        
+        // 解析数据包
+        parsePacket(packet);
+    }
 }
 
 void NetworkClient::onSocketError(QAbstractSocket::SocketError socketError)
@@ -488,7 +477,7 @@ void NetworkClient::setupSslSocket()
 {
     connect(_sslSocket, &QSslSocket::connected, this, &NetworkClient::onConnected);
     connect(_sslSocket, &QSslSocket::disconnected, this, &NetworkClient::onDisconnected);
-    connect(_sslSocket, &QSslSocket::readyRead, this, &NetworkClient::onReadyRead);
+    connect(_sslSocket, &QSslSocket::readyRead, this, &NetworkClient::onSocketReadyRead);
     connect(_sslSocket, &QSslSocket::errorOccurred, this, &NetworkClient::onSocketError);
     connect(_sslSocket, &QSslSocket::sslErrors, this, &NetworkClient::onSslErrors);
     connect(_sslSocket, &QSslSocket::encrypted, this, [this]() {
@@ -498,13 +487,6 @@ void NetworkClient::setupSslSocket()
 
         // 通知状态管理器SSL握手完成
         _stateManager->triggerEvent(ConnectionStateManager::SslHandshakeCompleted);
-
-        // 对于这种应用，SSL握手完成后就可以进行基本通信，启动一个定时器来模拟认证成功
-        QTimer::singleShot(1000, this, [this]() {
-            qCInfo(networkClient) << "Auto-triggering authentication success for basic communication";
-            LogManager::instance()->writeConnectionLog("AUTH_AUTO_SUCCESS", "SSL connection ready for communication");
-            _stateManager->triggerEvent(ConnectionStateManager::AuthenticationSucceeded);
-        });
     });
 
     // 使用SSL配置管理器设置SSL配置
@@ -802,25 +784,30 @@ void NetworkClient::processIncomingData()
 
 void NetworkClient::sendData(const QByteArray &data)
 {
-    qCInfo(networkClient) << "Attempting to send data, size:" << data.size();
-    qCInfo(networkClient) << "Connection status - _isConnected:" << _isConnected;
-    qCInfo(networkClient) << "Socket state:" << _sslSocket->state();
-    qCInfo(networkClient) << "Socket connected:" << _sslSocket->isValid();
-    
-    if (!isConnected()) {
-        qCWarning(networkClient) << "Not connected, cannot send data";
-        qCWarning(networkClient) << "isConnected() returned false";
+    if (!_sslSocket || _sslSocket->state() != QAbstractSocket::ConnectedState) {
+        qCWarning(networkClient) << "Cannot send data - socket not connected. State:" <<
+            (_sslSocket ? _sslSocket->state() : QAbstractSocket::UnconnectedState);
         return;
     }
-    
+
+    qCDebug(networkClient) << "Sending data packet of size:" << data.size() << "bytes";
+
     qint64 bytesWritten = _sslSocket->write(data);
     if (bytesWritten == -1) {
-        qCWarning(networkClient) << "Failed to send data:" << _sslSocket->errorString();
+        qCWarning(networkClient) << "Failed to write data to socket:" << _sslSocket->errorString();
         return;
     }
-    
-    _sslSocket->flush();
-    qCInfo(networkClient) << "Data sent successfully, bytes:" << bytesWritten;
+
+    if (bytesWritten != data.size()) {
+        qCWarning(networkClient) << "Partial write: wrote" << bytesWritten << "of" << data.size() << "bytes";
+    }
+
+    // 确保数据立即发送
+    if (!_sslSocket->flush()) {
+        qCWarning(networkClient) << "Failed to flush socket data";
+    } else {
+        qCDebug(networkClient) << "Data sent and flushed successfully";
+    }
 }
 
 QByteArray NetworkClient::createPacket(const QString &type, const QVariantMap &data)
@@ -846,73 +833,59 @@ void NetworkClient::parsePacket(const QByteArray &packet)
     QJsonDocument doc = QJsonDocument::fromJson(packet, &parseError);
     
     if (parseError.error != QJsonParseError::NoError) {
-        qCWarning(networkClient) << "JSON parse error:" << parseError.errorString();
         return;
     }
     
     if (!doc.isObject()) {
-        qCWarning(networkClient) << "Invalid packet format";
         return;
     }
     
     QVariantMap packetMap = doc.toVariant().toMap();
     QString type = packetMap["type"].toString();
-    QVariantMap data = packetMap["data"].toMap();
     
-    qCDebug(networkClient) << "Packet received, type:" << type;
-    
-    // 处理不同类型的数据包
-    if (type == "auth") {
-        handleAuthResponse(data);
-    } else if (type == "message") {
-        handleMessageResponse(data);
-    } else if (type == "validation") {
-        handleValidationResponse(data);
+    // 简化处理逻辑：直接根据类型处理
+    if (type == "send_verification" || type == "email_code_verification" ||
+        type == "register" || type == "login") {
+        // 邮箱验证和认证相关响应
+        QJsonObject authData = QJsonObject::fromVariantMap(packetMap);
+        handleAuthResponse(authData);
     } else if (type == "heartbeat") {
-        handleHeartbeatResponse(data);
+        // 心跳响应
+        handleHeartbeatResponse(packetMap);
+    } else if (type == "auth") {
+        // 包装的认证响应（兼容旧格式）
+        QVariantMap data = packetMap["data"].toMap();
+        QJsonObject authData = QJsonObject::fromVariantMap(data);
+        handleAuthResponse(authData);
+    } else if (type == "message") {
+        handleMessageResponse(packetMap);
+    } else if (type == "validation") {
+        handleValidationResponse(packetMap);
     } else if (type == "error") {
-        handleErrorResponse(data);
-    } else {
-        qCWarning(networkClient) << "Unknown packet type:" << type;
+        handleErrorResponse(packetMap);
     }
 }
 
-void NetworkClient::handleAuthResponse(const QVariantMap &data)
+void NetworkClient::handleAuthResponse(const QJsonObject& response)
 {
-    QString authType = data["type"].toString();
+    QString type = response["type"].toString();
     
-    if (authType == "login") {
-        bool success = data["success"].toBool();
-        QString message = data["message"].toString();
-        QString token = data["token"].toString();
-        
-        emit loginResponse(success, message, token);
-    } else if (authType == "register") {
-        bool success = data["success"].toBool();
-        QString message = data["message"].toString();
-        QString username = data["username"].toString();
-        QString email = data["email"].toString();
-        qint64 userId = data["userId"].toLongLong();
-        
-        emit registerResponse(success, message, username, email, userId);
-    } else if (authType == "logout") {
-        bool success = data["success"].toBool();
-        emit logoutResponse(success);
-    } else if (authType == "captcha") {
-        QString captchaImage = data["captcha"].toString();
-        emit captchaReceived(captchaImage);
-    } else if (authType == "verify_email_code") {
-        bool success = data["success"].toBool();
-        QString message = data["message"].toString();
-        emit emailCodeVerified(success, message);
-    } else if (authType == "send_verification") {
-        bool success = data["success"].toBool();
-        QString message = data["message"].toString();
-        emit resendVerificationResponse(success, message);
-    } else if (authType == "resend_verification") {
-        bool success = data["success"].toBool();
-        QString message = data["message"].toString();
-        emit resendVerificationResponse(success, message);
+    if (type == "send_verification") {
+        bool success = response["success"].toBool();
+        QString message = response["message"].toString();
+        emit sendVerificationResponse(success, message);
+    } else if (type == "email_code_verification") {
+        bool success = response["success"].toBool();
+        QString message = response["message"].toString();
+        emit emailCodeVerificationResponse(success, message);
+    } else if (type == "register") {
+        bool success = response["success"].toBool();
+        QString message = response["message"].toString();
+        emit registerResponse(success, message);
+    } else if (type == "login") {
+        bool success = response["success"].toBool();
+        QString message = response["message"].toString();
+        emit loginResponse(success, message);
     }
 }
 
@@ -986,40 +959,71 @@ void NetworkClient::verifyEmail(const QString &token)
 
 void NetworkClient::sendEmailVerification(const QString &email)
 {
-    qCInfo(networkClient) << "sendEmailVerification called with email:" << email;
-    qCInfo(networkClient) << "Current connection status - _isConnected:" << _isConnected;
-    qCInfo(networkClient) << "Socket state:" << _sslSocket->state();
-    
+    qCInfo(networkClient) << "Attempting to send email verification for:" << email;
+
+    if (!isConnected()) {
+        qCWarning(networkClient) << "Cannot send email verification - not connected to server";
+        emit sendVerificationResponse(false, "未连接到服务器");
+        return;
+    }
+
     QVariantMap data;
     data["type"] = "send_verification";
     data["email"] = email;
-    
-    QByteArray packet = createPacket("auth", data);
-    qCInfo(networkClient) << "Created packet size:" << packet.size();
-    
+    data["timestamp"] = QDateTime::currentMSecsSinceEpoch();
+
+    QJsonDocument doc = QJsonDocument::fromVariant(data);
+    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+
+    qCInfo(networkClient) << "Sending email verification packet. Data:" << jsonData;
+
+    QByteArray lengthBytes(4, 0);
+    qToBigEndian<qint32>(jsonData.size(), reinterpret_cast<uchar*>(lengthBytes.data()));
+
+    QByteArray packet = lengthBytes + jsonData;
+
+    qCInfo(networkClient) << "Email verification packet size:" << packet.size() << "bytes";
     sendData(packet);
-    
-    qCInfo(networkClient) << "Email verification send request for:" << email;
+    qCInfo(networkClient) << "Email verification packet sent successfully";
 }
 
 void NetworkClient::resendVerification(const QString &email)
 {
-    QVariantMap data;
-    data["type"] = "resend_verification";
-    data["email"] = email;
+    // 创建符合服务器端期望的扁平消息结构
+    QVariantMap flatData;
+    flatData["type"] = "resend_verification";
+    flatData["email"] = email;
     
-    QByteArray packet = createPacket("auth", data);
-    sendData(packet);
+    QJsonDocument doc = QJsonDocument::fromVariant(flatData);
+    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+    
+    // 添加长度前缀
+    QByteArray lengthBytes(4, 0);
+    qToBigEndian<qint32>(jsonData.size(), reinterpret_cast<uchar*>(lengthBytes.data()));
+    
+    QByteArray flatPacket = lengthBytes + jsonData;
+    
+    sendData(flatPacket);
     
     qCInfo(networkClient) << "Email verification resend request for:" << email;
 }
 void NetworkClient::verifyEmailCode(const QString &email, const QString &code)
 {
-    QVariantMap data;
-    data["type"] = "verify_email_code";
-    data["email"] = email;
-    data["code"] = code;
-    QByteArray packet = createPacket("auth", data);
-    sendData(packet);
+    // 创建符合服务器端期望的扁平消息结构
+    QVariantMap flatData;
+    flatData["type"] = "verify_email_code";
+    flatData["email"] = email;
+    flatData["code"] = code;
+    
+    QJsonDocument doc = QJsonDocument::fromVariant(flatData);
+    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+    
+    // 添加长度前缀
+    QByteArray lengthBytes(4, 0);
+    qToBigEndian<qint32>(jsonData.size(), reinterpret_cast<uchar*>(lengthBytes.data()));
+    
+    QByteArray flatPacket = lengthBytes + jsonData;
+    
+    sendData(flatPacket);
     qCInfo(networkClient) << "Email code verification sent for:" << email;
 }

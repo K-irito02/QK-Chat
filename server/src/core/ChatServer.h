@@ -19,6 +19,13 @@ class ChatClientConnection;
 #include <QByteArray>
 #include <memory>
 
+// Windows系统监控
+#ifdef Q_OS_WIN
+#include <pdh.h>
+#include <windows.h>
+#pragma comment(lib, "pdh.lib")
+#endif
+
 #include "ThreadManager.h"
 #include "ConnectionManager.h"
 #include "MessageEngine.h"
@@ -106,6 +113,7 @@ public:
     // 统计信息
     ServerStats getServerStats() const;
     void resetAllStats();
+    void refreshAllCaches(); // 刷新所有缓存数据
     
     // 消息发送接口
     bool sendMessageToUser(qint64 userId, const QJsonObject& message);
@@ -133,7 +141,7 @@ public:
     bool isHealthy() const;
     QString getHealthReport() const;
     
-    // 数据库初始化
+    // 数据库连接
     bool initializeDatabase();
     
     // 客户端管理
@@ -144,8 +152,14 @@ public:
     // SSL配置
     bool configureSsl();
     
-    // 系统信息
+    // 获取服务器状态
     QJsonObject getServerStatus() const;
+    
+    // 获取数据库实例
+    Database* getDatabase() const;
+    
+    // 获取客户端地址
+
 
 signals:
     void serverStarted();
@@ -183,7 +197,7 @@ private slots:
 
     // 客户端连接处理
     void onClientConnected(QSslSocket* socket);
-    void onClientDisconnected(QSslSocket* socket);
+    void onClientDisconnected(const QString& clientId);
     void handleClientData(const QString& clientId);
     void handleClientDisconnected(const QString& clientId);
     void handleSocketError(const QString& clientId, QAbstractSocket::SocketError error);
@@ -196,6 +210,7 @@ private:
     ProtocolParser* _protocolParser;
     ThreadPool* _threadPool;
     QTimer* _cleanupTimer;
+    CacheManagerV2* _cacheManager;
     
     // 客户端连接管理
     struct ClientInfo {
@@ -208,6 +223,7 @@ private:
         bool isAuthenticated;
         qint64 userId;
         QString username;
+        QByteArray messageBuffer;  // 消息缓冲区
     };
     
     QHash<QString, ClientInfo> _clients;
@@ -224,12 +240,22 @@ private:
     qint64 _totalMessages;
     int _cachedCpuUsage;
     int _cachedMemoryUsage;
+    int _cachedOnlineUserCount;
+    int _cachedTotalUserCount;
     
     // 统计信息互斥锁
     mutable QMutex _statsMutex;
     
     // 系统信息定时器
     QTimer* _systemInfoTimer;
+    
+    // PDH系统监控
+    mutable PDH_HQUERY _cpuQuery;
+    mutable PDH_HCOUNTER _cpuTotal;
+    mutable PDH_HQUERY _memQuery;
+    mutable PDH_HCOUNTER _memTotal;
+    mutable bool _pdhInitialized;
+    mutable QMutex _pdhMutex;
     
     // 初始化方法
     bool initializeComponents();
@@ -271,6 +297,15 @@ private:
     int getCpuUsageViaProcess() const;
     int getMemoryUsageViaProcess() const;
     
+    // PDH系统监控方法
+#ifdef Q_OS_WIN
+    bool initializePdhCounters() const;
+    int getCpuUsageViaPdh() const;
+    int getMemoryUsageViaPdh() const;
+    int getCpuUsageViaRegistry() const;
+    int getMemoryUsageViaRegistry() const;
+#endif
+    
     // 错误处理
     void handleComponentError(const QString& component, const QString& error);
     void handleSystemError(const QString& error);
@@ -280,12 +315,13 @@ private:
     void onPeerVerifyError(const QSslError& error);
     void cleanupConnections();
     void removeClient(QSslSocket* socket);
-    void processClientMessage(const QString& clientId, const QVariantMap& data);
+    void processClientMessage(const QString& clientId, const QByteArray& messageData);
     
     // 消息处理
     void handleLogoutRequest(const QString& clientId);
     void handleMessageRequest(const QString& clientId, const QVariantMap& data);
     void handleHeartbeat(const QString& clientId);
+    void handleValidationRequest(const QString& clientId, const QVariantMap& data);
     void handleRegisterRequest(const QString& clientId, const QVariantMap& data);
     void handleEmailVerificationRequest(const QString& clientId, const QVariantMap& data);
     void handleSendEmailVerificationRequest(const QString& clientId, const QVariantMap& data);

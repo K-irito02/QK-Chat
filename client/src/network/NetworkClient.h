@@ -13,6 +13,7 @@
 #include "ErrorHandler.h"
 #include "ReconnectManager.h"
 #include "HeartbeatManager.h"
+#include <QJsonObject>
 
 /**
  * @brief 网络客户端类
@@ -31,10 +32,11 @@ public:
     explicit NetworkClient(QObject *parent = nullptr);
     ~NetworkClient();
     
-    // 连接管理
+    // 连接状态
+    bool isConnected() const;
+    bool isSslEncrypted() const;
     bool connectToServer(const QString &host, int port);
     void disconnect();
-    bool isConnected() const;
     
     // 用户认证
     void login(const QString &usernameOrEmail, const QString &password, const QString &captcha = "");
@@ -71,10 +73,12 @@ signals:
     void disconnected();
     void connectionError(const QString &error);
     
-    void loginResponse(bool success, const QString &message, const QString &token);
-    void registerResponse(bool success, const QString &message, const QString &username, const QString &email, qint64 userId);
+    void loginResponse(bool success, const QString &message);
+    void registerResponse(bool success, const QString &message);
     void verifyEmailResponse(bool success, const QString &message);
+    void sendVerificationResponse(bool success, const QString &message);
     void resendVerificationResponse(bool success, const QString &message);
+    void emailCodeVerificationResponse(bool success, const QString &message);
     void logoutResponse(bool success);
     
     void captchaReceived(const QString &captchaImage);
@@ -94,9 +98,9 @@ signals:
 private slots:
     void onConnected();
     void onDisconnected();
-    void onSslErrors(const QList<QSslError> &errors);
-    void onReadyRead();
+    void onSocketReadyRead();
     void onSocketError(QAbstractSocket::SocketError socketError);
+    void onSslErrors(const QList<QSslError> &errors);
     void onHeartbeatTimeout();
     void onNetworkReplyFinished();
     
@@ -113,7 +117,7 @@ private:
     void parsePacket(const QByteArray &packet);
     
     // 响应处理函数
-    void handleAuthResponse(const QVariantMap &data);
+    void handleAuthResponse(const QJsonObject& response);
     void handleMessageResponse(const QVariantMap &data);
     void handleValidationResponse(const QVariantMap &data);
     void handleHeartbeatResponse(const QVariantMap &data);

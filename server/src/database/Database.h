@@ -60,7 +60,7 @@ public:
     bool createEmailVerification(qint64 userId, const QString &email, const QString &token, const QString &tokenType = "register", int expiryHours = 24);
     bool verifyEmailToken(const QString &token, QString *email = nullptr);
     bool verifyEmailCode(const QString &email, const QString &code);
-    bool saveEmailVerificationCode(const QString &email, const QString &code);
+    bool saveEmailVerificationCode(const QString &email, const QString &code, int expirySeconds = 600);
     bool markEmailVerificationUsed(const QString &token);
     bool isEmailVerificationValid(const QString &token);
     bool updateUserEmailVerification(qint64 userId, bool verified);
@@ -230,9 +230,6 @@ public:
     // 数据库管理
     bool executeQuery(QSqlQuery &query);
     QString getConnectionName() const;
-    bool createTables();
-    void setupDatabase();
-    bool createDefaultAdminAccount();
     
     // 获取数据库连接
     QSqlDatabase getDatabase() const;

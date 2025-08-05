@@ -18,6 +18,7 @@
 #include <QThread>
 #include <QDateTime>
 #include <QCryptographicHash>
+#include <QElapsedTimer>
 
 Q_LOGGING_CATEGORY(database, "qkchat.server.database")
 
@@ -42,12 +43,15 @@ bool Database::initialize()
 
     if (_isConnected) {
         LogManager::instance()->writeDatabaseLog("INIT_SKIP", "Database already connected", "Database");
+        qCInfo(database) << "Database already connected, skipping initialization";
         return true;
     }
 
+    qCInfo(database) << "Starting database initialization...";
     LogManager::instance()->writeDatabaseLog("INIT_START", "Starting database initialization", "Database");
 
     // 检查可用的数据库驱动
+    qCInfo(database) << "Checking available database drivers...";
     QStringList availableDrivers = QSqlDatabase::drivers();
     LogManager::instance()->writeDatabaseLog("DRIVER_CHECK",
                                            QString("Available drivers: %1").arg(availableDrivers.join(", ")),
@@ -55,12 +59,15 @@ bool Database::initialize()
 
     if (!availableDrivers.contains("QMYSQL")) {
         QString error = "QMYSQL driver not available. Available drivers: " + availableDrivers.join(", ");
+        qCCritical(database) << error;
         LogManager::instance()->writeErrorLog(error, "Database");
         emit databaseError(error);
         return false;
     }
+    qCInfo(database) << "QMYSQL driver found";
 
     // 从配置中获取数据库连接参数
+    qCInfo(database) << "Loading database configuration...";
     ServerConfig *config = ServerConfig::instance();
     _host = config->getDatabaseHost();
     _port = config->getDatabasePort();
@@ -68,12 +75,14 @@ bool Database::initialize()
     _username = config->getDatabaseUsername();
     _password = config->getDatabasePassword();
 
+    qCInfo(database) << "Database config - Host:" << _host << "Port:" << _port << "Database:" << _databaseName << "User:" << _username;
     LogManager::instance()->writeDatabaseLog("CONNECTION_ATTEMPT",
                                            QString("Host: %1:%2, Database: %3, User: %4")
                                            .arg(_host).arg(_port).arg(_databaseName).arg(_username),
                                            "Database");
     
     // 创建数据库连接
+    qCInfo(database) << "Creating database connection...";
     _database = QSqlDatabase::addDatabase("QMYSQL", _connectionName);
     _database.setHostName(_host);
     _database.setPort(_port);
@@ -81,12 +90,19 @@ bool Database::initialize()
     _database.setUserName(_username);
     _database.setPassword(_password);
     
-    // 设置连接选项 - 减少超时时间防止阻塞
-    _database.setConnectOptions(QString("MYSQL_OPT_CONNECT_TIMEOUT=3;MYSQL_OPT_READ_TIMEOUT=5"));
+    // 设置连接选项 - 进一步减少超时时间
+    qCInfo(database) << "Setting connection options with reduced timeouts...";
+    _database.setConnectOptions(QString("MYSQL_OPT_CONNECT_TIMEOUT=2;MYSQL_OPT_READ_TIMEOUT=3;MYSQL_OPT_WRITE_TIMEOUT=3"));
     
     // 使用非阻塞连接方式，设置超时
+    qCInfo(database) << "Attempting to open database connection...";
+    QElapsedTimer connectionTimer;
+    connectionTimer.start();
+    
     if (!_database.open()) {
         QString error = QString("Failed to connect to database: %1").arg(_database.lastError().text());
+        qCCritical(database) << error;
+        qCCritical(database) << "Connection attempt took" << connectionTimer.elapsed() << "ms";
         LogManager::instance()->writeErrorLog(error, "Database");
         LogManager::instance()->writeDatabaseLog("CONNECTION_FAILED", error, "Database");
         emit databaseError(error);
@@ -97,18 +113,16 @@ bool Database::initialize()
         return false;
     }
 
+    qCInfo(database) << "Database connection opened successfully in" << connectionTimer.elapsed() << "ms";
     _isConnected = true;
+    
+    // 测试连接
 
-    // 设置字符集
-    QSqlQuery query(_database);
-    query.exec("SET NAMES utf8mb4");
-    query.exec("SET CHARACTER SET utf8mb4");
 
-    LogManager::instance()->writeDatabaseLog("CONNECTION_SUCCESS",
-                                           QString("Connected to %1:%2").arg(_host).arg(_port),
-                                           "Database");
+    LogManager::instance()->writeDatabaseLog("CONNECTION_SUCCESS", "Database connected successfully", "Database");
     emit connectionRestored();
-
+    
+    qCInfo(database) << "Database initialization completed successfully";
     return true;
 }
 
@@ -241,7 +255,7 @@ bool Database::verifyEmailCode(const QString &email, const QString &code)
     return false;
 }
 
-bool Database::saveEmailVerificationCode(const QString &email, const QString &code)
+bool Database::saveEmailVerificationCode(const QString &email, const QString &code, int expirySeconds)
 {
     QMutexLocker locker(&_mutex);
     
@@ -257,8 +271,8 @@ bool Database::saveEmailVerificationCode(const QString &email, const QString &co
     
     // 插入新的验证码
     QSqlQuery query(_database);
-    query.prepare("INSERT INTO email_verification_codes (email, verification_code, expires_at, created_at) "
-                  "VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 10 MINUTE), NOW())");
+    query.prepare(QString("INSERT INTO email_verification_codes (email, verification_code, expires_at, created_at) "
+                  "VALUES (?, ?, DATE_ADD(NOW(), INTERVAL %1 SECOND), NOW())").arg(expirySeconds));
     query.addBindValue(email);
     query.addBindValue(code);
     
@@ -1053,28 +1067,31 @@ int Database::getTotalUserCount() const
 {
     QMutexLocker locker(&_mutex);
 
-    if (!isConnected()) {
-        // 在const方法中不能调用非const方法，所以我们需要特殊处理
-        Database* nonConstThis = const_cast<Database*>(this);
-        if (!nonConstThis->initialize()) {
-            LogManager::instance()->writeErrorLog("Failed to initialize database in getTotalUserCount", "Database");
+    // 检查数据库连接状态，但不重新初始化
+    if (!_isConnected || !_database.isValid()) {
+        qCWarning(database) << "Database not connected in getTotalUserCount";
+        return 0;
+    }
+
+    try {
+        QSqlQuery query(_database);
+        query.prepare("SELECT COUNT(*) FROM users");
+
+        if (query.exec() && query.next()) {
+            int count = query.value(0).toInt();
+            qCDebug(database) << "Total user count:" << count;
+            return count;
+        } else {
+            qCWarning(database) << "Failed to execute query in getTotalUserCount:" << query.lastError().text();
             return 0;
         }
+    } catch (const std::exception& e) {
+        qCWarning(database) << "Exception in getTotalUserCount:" << e.what();
+        return 0;
+    } catch (...) {
+        qCWarning(database) << "Unknown exception in getTotalUserCount";
+        return 0;
     }
-
-    QSqlQuery query(_database);
-    query.prepare("SELECT COUNT(*) FROM users");
-
-    // 使用executeQuery来确保错误处理
-    Database* nonConstThis = const_cast<Database*>(this);
-    if (nonConstThis->executeQuery(query) && query.next()) {
-        int count = query.value(0).toInt();
-        LogManager::instance()->writeDatabaseLog("GET_TOTAL_USER_COUNT", QString("Total users: %1").arg(count), "Database");
-        return count;
-    }
-
-    LogManager::instance()->writeErrorLog("Failed to get total user count", "Database");
-    return 0;
 }
 
 
@@ -1083,52 +1100,62 @@ int Database::getOnlineUserCount() const
 {
     QMutexLocker locker(&_mutex);
 
-    if (!isConnected()) {
-        Database* nonConstThis = const_cast<Database*>(this);
-        if (!nonConstThis->initialize()) {
-            LogManager::instance()->writeErrorLog("Failed to initialize database in getOnlineUserCount", "Database");
+    // 检查数据库连接状态，但不重新初始化
+    if (!_isConnected || !_database.isValid()) {
+        qCWarning(database) << "Database not connected in getOnlineUserCount";
+        return 0;
+    }
+
+    try {
+        QSqlQuery query(_database);
+        query.prepare("SELECT COUNT(DISTINCT user_id) FROM user_sessions WHERE expires_at > NOW()");
+
+        if (query.exec() && query.next()) {
+            int count = query.value(0).toInt();
+            qCDebug(database) << "Online user count:" << count;
+            return count;
+        } else {
+            qCWarning(database) << "Failed to execute query in getOnlineUserCount:" << query.lastError().text();
             return 0;
         }
+    } catch (const std::exception& e) {
+        qCWarning(database) << "Exception in getOnlineUserCount:" << e.what();
+        return 0;
+    } catch (...) {
+        qCWarning(database) << "Unknown exception in getOnlineUserCount";
+        return 0;
     }
-
-    QSqlQuery query(_database);
-    query.prepare("SELECT COUNT(DISTINCT user_id) FROM user_sessions WHERE expires_at > NOW()");
-
-    Database* nonConstThis = const_cast<Database*>(this);
-    if (nonConstThis->executeQuery(query) && query.next()) {
-        int count = query.value(0).toInt();
-        LogManager::instance()->writeDatabaseLog("GET_ONLINE_USER_COUNT", QString("Online users: %1").arg(count), "Database");
-        return count;
-    }
-
-    LogManager::instance()->writeErrorLog("Failed to get online user count", "Database");
-    return 0;
 }
 
 qint64 Database::getTotalMessageCount() const
 {
     QMutexLocker locker(&_mutex);
 
-    if (!isConnected()) {
-        Database* nonConstThis = const_cast<Database*>(this);
-        if (!nonConstThis->initialize()) {
-            LogManager::instance()->writeErrorLog("Failed to initialize database in getTotalMessageCount", "Database");
+    // 检查数据库连接状态，但不重新初始化
+    if (!_isConnected || !_database.isValid()) {
+        qCWarning(database) << "Database not connected in getTotalMessageCount";
+        return 0;
+    }
+
+    try {
+        QSqlQuery query(_database);
+        query.prepare("SELECT COUNT(*) FROM messages");
+
+        if (query.exec() && query.next()) {
+            qint64 count = query.value(0).toLongLong();
+            qCDebug(database) << "Total message count:" << count;
+            return count;
+        } else {
+            qCWarning(database) << "Failed to execute query in getTotalMessageCount:" << query.lastError().text();
             return 0;
         }
+    } catch (const std::exception& e) {
+        qCWarning(database) << "Exception in getTotalMessageCount:" << e.what();
+        return 0;
+    } catch (...) {
+        qCWarning(database) << "Unknown exception in getTotalMessageCount";
+        return 0;
     }
-
-    QSqlQuery query(_database);
-    query.prepare("SELECT COUNT(*) FROM messages");
-
-    Database* nonConstThis = const_cast<Database*>(this);
-    if (nonConstThis->executeQuery(query) && query.next()) {
-        qint64 count = query.value(0).toLongLong();
-        LogManager::instance()->writeDatabaseLog("GET_TOTAL_MESSAGE_COUNT", QString("Total messages: %1").arg(count), "Database");
-        return count;
-    }
-
-    LogManager::instance()->writeErrorLog("Failed to get total message count", "Database");
-    return 0;
 }
 
 // 好友关系管理
@@ -1746,288 +1773,3 @@ QList<Database::ServerStats> Database::getStatsHistory(const QDate &startDate, c
     return statsHistory;
 }
 
-bool Database::createTables()
-{
-    QMutexLocker locker(&_mutex);
-
-    if (!isConnected() && !initialize()) {
-        qCCritical(database) << "Cannot create tables: database not connected";
-        return false;
-    }
-
-    QSqlQuery query(_database);
-
-    if (!_database.transaction()) {
-        qCCritical(database) << "Failed to start transaction for table creation";
-        return false;
-    }
-
-    try {
-        if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS users (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                username VARCHAR(50) NOT NULL UNIQUE,
-                email VARCHAR(100) NOT NULL UNIQUE,
-                password_hash VARCHAR(255) NOT NULL,
-                salt VARCHAR(64) NOT NULL,
-                avatar_url VARCHAR(512) DEFAULT NULL,
-                display_name VARCHAR(100) DEFAULT NULL,
-                bio TEXT DEFAULT NULL,
-                status VARCHAR(20) DEFAULT 'inactive',
-                last_online TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB COMMENT='用户信息表'
-        )")) {
-            throw std::runtime_error("Failed to create users table: " + query.lastError().text().toStdString());
-        }
-
-        if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS user_sessions (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                user_id BIGINT UNSIGNED NOT NULL,
-                session_token VARCHAR(255) NOT NULL UNIQUE,
-                refresh_token VARCHAR(255) DEFAULT NULL,
-                device_info VARCHAR(255) DEFAULT NULL,
-                ip_address VARCHAR(45) DEFAULT NULL,
-                expires_at TIMESTAMP NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                last_activity TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB COMMENT='用户会话表'
-        )")) {
-            throw std::runtime_error("Failed to create user_sessions table: " + query.lastError().text().toStdString());
-        }
-
-        if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS messages (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                message_id VARCHAR(36) NOT NULL UNIQUE,
-                sender_id BIGINT UNSIGNED NOT NULL,
-                receiver_id BIGINT UNSIGNED NOT NULL,
-                message_type VARCHAR(20) DEFAULT 'text',
-                content TEXT NOT NULL,
-                file_url VARCHAR(512) DEFAULT NULL,
-                file_size BIGINT DEFAULT NULL,
-                delivery_status VARCHAR(20) DEFAULT 'sent',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (receiver_id) REFERENCES users(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB COMMENT='消息表'
-        )")) {
-            throw std::runtime_error("Failed to create messages table: " + query.lastError().text().toStdString());
-        }
-
-        if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS friendships (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                user_id BIGINT UNSIGNED NOT NULL,
-                friend_id BIGINT UNSIGNED NOT NULL,
-                status VARCHAR(20) DEFAULT 'pending',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                remark VARCHAR(255) DEFAULT NULL,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE,
-                UNIQUE KEY uk_friendship (user_id, friend_id)
-            ) ENGINE=InnoDB COMMENT='好友关系表'
-        )")) {
-            throw std::runtime_error("Failed to create friendships table: " + query.lastError().text().toStdString());
-        }
-
-        if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS chat_groups (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                name VARCHAR(100) NOT NULL,
-                description TEXT DEFAULT NULL,
-                avatar_url VARCHAR(512) DEFAULT NULL,
-                creator_id BIGINT UNSIGNED NOT NULL,
-                member_count INT DEFAULT 1,
-                is_public BOOLEAN DEFAULT TRUE,
-                is_encrypted BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB COMMENT='群组信息表'
-        )")) {
-            throw std::runtime_error("Failed to create chat_groups table: " + query.lastError().text().toStdString());
-        }
-        
-        // 群组成员表
-        if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS group_members (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                group_id BIGINT UNSIGNED NOT NULL,
-                user_id BIGINT UNSIGNED NOT NULL,
-                role VARCHAR(20) DEFAULT 'member',
-                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                UNIQUE KEY uk_group_member (group_id, user_id)
-            ) ENGINE=InnoDB COMMENT='群组成员表'
-        )")) {
-            throw std::runtime_error("Failed to create group_members table: " + query.lastError().text().toStdString());
-        }
-        
-        // 群组消息表
-        if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS group_messages (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                message_id VARCHAR(36) NOT NULL UNIQUE,
-                group_id BIGINT UNSIGNED NOT NULL,
-                sender_id BIGINT UNSIGNED NOT NULL,
-                message_type VARCHAR(20) DEFAULT 'text',
-                content TEXT NOT NULL,
-                file_url VARCHAR(512) DEFAULT NULL,
-                file_size BIGINT DEFAULT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-                FOREIGN KEY (group_id) REFERENCES chat_groups(id) ON DELETE CASCADE,
-                FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
-            ) ENGINE=InnoDB COMMENT='群组消息表'
-        )")) {
-            throw std::runtime_error("Failed to create group_messages table: " + query.lastError().text().toStdString());
-        }
-        
-        // 系统日志表
-        if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS system_logs (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                log_level VARCHAR(20) NOT NULL,
-                module VARCHAR(50) NOT NULL,
-                message TEXT NOT NULL,
-                user_id BIGINT UNSIGNED DEFAULT NULL,
-                ip_address VARCHAR(45) DEFAULT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
-            ) ENGINE=InnoDB COMMENT='系统日志表'
-        )")) {
-            throw std::runtime_error("Failed to create system_logs table: " + query.lastError().text().toStdString());
-        }
-        
-        // 服务器统计表
-        if (!query.exec(R"(
-            CREATE TABLE IF NOT EXISTS daily_stats (
-                id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-                stat_date DATE NOT NULL UNIQUE,
-                online_users INT DEFAULT 0,
-                new_registrations INT DEFAULT 0,
-                messages_sent INT DEFAULT 0,
-                files_transferred INT DEFAULT 0,
-                total_users INT DEFAULT 0,
-                active_users INT DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB COMMENT='每日统计表'
-        )")) {
-            throw std::runtime_error("Failed to create server_stats table: " + query.lastError().text().toStdString());
-        }
-        
-        // 提交事务
-        if (!_database.commit()) {
-            qCCritical(database) << "Failed to commit table creation transaction";
-            return false;
-        }
-        
-        qCInfo(database) << "Database tables created successfully";
-        return true;
-        
-    } catch (const std::exception &e) {
-        qCCritical(database) << "Exception during table creation:" << e.what();
-        _database.rollback();
-        return false;
-    }
-}
-
-void Database::setupDatabase()
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        qCCritical(database) << "Cannot setup database: database not connected";
-        return;
-    }
-    
-    // 创建表
-    if (!createTables()) {
-        qCCritical(database) << "Failed to create database tables";
-        return;
-    }
-    
-    // 创建默认管理员账号
-    createDefaultAdminAccount();
-    
-    // 创建系统日志记录
-    logEvent(Info, "Database", "Database setup completed successfully");
-    
-    qCInfo(database) << "Database setup completed successfully";
-}
-
-bool Database::createDefaultAdminAccount()
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected()) {
-        qCCritical(database) << "Cannot create admin account: database not connected";
-        return false;
-    }
-    
-    // 检查是否已存在管理员账号
-    QSqlQuery checkQuery(_database);
-    checkQuery.prepare("SELECT COUNT(*) FROM users WHERE username = 'admin'");
-    
-    if (!executeQuery(checkQuery) || !checkQuery.next()) {
-        qCWarning(database) << "Failed to check existing admin account";
-        return false;
-    }
-    
-    if (checkQuery.value(0).toInt() > 0) {
-        qCInfo(database) << "Admin account already exists";
-        return true;
-    }
-    
-    // 从配置中获取管理员凭据
-    ServerConfig *config = ServerConfig::instance();
-    QString adminUsername = config->getAdminUsername();
-    QString adminPassword = config->getAdminPassword();
-    QString adminEmail = "admin@qkchat.com";
-    
-    // 生成安全的盐值
-    QString salt = QUuid::createUuid().toString(QUuid::WithoutBraces);
-    
-    // 使用SHA-256哈希密码
-    QCryptographicHash hash(QCryptographicHash::Sha256);
-    hash.addData((adminPassword + salt).toUtf8());
-    QString passwordHash = QString(hash.result().toHex());
-    
-    // 创建管理员账号
-    QSqlQuery insertQuery(_database);
-    insertQuery.prepare(R"(
-        INSERT INTO users (username, email, password_hash, salt, display_name, status, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, 'active', NOW(), NOW())
-    )");
-    
-    insertQuery.addBindValue(adminUsername);
-    insertQuery.addBindValue(adminEmail);
-    insertQuery.addBindValue(passwordHash);
-    insertQuery.addBindValue(salt);
-    insertQuery.addBindValue("系统管理员");
-    
-    if (!executeQuery(insertQuery)) {
-        qCCritical(database) << "Failed to create admin account:" << insertQuery.lastError().text();
-        return false;
-    }
-    
-    qint64 adminId = insertQuery.lastInsertId().toLongLong();
-    
-    // 记录管理员账号创建日志
-    logEvent(Info, "Database", QString("Default admin account created with ID: %1").arg(adminId));
-    
-    qCInfo(database) << "Default admin account created successfully";
-    qCInfo(database) << "Admin username:" << adminUsername;
-    qCInfo(database) << "Admin email:" << adminEmail;
-    qCInfo(database) << "Please change the default password after first login";
-    
-    return true;
-}

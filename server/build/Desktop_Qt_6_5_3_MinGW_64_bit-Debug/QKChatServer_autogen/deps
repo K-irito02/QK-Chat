@@ -61,6 +61,8 @@ QKChatServer_autogen/timestamp: \
 	D:/QT_Learn/Projects/QKChatApp/server/src/cache/CacheStrategyManager.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/cache/MultiLevelCache.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/cache/MultiLevelCache.h \
+	D:/QT_Learn/Projects/QKChatApp/server/src/cache/RedisClient.cpp \
+	D:/QT_Learn/Projects/QKChatApp/server/src/cache/RedisClient.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/config/ServerConfig.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/config/ServerConfig.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/core/ArchitectureOptimizer.cpp \
@@ -119,8 +121,12 @@ QKChatServer_autogen/timestamp: \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/LockFreeStructures.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.h \
+	D:/QT_Learn/Projects/QKChatApp/server/src/utils/RedisEmailVerification.cpp \
+	D:/QT_Learn/Projects/QKChatApp/server/src/utils/RedisEmailVerification.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/StackTraceLogger.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/StackTraceLogger.h \
+	D:/QT_Learn/Projects/QKChatApp/server/src/utils/SystemMonitor.cpp \
+	D:/QT_Learn/Projects/QKChatApp/server/src/utils/SystemMonitor.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/ThreadPool.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/ThreadPool.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QAtomicInt \
@@ -1008,6 +1014,7 @@ QKChatServer_autogen/timestamp: \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/ole2.h \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/oleauto.h \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/oleidl.h \
+	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/pdh.h \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/poppack.h \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/process.h \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/processenv.h \
@@ -1026,6 +1033,7 @@ QKChatServer_autogen/timestamp: \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/psdk_inc/_ws1_undef.h \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/psdk_inc/_wsa_errnos.h \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/psdk_inc/_wsadata.h \
+	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/psdk_inc/_xmitfile.h \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/psdk_inc/intrin-impl.h \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/pshpack1.h \
 	D:/Qt/Tools/mingw1120_64/x86_64-w64-mingw32/include/pshpack2.h \

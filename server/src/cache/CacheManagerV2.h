@@ -89,6 +89,9 @@ public:
         {}
     };
 
+    // 单例模式
+    static CacheManagerV2* instance();
+    
     explicit CacheManagerV2(QObject *parent = nullptr);
     ~CacheManagerV2();
 

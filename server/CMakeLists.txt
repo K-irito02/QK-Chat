@@ -67,6 +67,7 @@ set(SOURCES
     src/cache/MultiLevelCache.cpp
     src/cache/CacheStrategyManager.cpp
     src/cache/CachePreloader.cpp
+    src/cache/RedisClient.cpp
     src/crypto/CryptoManager.cpp
     src/network/ProtocolParser.cpp
     src/network/QSslServer.cpp
@@ -79,6 +80,8 @@ set(SOURCES
     src/utils/LogManager.cpp
     src/utils/AutoRecovery.cpp
     src/utils/StackTraceLogger.cpp
+    src/utils/RedisEmailVerification.cpp
+    src/utils/SystemMonitor.cpp
     src/config/ServerConfig.cpp
     src/utils/ThreadPool.cpp
 )
@@ -127,6 +130,7 @@ set(HEADERS
     src/utils/LogManager.h
     src/utils/AutoRecovery.h
     src/utils/StackTraceLogger.h
+    src/utils/RedisEmailVerification.h
     src/config/ServerConfig.h
     src/utils/ThreadPool.h
     src/utils/LockFreeStructures.h

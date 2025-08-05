@@ -121,8 +121,10 @@ void UserController::login(const QString &usernameOrEmail, const QString &passwo
     if (!_networkClient) {
         _networkClient = new NetworkClient(this);
         connect(_networkClient, &NetworkClient::loginResponse, this, &UserController::onLoginResponse);
+        connect(_networkClient, &NetworkClient::registerResponse, this, &UserController::onRegisterResponse);
+        connect(_networkClient, &NetworkClient::sendVerificationResponse, this, &UserController::onEmailVerificationSent);
+        connect(_networkClient, &NetworkClient::emailCodeVerificationResponse, this, &UserController::onEmailCodeVerificationResponse);
         connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
-        // 确保连接到服务器
         _networkClient->connectToServer("localhost", 8443);
     }
     
@@ -415,53 +417,48 @@ void UserController::saveLoginCredentials(const QString &username, const QString
 void UserController::sendEmailVerification(const QString &email)
 {
     qCInfo(userController) << "Sending email verification to:" << email;
-    
-    if (!_networkClient) {
-        _networkClient = new NetworkClient(this);
-        connect(_networkClient, &NetworkClient::resendVerificationResponse, this, &UserController::onEmailVerificationSent);
-        connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
-        // 确保连接到服务器
+
+    // 确保网络客户端已初始化
+    ensureNetworkClient();
+
+    // 检查连接状态
+    if (!_networkClient->isConnected()) {
+        qCInfo(userController) << "Not connected, attempting to connect first";
         _networkClient->connectToServer("localhost", 8443);
-        
-        // 延迟发送，确保连接建立
+
+        // 连接成功后发送验证码
         QTimer::singleShot(2000, this, [this, email]() {
-            qCInfo(userController) << "Delayed sending email verification to:" << email;
-            _networkClient->sendEmailVerification(email);
+            if (_networkClient->isConnected()) {
+                qCInfo(userController) << "Connection established, sending email verification";
+                _networkClient->sendEmailVerification(email);
+            } else {
+                qCWarning(userController) << "Failed to connect to server";
+                emit emailVerificationSent(false, "连接服务器失败");
+            }
         });
-    } else {
-        // 如果已经有连接，直接发送
-        _networkClient->sendEmailVerification(email);
+        return;
     }
+
+    // 直接发送请求
+    qCInfo(userController) << "Already connected, sending email verification directly";
+    _networkClient->sendEmailVerification(email);
 }
 
 void UserController::resendEmailVerification(const QString &email)
 {
     qCInfo(userController) << "Resending email verification to:" << email;
-    
-    if (!_networkClient) {
-        _networkClient = new NetworkClient(this);
-        connect(_networkClient, &NetworkClient::resendVerificationResponse, this, &UserController::onEmailVerificationSent);
-        connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
-        // 确保连接到服务器
-        _networkClient->connectToServer("localhost", 8443);
-    }
-    
-    _networkClient->resendVerification(email);
+
+    // 重发验证码实际上就是重新发送验证码
+    sendEmailVerification(email);
 }
 
-void UserController::onEmailVerificationSent(bool success, const QString &message)
+void UserController::onEmailVerificationSent(bool success, const QString& message)
 {
-    if (success) {
-        qCInfo(userController) << "Email verification sent successfully";
-        setErrorMessage("");
-    } else {
-        qCWarning(userController) << "Failed to send email verification:" << message;
-        setErrorMessage(message);
-    }
+    emit emailVerificationSent(success, message);
 }
 
 // 网络响应处理槽函数
-void UserController::onLoginResponse(bool success, const QString &message, const QString &token)
+void UserController::onLoginResponse(bool success, const QString &message)
 {
     setIsLoading(false);
     
@@ -473,14 +470,6 @@ void UserController::onLoginResponse(bool success, const QString &message, const
         _needCaptcha = false;
         setErrorMessage("");
         
-        // 保存用户信息到模型
-        // TODO: 解析服务器返回的用户信息并设置到UserModel
-        
-        // 保存token
-        if (!token.isEmpty()) {
-            _userModel->setToken(token);
-        }
-        
         emit loginSuccess();
     } else {
         qCWarning(userController) << "Login failed:" << message;
@@ -491,19 +480,14 @@ void UserController::onLoginResponse(bool success, const QString &message, const
     }
 }
 
-void UserController::onRegisterResponse(bool success, const QString &message, const QString &username, const QString &email, qint64 userId)
+void UserController::onRegisterResponse(bool success, const QString &message)
 {
     setIsLoading(false);
     
     if (success) {
-        qCInfo(userController) << "Registration successful for user:" << username << "with email:" << email;
+        qCInfo(userController) << "Registration successful";
         setErrorMessage("");
-        emit registerSuccess(username, email, userId);
-        
-        // 注册成功后自动触发邮箱验证
-        if (!email.isEmpty()) {
-            sendEmailVerification(email);
-        }
+        emit registerSuccess("", "", 0);
     } else {
         qCWarning(userController) << "Registration failed:" << message;
         setErrorMessage(message);
@@ -540,6 +524,19 @@ void UserController::onResendVerificationResponse(bool success, const QString &m
     } else {
         qCWarning(userController) << "Failed to resend email verification:" << message;
         emit emailVerificationResendFailed(message);
+    }
+}
+
+void UserController::onEmailCodeVerificationResponse(bool success, const QString &message)
+{
+    qCInfo(userController) << "Email code verification response received:" << success << message;
+
+    if (success) {
+        qCInfo(userController) << "Email code verification successful";
+        emit emailCodeVerified();
+    } else {
+        qCWarning(userController) << "Email code verification failed:" << message;
+        emit emailCodeVerificationFailed(message);
     }
 }
 
@@ -605,21 +602,49 @@ void UserController::generateCaptcha()
 }
 void UserController::verifyEmailCode(const QString &email, const QString &code)
 {
-    qCInfo(userController) << "Verifying email code for:" << email;
-    if (!_networkClient) {
-        _networkClient = new NetworkClient(this);
-        connect(_networkClient, &NetworkClient::emailCodeVerified, this, [this](bool success, const QString &message) {
-            if (success) {
-                emit emailCodeVerified();
+    qCInfo(userController) << "Verifying email code for:" << email << "Code:" << code;
+
+    // 确保网络客户端已初始化
+    ensureNetworkClient();
+
+    // 检查连接状态
+    if (!_networkClient->isConnected()) {
+        qCInfo(userController) << "Not connected, attempting to connect first";
+        _networkClient->connectToServer("localhost", 8443);
+
+        // 连接成功后验证验证码
+        QTimer::singleShot(2000, this, [this, email, code]() {
+            if (_networkClient->isConnected()) {
+                qCInfo(userController) << "Connection established, verifying email code";
+                _networkClient->verifyEmailCode(email, code);
             } else {
-                emit emailCodeVerificationFailed(message);
+                qCWarning(userController) << "Failed to connect to server";
+                emit emailCodeVerificationFailed("连接服务器失败");
             }
         });
-        connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
-        // 确保连接到服务器
-        _networkClient->connectToServer("localhost", 8443);
+        return;
     }
+
+    // 直接发送验证请求
+    qCInfo(userController) << "Already connected, verifying email code directly";
     _networkClient->verifyEmailCode(email, code);
+}
+
+// 确保网络客户端已初始化的辅助方法
+void UserController::ensureNetworkClient()
+{
+    if (!_networkClient) {
+        _networkClient = new NetworkClient(this);
+
+        // 连接所有必要的信号
+        connect(_networkClient, &NetworkClient::loginResponse, this, &UserController::onLoginResponse);
+        connect(_networkClient, &NetworkClient::registerResponse, this, &UserController::onRegisterResponse);
+        connect(_networkClient, &NetworkClient::sendVerificationResponse, this, &UserController::onEmailVerificationSent);
+        connect(_networkClient, &NetworkClient::emailCodeVerificationResponse, this, &UserController::onEmailCodeVerificationResponse);
+        connect(_networkClient, &NetworkClient::connectionError, this, &UserController::onNetworkError);
+
+        qCInfo(userController) << "NetworkClient initialized with all signal connections";
+    }
 }
 
 void UserController::connectToServer(const QString &host, int port)

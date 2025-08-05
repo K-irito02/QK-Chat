@@ -6,6 +6,10 @@
 // #include "MonitorWidget.h"
 #include "../database/Database.h"
 #include "../core/ChatServer.h"
+#include "../config/ServerConfig.h"
+#include "../utils/LogManager.h"
+#include "../utils/StackTraceLogger.h"
+
 #include <QTabWidget>
 #include <QMenuBar>
 #include <QStatusBar>
@@ -25,6 +29,7 @@
 #include <QIcon>
 #include <QKeySequence>
 #include <QEvent>
+#include <QThread>
 
 Q_LOGGING_CATEGORY(adminWindow, "qkchat.server.admin.adminwindow")
 
@@ -40,9 +45,10 @@ AdminWindow::AdminWindow(QWidget *parent)
     setupSystemTray();
     setupConnections();
     
-    // 初始化数据库
-    _database = new Database(this);
-    _database->initialize();
+    // 移除数据库初始化，避免重复初始化
+    // 数据库将由ChatServer统一管理
+    // _database = new Database(this);
+    // _database->initialize();
     
     // 加载设置
     loadSettings();
@@ -50,7 +56,7 @@ AdminWindow::AdminWindow(QWidget *parent)
     
     // 启动状态更新计时器
     _statusUpdateTimer = new QTimer(this);
-    _statusUpdateTimer->setInterval(5000); // 5秒更新一次
+    _statusUpdateTimer->setInterval(1000); // 1秒更新一次，确保运行时间实时更新
     connect(_statusUpdateTimer, &QTimer::timeout, this, &AdminWindow::updateServerStatus);
     _statusUpdateTimer->start();
     
@@ -62,20 +68,86 @@ AdminWindow::~AdminWindow()
     saveSettings();
 }
 
-void AdminWindow::setChatServer(ChatServer *server)
+void AdminWindow::setChatServer(ChatServer* chatServer)
 {
-    _chatServer = server;
-    
-    if (_chatServer) {
-        connect(_chatServer, &ChatServer::serverStarted, this, &AdminWindow::onServerStarted);
-        connect(_chatServer, &ChatServer::serverStopped, this, &AdminWindow::onServerStopped);
-        connect(_chatServer, &ChatServer::serverError, this, &AdminWindow::onServerError);
+    try {
+        qCInfo(adminWindow) << "Setting ChatServer for AdminWindow";
         
-        // 将服务器对象传递给各个组件，但不立即启动DashboardWidget
-        _dashboardWidget->setChatServer(_chatServer);
-        // _userManagerWidget->setDatabase(_database);
-        // _logViewerWidget->setDatabase(_database);
-        // _monitorWidget->setChatServer(_chatServer);
+        // 确保在主线程中执行
+        if (QThread::currentThread() != qApp->thread()) {
+            qCWarning(adminWindow) << "setChatServer called from non-main thread, moving to main thread";
+            QMetaObject::invokeMethod(this, [this, chatServer]() {
+                setChatServer(chatServer);
+            }, Qt::QueuedConnection);
+            return;
+        }
+        
+        _chatServer = chatServer;
+        
+        if (_chatServer) {
+            // 检查服务器是否正在运行
+            bool serverRunning = false;
+            try {
+                serverRunning = _chatServer->isRunning();
+            } catch (const std::exception& e) {
+                qCWarning(adminWindow) << "Exception checking server running status:" << e.what();
+                serverRunning = false;
+            } catch (...) {
+                qCWarning(adminWindow) << "Unknown exception checking server running status";
+                serverRunning = false;
+            }
+            
+            if (serverRunning) {
+                qCInfo(adminWindow) << "Server is running, setting up UI immediately";
+                
+                // 设置DashboardWidget的ChatServer
+                if (_dashboardWidget) {
+                    _dashboardWidget->setChatServer(_chatServer);
+                    qCInfo(adminWindow) << "ChatServer set for DashboardWidget";
+                }
+                
+                // 立即更新一次服务器状态
+                updateServerStatus();
+                
+                // 启动服务器状态更新定时器
+                if (_statusUpdateTimer) {
+                    _statusUpdateTimer->start(1000); // 每秒更新一次
+                }
+            } else {
+                qCInfo(adminWindow) << "Server is not running yet, will setup UI later";
+                
+                // 设置默认状态
+                if (_serverStatusLabel) {
+                    _serverStatusLabel->setText("服务器状态: 启动中");
+                    _serverStatusLabel->setStyleSheet("color: orange; font-weight: bold;");
+                }
+                if (_onlineUsersLabel) _onlineUsersLabel->setText("在线用户: 0");
+                if (_connectionCountLabel) _connectionCountLabel->setText("连接数: 0");
+                if (_uptimeLabel) _uptimeLabel->setText("运行时间: 00:00:00");
+                
+                // 延迟设置DashboardWidget，等待服务器启动
+                QTimer::singleShot(2000, this, [this]() {
+                    if (_dashboardWidget && _chatServer) {
+                        _dashboardWidget->setChatServer(_chatServer);
+                        qCInfo(adminWindow) << "ChatServer set for DashboardWidget (delayed)";
+                    }
+                });
+                
+                // 延迟启动状态更新定时器
+                QTimer::singleShot(3000, this, [this]() {
+                    if (_statusUpdateTimer) {
+                        _statusUpdateTimer->start(1000); // 每秒更新一次
+                    }
+                });
+            }
+        } else {
+            qCWarning(adminWindow) << "ChatServer is null";
+        }
+        
+    } catch (const std::exception& e) {
+        qCWarning(adminWindow) << "Exception in setChatServer:" << e.what();
+    } catch (...) {
+        qCWarning(adminWindow) << "Unknown exception in setChatServer";
     }
 }
 
@@ -185,12 +257,31 @@ void AdminWindow::setupStatusBar()
     _connectionCountLabel = new QLabel("连接数: 0");
     _uptimeLabel = new QLabel("运行时间: 00:00:00");
     
+    // 设置状态栏样式，避免重叠
+    statusBar()->setStyleSheet("QStatusBar { border: none; background-color: #f0f0f0; }");
+    
+    // 添加服务器状态到左侧
     statusBar()->addWidget(_serverStatusLabel);
+    
+    // 添加永久部件到右侧，使用固定宽度避免重叠
+    _uptimeLabel->setMinimumWidth(150);
+    _uptimeLabel->setMaximumWidth(150);
+    _connectionCountLabel->setMinimumWidth(100);
+    _connectionCountLabel->setMaximumWidth(100);
+    _onlineUsersLabel->setMinimumWidth(120);
+    _onlineUsersLabel->setMaximumWidth(120);
+    
+    // 设置文本对齐
+    _uptimeLabel->setAlignment(Qt::AlignRight);
+    _connectionCountLabel->setAlignment(Qt::AlignRight);
+    _onlineUsersLabel->setAlignment(Qt::AlignRight);
+    
     statusBar()->addPermanentWidget(_uptimeLabel);
     statusBar()->addPermanentWidget(_connectionCountLabel);
     statusBar()->addPermanentWidget(_onlineUsersLabel);
     
-    statusBar()->showMessage("QK Chat 服务器管理系统已就绪");
+    // 删除状态栏消息，避免左下角显示黑色文字
+    // statusBar()->showMessage("QK Chat 服务器管理系统已就绪");
 }
 
 void AdminWindow::setupSystemTray()
@@ -247,46 +338,73 @@ void AdminWindow::setupConnections()
 
 void AdminWindow::updateServerStatus()
 {
-    if (!_chatServer) {
-        return;
-    }
-    
-    // 添加线程安全保护
-    static QMutex statusMutex;
-    QMutexLocker locker(&statusMutex);
-    
     try {
-        // 更新服务器状态
-        bool isRunning = _chatServer->isRunning();
-        if (isRunning != _isServerRunning) {
-            _isServerRunning = isRunning;
-            
-            if (isRunning) {
-                if (_serverStatusLabel) {
-                    _serverStatusLabel->setText("服务器状态: 运行中");
-                    _serverStatusLabel->setStyleSheet("color: green;");
-                }
-                if (_startServerAction) _startServerAction->setEnabled(false);
-                if (_stopServerAction) _stopServerAction->setEnabled(true);
-                if (_restartServerAction) _restartServerAction->setEnabled(true);
-            } else {
-                if (_serverStatusLabel) {
-                    _serverStatusLabel->setText("服务器状态: 已停止");
-                    _serverStatusLabel->setStyleSheet("color: red;");
-                }
-                if (_startServerAction) _startServerAction->setEnabled(true);
-                if (_stopServerAction) _stopServerAction->setEnabled(false);
-                if (_restartServerAction) _restartServerAction->setEnabled(false);
-            }
+        // 确保在主线程中执行
+        if (QThread::currentThread() != qApp->thread()) {
+            qCWarning(adminWindow) << "updateServerStatus called from non-main thread, moving to main thread";
+            QMetaObject::invokeMethod(this, "updateServerStatus", Qt::QueuedConnection);
+            return;
         }
+        
+        if (!_chatServer) {
+            qCWarning(adminWindow) << "ChatServer object is null";
+            if (_serverStatusLabel) {
+                _serverStatusLabel->setText("服务器状态: 未初始化");
+                _serverStatusLabel->setStyleSheet("color: orange;");
+            }
+            if (_onlineUsersLabel) _onlineUsersLabel->setText("在线用户: 0");
+            if (_connectionCountLabel) _connectionCountLabel->setText("连接数: 0");
+            if (_uptimeLabel) _uptimeLabel->setText("运行时间: 00:00:00");
+            return;
+        }
+
+        // 获取服务器运行状态 - 使用更可靠的方法
+        bool isRunning = false;
+        try {
+            isRunning = _chatServer->isRunning();
+        } catch (const std::exception& e) {
+            qCWarning(adminWindow) << "Exception checking server running status:" << e.what();
+            isRunning = false;
+        } catch (...) {
+            qCWarning(adminWindow) << "Unknown exception checking server running status";
+            isRunning = false;
+        }
+
+        qCDebug(adminWindow) << "Server running status:" << isRunning << "Cached status:" << _isServerRunning;
+
+        // 更新服务器状态显示
+        if (isRunning) {
+            if (_serverStatusLabel) {
+                _serverStatusLabel->setText("服务器状态: 运行中");
+                _serverStatusLabel->setStyleSheet("color: green; font-weight: bold;");
+            }
+            if (_startServerAction) _startServerAction->setEnabled(false);
+            if (_stopServerAction) _stopServerAction->setEnabled(true);
+            if (_restartServerAction) _restartServerAction->setEnabled(true);
+        } else {
+            if (_serverStatusLabel) {
+                _serverStatusLabel->setText("服务器状态: 未启动");
+                _serverStatusLabel->setStyleSheet("color: red; font-weight: bold;");
+            }
+            if (_startServerAction) _startServerAction->setEnabled(true);
+            if (_stopServerAction) _stopServerAction->setEnabled(false);
+            if (_restartServerAction) _restartServerAction->setEnabled(false);
+        }
+
+        // 更新缓存状态
+        _isServerRunning = isRunning;
         
         if (isRunning) {
             // 更新在线用户数
             int onlineUsers = 0;
             try {
                 onlineUsers = _chatServer->getOnlineUserCount();
+            } catch (const std::exception& e) {
+                qCWarning(adminWindow) << "Exception getting online user count:" << e.what();
+                onlineUsers = 0;
             } catch (...) {
-                qWarning() << "[AdminWindow] Failed to get online user count";
+                qCWarning(adminWindow) << "Unknown exception getting online user count";
+                onlineUsers = 0;
             }
             
             if (_onlineUsersLabel) {
@@ -297,25 +415,43 @@ void AdminWindow::updateServerStatus()
             int connections = 0;
             try {
                 connections = _chatServer->getConnectionCount();
+            } catch (const std::exception& e) {
+                qCWarning(adminWindow) << "Exception getting connection count:" << e.what();
+                connections = 0;
             } catch (...) {
-                qWarning() << "[AdminWindow] Failed to get connection count";
+                qCWarning(adminWindow) << "Unknown exception getting connection count";
+                connections = 0;
             }
             
             if (_connectionCountLabel) {
                 _connectionCountLabel->setText(QString("连接数: %1").arg(connections));
             }
             
-            // 更新运行时间
-            if (!_serverStartTime.isNull() && _uptimeLabel) {
-                qint64 seconds = _serverStartTime.secsTo(QDateTime::currentDateTime());
-                int hours = seconds / 3600;
-                int minutes = (seconds % 3600) / 60;
-                int secs = seconds % 60;
-                
-                _uptimeLabel->setText(QString("运行时间: %1:%2:%3")
-                                     .arg(hours, 2, 10, QChar('0'))
-                                     .arg(minutes, 2, 10, QChar('0'))
-                                     .arg(secs, 2, 10, QChar('0')));
+            // 更新运行时间 - 直接从ChatServer获取，确保实时性
+            if (_uptimeLabel) {
+                try {
+                    QString uptime = _chatServer->getUptime();
+                    _uptimeLabel->setText(QString("运行时间: %1").arg(uptime));
+                } catch (const std::exception& e) {
+                    qCWarning(adminWindow) << "Exception getting uptime:" << e.what();
+                    // 如果获取失败，使用本地计算的时间作为备用
+                    if (!_serverStartTime.isNull()) {
+                        qint64 seconds = _serverStartTime.secsTo(QDateTime::currentDateTime());
+                        int hours = seconds / 3600;
+                        int minutes = (seconds % 3600) / 60;
+                        int secs = seconds % 60;
+
+                        _uptimeLabel->setText(QString("运行时间: %1:%2:%3")
+                                             .arg(hours, 2, 10, QChar('0'))
+                                             .arg(minutes, 2, 10, QChar('0'))
+                                             .arg(secs, 2, 10, QChar('0')));
+                    } else {
+                        _uptimeLabel->setText("运行时间: 00:00:00");
+                    }
+                } catch (...) {
+                    qCWarning(adminWindow) << "Unknown exception getting uptime";
+                    _uptimeLabel->setText("运行时间: 00:00:00");
+                }
             }
         } else {
             if (_onlineUsersLabel) _onlineUsersLabel->setText("在线用户: 0");
@@ -323,29 +459,35 @@ void AdminWindow::updateServerStatus()
             if (_uptimeLabel) _uptimeLabel->setText("运行时间: 00:00:00");
         }
     } catch (const std::exception& e) {
-        qWarning() << "[AdminWindow] Exception in updateServerStatus:" << e.what();
+        qCWarning(adminWindow) << "Exception in updateServerStatus:" << e.what();
     } catch (...) {
-        qWarning() << "[AdminWindow] Unknown exception in updateServerStatus";
+        qCWarning(adminWindow) << "Unknown exception in updateServerStatus";
     }
 }
 
 void AdminWindow::onServerStarted()
 {
-    _serverStartTime = QDateTime::currentDateTime();
+    // 如果服务器启动时间还没有设置，使用当前时间
+    if (_serverStartTime.isNull()) {
+        _serverStartTime = QDateTime::currentDateTime();
+    }
     _isServerRunning = true;
-    
+
     // 启动DashboardWidget的统计信息更新
     if (_dashboardWidget) {
         _dashboardWidget->setChatServer(_chatServer);
     }
-    
+
+    // 立即更新一次服务器状态显示
+    updateServerStatus();
+
     statusBar()->showMessage("服务器启动成功", 3000);
-    
+
     if (_systemTray) {
-        _systemTray->showMessage("QK Chat 服务器", "服务器启动成功", 
+        _systemTray->showMessage("QK Chat 服务器", "服务器启动成功",
                                 QSystemTrayIcon::Information, 3000);
     }
-    
+
     qCInfo(adminWindow) << "Server started successfully";
 }
 
@@ -527,11 +669,19 @@ void AdminWindow::updateTheme()
     setStyleSheet(styleSheet);
     
     // 更新各个子组件的主题
+    try {
+        if (_dashboardWidget) {
             _dashboardWidget->updateTheme(_isDarkTheme);
+        }
         // _userManagerWidget->updateTheme(_isDarkTheme);
         // _systemConfigWidget->updateTheme(_isDarkTheme);
         // _logViewerWidget->updateTheme(_isDarkTheme);
         // _monitorWidget->updateTheme(_isDarkTheme);
+    } catch (const std::exception& e) {
+        qCWarning(adminWindow) << "Exception in updateTheme:" << e.what();
+    } catch (...) {
+        qCWarning(adminWindow) << "Unknown exception in updateTheme";
+    }
 }
 
 void AdminWindow::onSystemTrayActivated(QSystemTrayIcon::ActivationReason reason)

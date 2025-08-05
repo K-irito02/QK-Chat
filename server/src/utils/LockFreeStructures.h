@@ -179,6 +179,10 @@ template<typename Key, typename Value>
 class ConcurrentMap
 {
 public:
+    // 迭代器类型定义
+    using iterator = typename QHash<Key, Value>::iterator;
+    using const_iterator = typename QHash<Key, Value>::const_iterator;
+    
     void insert(const Key& key, const Value& value) {
         QWriteLocker locker(&m_lock);
         m_data[key] = value;
@@ -202,6 +206,44 @@ public:
     bool contains(const Key& key) const {
         QReadLocker locker(&m_lock);
         return m_data.contains(key);
+    }
+    
+    // 添加find方法
+    const_iterator find(const Key& key) const {
+        QReadLocker locker(&m_lock);
+        return m_data.find(key);
+    }
+    
+    iterator find(const Key& key) {
+        QWriteLocker locker(&m_lock);
+        return m_data.find(key);
+    }
+    
+    // 添加begin和end方法
+    const_iterator begin() const {
+        QReadLocker locker(&m_lock);
+        return m_data.begin();
+    }
+    
+    const_iterator end() const {
+        QReadLocker locker(&m_lock);
+        return m_data.end();
+    }
+    
+    iterator begin() {
+        QWriteLocker locker(&m_lock);
+        return m_data.begin();
+    }
+    
+    iterator end() {
+        QWriteLocker locker(&m_lock);
+        return m_data.end();
+    }
+    
+    // 添加toHash方法
+    QHash<Key, Value> toHash() const {
+        QReadLocker locker(&m_lock);
+        return m_data;
     }
     
     QList<Key> keys() const {

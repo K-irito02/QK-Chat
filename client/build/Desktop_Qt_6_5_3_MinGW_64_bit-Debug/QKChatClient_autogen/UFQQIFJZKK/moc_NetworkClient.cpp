@@ -49,13 +49,11 @@ static constexpr auto qt_meta_stringdata_CLASSNetworkClientENDCLASS = QtMocHelpe
     "loginResponse",
     "success",
     "message",
-    "token",
     "registerResponse",
-    "username",
-    "email",
-    "userId",
     "verifyEmailResponse",
+    "sendVerificationResponse",
     "resendVerificationResponse",
+    "emailCodeVerificationResponse",
     "logoutResponse",
     "captchaReceived",
     "captchaImage",
@@ -76,19 +74,19 @@ static constexpr auto qt_meta_stringdata_CLASSNetworkClientENDCLASS = QtMocHelpe
     "emailCodeVerified",
     "onConnected",
     "onDisconnected",
-    "onSslErrors",
-    "QList<QSslError>",
-    "errors",
-    "onReadyRead",
+    "onSocketReadyRead",
     "onSocketError",
     "QAbstractSocket::SocketError",
     "socketError",
+    "onSslErrors",
+    "QList<QSslError>",
+    "errors",
     "onHeartbeatTimeout",
     "onNetworkReplyFinished"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSNetworkClientENDCLASS_t {
-    uint offsetsAndSizes[90];
+    uint offsetsAndSizes[86];
     char stringdata0[14];
     char stringdata1[10];
     char stringdata2[1];
@@ -98,42 +96,40 @@ struct qt_meta_stringdata_CLASSNetworkClientENDCLASS_t {
     char stringdata6[14];
     char stringdata7[8];
     char stringdata8[8];
-    char stringdata9[6];
-    char stringdata10[17];
-    char stringdata11[9];
-    char stringdata12[6];
-    char stringdata13[7];
-    char stringdata14[20];
-    char stringdata15[27];
-    char stringdata16[15];
-    char stringdata17[16];
-    char stringdata18[13];
-    char stringdata19[21];
-    char stringdata20[10];
-    char stringdata21[18];
-    char stringdata22[15];
-    char stringdata23[10];
-    char stringdata24[16];
-    char stringdata25[7];
-    char stringdata26[8];
+    char stringdata9[17];
+    char stringdata10[20];
+    char stringdata11[25];
+    char stringdata12[27];
+    char stringdata13[30];
+    char stringdata14[15];
+    char stringdata15[16];
+    char stringdata16[13];
+    char stringdata17[21];
+    char stringdata18[10];
+    char stringdata19[18];
+    char stringdata20[15];
+    char stringdata21[10];
+    char stringdata22[16];
+    char stringdata23[7];
+    char stringdata24[8];
+    char stringdata25[12];
+    char stringdata26[10];
     char stringdata27[12];
     char stringdata28[10];
-    char stringdata29[12];
-    char stringdata30[10];
-    char stringdata31[17];
-    char stringdata32[13];
-    char stringdata33[18];
-    char stringdata34[12];
-    char stringdata35[15];
-    char stringdata36[12];
-    char stringdata37[17];
-    char stringdata38[7];
-    char stringdata39[12];
-    char stringdata40[14];
-    char stringdata41[29];
-    char stringdata42[12];
-    char stringdata43[19];
-    char stringdata44[23];
+    char stringdata29[17];
+    char stringdata30[13];
+    char stringdata31[18];
+    char stringdata32[12];
+    char stringdata33[15];
+    char stringdata34[18];
+    char stringdata35[14];
+    char stringdata36[29];
+    char stringdata37[12];
+    char stringdata38[12];
+    char stringdata39[17];
+    char stringdata40[7];
+    char stringdata41[19];
+    char stringdata42[23];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSNetworkClientENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -148,42 +144,40 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSNetworkClientENDCLASS_t qt_meta
         QT_MOC_LITERAL(60, 13),  // "loginResponse"
         QT_MOC_LITERAL(74, 7),  // "success"
         QT_MOC_LITERAL(82, 7),  // "message"
-        QT_MOC_LITERAL(90, 5),  // "token"
-        QT_MOC_LITERAL(96, 16),  // "registerResponse"
-        QT_MOC_LITERAL(113, 8),  // "username"
-        QT_MOC_LITERAL(122, 5),  // "email"
-        QT_MOC_LITERAL(128, 6),  // "userId"
-        QT_MOC_LITERAL(135, 19),  // "verifyEmailResponse"
-        QT_MOC_LITERAL(155, 26),  // "resendVerificationResponse"
-        QT_MOC_LITERAL(182, 14),  // "logoutResponse"
-        QT_MOC_LITERAL(197, 15),  // "captchaReceived"
-        QT_MOC_LITERAL(213, 12),  // "captchaImage"
-        QT_MOC_LITERAL(226, 20),  // "usernameAvailability"
-        QT_MOC_LITERAL(247, 9),  // "available"
-        QT_MOC_LITERAL(257, 17),  // "emailAvailability"
-        QT_MOC_LITERAL(275, 14),  // "avatarUploaded"
-        QT_MOC_LITERAL(290, 9),  // "avatarUrl"
-        QT_MOC_LITERAL(300, 15),  // "messageReceived"
-        QT_MOC_LITERAL(316, 6),  // "sender"
-        QT_MOC_LITERAL(323, 7),  // "content"
-        QT_MOC_LITERAL(331, 11),  // "messageType"
-        QT_MOC_LITERAL(343, 9),  // "timestamp"
-        QT_MOC_LITERAL(353, 11),  // "messageSent"
-        QT_MOC_LITERAL(365, 9),  // "messageId"
-        QT_MOC_LITERAL(375, 16),  // "messageDelivered"
-        QT_MOC_LITERAL(392, 12),  // "networkError"
-        QT_MOC_LITERAL(405, 17),  // "emailCodeVerified"
-        QT_MOC_LITERAL(423, 11),  // "onConnected"
-        QT_MOC_LITERAL(435, 14),  // "onDisconnected"
-        QT_MOC_LITERAL(450, 11),  // "onSslErrors"
-        QT_MOC_LITERAL(462, 16),  // "QList<QSslError>"
-        QT_MOC_LITERAL(479, 6),  // "errors"
-        QT_MOC_LITERAL(486, 11),  // "onReadyRead"
-        QT_MOC_LITERAL(498, 13),  // "onSocketError"
-        QT_MOC_LITERAL(512, 28),  // "QAbstractSocket::SocketError"
-        QT_MOC_LITERAL(541, 11),  // "socketError"
-        QT_MOC_LITERAL(553, 18),  // "onHeartbeatTimeout"
-        QT_MOC_LITERAL(572, 22)   // "onNetworkReplyFinished"
+        QT_MOC_LITERAL(90, 16),  // "registerResponse"
+        QT_MOC_LITERAL(107, 19),  // "verifyEmailResponse"
+        QT_MOC_LITERAL(127, 24),  // "sendVerificationResponse"
+        QT_MOC_LITERAL(152, 26),  // "resendVerificationResponse"
+        QT_MOC_LITERAL(179, 29),  // "emailCodeVerificationResponse"
+        QT_MOC_LITERAL(209, 14),  // "logoutResponse"
+        QT_MOC_LITERAL(224, 15),  // "captchaReceived"
+        QT_MOC_LITERAL(240, 12),  // "captchaImage"
+        QT_MOC_LITERAL(253, 20),  // "usernameAvailability"
+        QT_MOC_LITERAL(274, 9),  // "available"
+        QT_MOC_LITERAL(284, 17),  // "emailAvailability"
+        QT_MOC_LITERAL(302, 14),  // "avatarUploaded"
+        QT_MOC_LITERAL(317, 9),  // "avatarUrl"
+        QT_MOC_LITERAL(327, 15),  // "messageReceived"
+        QT_MOC_LITERAL(343, 6),  // "sender"
+        QT_MOC_LITERAL(350, 7),  // "content"
+        QT_MOC_LITERAL(358, 11),  // "messageType"
+        QT_MOC_LITERAL(370, 9),  // "timestamp"
+        QT_MOC_LITERAL(380, 11),  // "messageSent"
+        QT_MOC_LITERAL(392, 9),  // "messageId"
+        QT_MOC_LITERAL(402, 16),  // "messageDelivered"
+        QT_MOC_LITERAL(419, 12),  // "networkError"
+        QT_MOC_LITERAL(432, 17),  // "emailCodeVerified"
+        QT_MOC_LITERAL(450, 11),  // "onConnected"
+        QT_MOC_LITERAL(462, 14),  // "onDisconnected"
+        QT_MOC_LITERAL(477, 17),  // "onSocketReadyRead"
+        QT_MOC_LITERAL(495, 13),  // "onSocketError"
+        QT_MOC_LITERAL(509, 28),  // "QAbstractSocket::SocketError"
+        QT_MOC_LITERAL(538, 11),  // "socketError"
+        QT_MOC_LITERAL(550, 11),  // "onSslErrors"
+        QT_MOC_LITERAL(562, 16),  // "QList<QSslError>"
+        QT_MOC_LITERAL(579, 6),  // "errors"
+        QT_MOC_LITERAL(586, 18),  // "onHeartbeatTimeout"
+        QT_MOC_LITERAL(605, 22)   // "onNetworkReplyFinished"
     },
     "NetworkClient",
     "connected",
@@ -194,13 +188,11 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSNetworkClientENDCLASS_t qt_meta
     "loginResponse",
     "success",
     "message",
-    "token",
     "registerResponse",
-    "username",
-    "email",
-    "userId",
     "verifyEmailResponse",
+    "sendVerificationResponse",
     "resendVerificationResponse",
+    "emailCodeVerificationResponse",
     "logoutResponse",
     "captchaReceived",
     "captchaImage",
@@ -221,13 +213,13 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSNetworkClientENDCLASS_t qt_meta
     "emailCodeVerified",
     "onConnected",
     "onDisconnected",
-    "onSslErrors",
-    "QList<QSslError>",
-    "errors",
-    "onReadyRead",
+    "onSocketReadyRead",
     "onSocketError",
     "QAbstractSocket::SocketError",
     "socketError",
+    "onSslErrors",
+    "QList<QSslError>",
+    "errors",
     "onHeartbeatTimeout",
     "onNetworkReplyFinished"
 };
@@ -241,66 +233,70 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSNetworkClientENDCLASS[] = {
       11,       // revision
        0,       // classname
        0,    0, // classinfo
-      24,   14, // methods
+      26,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-      17,       // signalCount
+      19,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,  158,    2, 0x06,    1 /* Public */,
-       3,    0,  159,    2, 0x06,    2 /* Public */,
-       4,    1,  160,    2, 0x06,    3 /* Public */,
-       6,    3,  163,    2, 0x06,    5 /* Public */,
-      10,    5,  170,    2, 0x06,    9 /* Public */,
-      14,    2,  181,    2, 0x06,   15 /* Public */,
-      15,    2,  186,    2, 0x06,   18 /* Public */,
-      16,    1,  191,    2, 0x06,   21 /* Public */,
-      17,    1,  194,    2, 0x06,   23 /* Public */,
-      19,    1,  197,    2, 0x06,   25 /* Public */,
-      21,    1,  200,    2, 0x06,   27 /* Public */,
-      22,    2,  203,    2, 0x06,   29 /* Public */,
-      24,    4,  208,    2, 0x06,   32 /* Public */,
-      29,    1,  217,    2, 0x06,   37 /* Public */,
-      31,    1,  220,    2, 0x06,   39 /* Public */,
-      32,    1,  223,    2, 0x06,   41 /* Public */,
-      33,    2,  226,    2, 0x06,   43 /* Public */,
+       1,    0,  170,    2, 0x06,    1 /* Public */,
+       3,    0,  171,    2, 0x06,    2 /* Public */,
+       4,    1,  172,    2, 0x06,    3 /* Public */,
+       6,    2,  175,    2, 0x06,    5 /* Public */,
+       9,    2,  180,    2, 0x06,    8 /* Public */,
+      10,    2,  185,    2, 0x06,   11 /* Public */,
+      11,    2,  190,    2, 0x06,   14 /* Public */,
+      12,    2,  195,    2, 0x06,   17 /* Public */,
+      13,    2,  200,    2, 0x06,   20 /* Public */,
+      14,    1,  205,    2, 0x06,   23 /* Public */,
+      15,    1,  208,    2, 0x06,   25 /* Public */,
+      17,    1,  211,    2, 0x06,   27 /* Public */,
+      19,    1,  214,    2, 0x06,   29 /* Public */,
+      20,    2,  217,    2, 0x06,   31 /* Public */,
+      22,    4,  222,    2, 0x06,   34 /* Public */,
+      27,    1,  231,    2, 0x06,   39 /* Public */,
+      29,    1,  234,    2, 0x06,   41 /* Public */,
+      30,    1,  237,    2, 0x06,   43 /* Public */,
+      31,    2,  240,    2, 0x06,   45 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-      34,    0,  231,    2, 0x08,   46 /* Private */,
-      35,    0,  232,    2, 0x08,   47 /* Private */,
-      36,    1,  233,    2, 0x08,   48 /* Private */,
-      39,    0,  236,    2, 0x08,   50 /* Private */,
-      40,    1,  237,    2, 0x08,   51 /* Private */,
-      43,    0,  240,    2, 0x08,   53 /* Private */,
-      44,    0,  241,    2, 0x08,   54 /* Private */,
+      32,    0,  245,    2, 0x08,   48 /* Private */,
+      33,    0,  246,    2, 0x08,   49 /* Private */,
+      34,    0,  247,    2, 0x08,   50 /* Private */,
+      35,    1,  248,    2, 0x08,   51 /* Private */,
+      38,    1,  251,    2, 0x08,   53 /* Private */,
+      41,    0,  254,    2, 0x08,   55 /* Private */,
+      42,    0,  255,    2, 0x08,   56 /* Private */,
 
  // signals: parameters
     QMetaType::Void,
     QMetaType::Void,
     QMetaType::Void, QMetaType::QString,    5,
-    QMetaType::Void, QMetaType::Bool, QMetaType::QString, QMetaType::QString,    7,    8,    9,
-    QMetaType::Void, QMetaType::Bool, QMetaType::QString, QMetaType::QString, QMetaType::QString, QMetaType::LongLong,    7,    8,   11,   12,   13,
+    QMetaType::Void, QMetaType::Bool, QMetaType::QString,    7,    8,
+    QMetaType::Void, QMetaType::Bool, QMetaType::QString,    7,    8,
+    QMetaType::Void, QMetaType::Bool, QMetaType::QString,    7,    8,
+    QMetaType::Void, QMetaType::Bool, QMetaType::QString,    7,    8,
     QMetaType::Void, QMetaType::Bool, QMetaType::QString,    7,    8,
     QMetaType::Void, QMetaType::Bool, QMetaType::QString,    7,    8,
     QMetaType::Void, QMetaType::Bool,    7,
-    QMetaType::Void, QMetaType::QString,   18,
-    QMetaType::Void, QMetaType::Bool,   20,
-    QMetaType::Void, QMetaType::Bool,   20,
-    QMetaType::Void, QMetaType::Bool, QMetaType::QUrl,    7,   23,
-    QMetaType::Void, QMetaType::QString, QMetaType::QString, QMetaType::QString, QMetaType::LongLong,   25,   26,   27,   28,
-    QMetaType::Void, QMetaType::QString,   30,
-    QMetaType::Void, QMetaType::QString,   30,
+    QMetaType::Void, QMetaType::QString,   16,
+    QMetaType::Void, QMetaType::Bool,   18,
+    QMetaType::Void, QMetaType::Bool,   18,
+    QMetaType::Void, QMetaType::Bool, QMetaType::QUrl,    7,   21,
+    QMetaType::Void, QMetaType::QString, QMetaType::QString, QMetaType::QString, QMetaType::LongLong,   23,   24,   25,   26,
+    QMetaType::Void, QMetaType::QString,   28,
+    QMetaType::Void, QMetaType::QString,   28,
     QMetaType::Void, QMetaType::QString,    5,
     QMetaType::Void, QMetaType::Bool, QMetaType::QString,    7,    8,
 
  // slots: parameters
     QMetaType::Void,
     QMetaType::Void,
-    QMetaType::Void, 0x80000000 | 37,   38,
     QMetaType::Void,
-    QMetaType::Void, 0x80000000 | 41,   42,
+    QMetaType::Void, 0x80000000 | 36,   37,
+    QMetaType::Void, 0x80000000 | 39,   40,
     QMetaType::Void,
     QMetaType::Void,
 
@@ -327,19 +323,23 @@ Q_CONSTINIT const QMetaObject NetworkClient::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'registerResponse'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<qint64, std::false_type>,
         // method 'verifyEmailResponse'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'sendVerificationResponse'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'resendVerificationResponse'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'emailCodeVerificationResponse'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
@@ -382,14 +382,14 @@ Q_CONSTINIT const QMetaObject NetworkClient::staticMetaObject = { {
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onDisconnected'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        // method 'onSslErrors'
-        QtPrivate::TypeAndForceComplete<void, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QList<QSslError> &, std::false_type>,
-        // method 'onReadyRead'
+        // method 'onSocketReadyRead'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onSocketError'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<QAbstractSocket::SocketError, std::false_type>,
+        // method 'onSslErrors'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QList<QSslError> &, std::false_type>,
         // method 'onHeartbeatTimeout'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         // method 'onNetworkReplyFinished'
@@ -407,44 +407,46 @@ void NetworkClient::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _i
         case 0: _t->connected(); break;
         case 1: _t->disconnected(); break;
         case 2: _t->connectionError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 3: _t->loginResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3]))); break;
-        case 4: _t->registerResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[4])),(*reinterpret_cast< std::add_pointer_t<qint64>>(_a[5]))); break;
+        case 3: _t->loginResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 4: _t->registerResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
         case 5: _t->verifyEmailResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
-        case 6: _t->resendVerificationResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
-        case 7: _t->logoutResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
-        case 8: _t->captchaReceived((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 9: _t->usernameAvailability((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
-        case 10: _t->emailAvailability((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
-        case 11: _t->avatarUploaded((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QUrl>>(_a[2]))); break;
-        case 12: _t->messageReceived((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<qint64>>(_a[4]))); break;
-        case 13: _t->messageSent((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 14: _t->messageDelivered((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 15: _t->networkError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 16: _t->emailCodeVerified((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
-        case 17: _t->onConnected(); break;
-        case 18: _t->onDisconnected(); break;
-        case 19: _t->onSslErrors((*reinterpret_cast< std::add_pointer_t<QList<QSslError>>>(_a[1]))); break;
-        case 20: _t->onReadyRead(); break;
-        case 21: _t->onSocketError((*reinterpret_cast< std::add_pointer_t<QAbstractSocket::SocketError>>(_a[1]))); break;
-        case 22: _t->onHeartbeatTimeout(); break;
-        case 23: _t->onNetworkReplyFinished(); break;
+        case 6: _t->sendVerificationResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 7: _t->resendVerificationResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 8: _t->emailCodeVerificationResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 9: _t->logoutResponse((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
+        case 10: _t->captchaReceived((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 11: _t->usernameAvailability((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
+        case 12: _t->emailAvailability((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1]))); break;
+        case 13: _t->avatarUploaded((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QUrl>>(_a[2]))); break;
+        case 14: _t->messageReceived((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[3])),(*reinterpret_cast< std::add_pointer_t<qint64>>(_a[4]))); break;
+        case 15: _t->messageSent((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 16: _t->messageDelivered((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 17: _t->networkError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 18: _t->emailCodeVerified((*reinterpret_cast< std::add_pointer_t<bool>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2]))); break;
+        case 19: _t->onConnected(); break;
+        case 20: _t->onDisconnected(); break;
+        case 21: _t->onSocketReadyRead(); break;
+        case 22: _t->onSocketError((*reinterpret_cast< std::add_pointer_t<QAbstractSocket::SocketError>>(_a[1]))); break;
+        case 23: _t->onSslErrors((*reinterpret_cast< std::add_pointer_t<QList<QSslError>>>(_a[1]))); break;
+        case 24: _t->onHeartbeatTimeout(); break;
+        case 25: _t->onNetworkReplyFinished(); break;
         default: ;
         }
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
         switch (_id) {
         default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
-        case 19:
-            switch (*reinterpret_cast<int*>(_a[1])) {
-            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
-            case 0:
-                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< QList<QSslError> >(); break;
-            }
-            break;
-        case 21:
+        case 22:
             switch (*reinterpret_cast<int*>(_a[1])) {
             default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
             case 0:
                 *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< QAbstractSocket::SocketError >(); break;
+            }
+            break;
+        case 23:
+            switch (*reinterpret_cast<int*>(_a[1])) {
+            default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
+            case 0:
+                *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< QList<QSslError> >(); break;
             }
             break;
         }
@@ -472,14 +474,14 @@ void NetworkClient::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _i
             }
         }
         {
-            using _t = void (NetworkClient::*)(bool , const QString & , const QString & );
+            using _t = void (NetworkClient::*)(bool , const QString & );
             if (_t _q_method = &NetworkClient::loginResponse; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 3;
                 return;
             }
         }
         {
-            using _t = void (NetworkClient::*)(bool , const QString & , const QString & , const QString & , qint64 );
+            using _t = void (NetworkClient::*)(bool , const QString & );
             if (_t _q_method = &NetworkClient::registerResponse; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 4;
                 return;
@@ -494,78 +496,92 @@ void NetworkClient::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _i
         }
         {
             using _t = void (NetworkClient::*)(bool , const QString & );
-            if (_t _q_method = &NetworkClient::resendVerificationResponse; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+            if (_t _q_method = &NetworkClient::sendVerificationResponse; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 6;
                 return;
             }
         }
         {
-            using _t = void (NetworkClient::*)(bool );
-            if (_t _q_method = &NetworkClient::logoutResponse; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+            using _t = void (NetworkClient::*)(bool , const QString & );
+            if (_t _q_method = &NetworkClient::resendVerificationResponse; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 7;
                 return;
             }
         }
         {
-            using _t = void (NetworkClient::*)(const QString & );
-            if (_t _q_method = &NetworkClient::captchaReceived; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+            using _t = void (NetworkClient::*)(bool , const QString & );
+            if (_t _q_method = &NetworkClient::emailCodeVerificationResponse; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 8;
                 return;
             }
         }
         {
             using _t = void (NetworkClient::*)(bool );
-            if (_t _q_method = &NetworkClient::usernameAvailability; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+            if (_t _q_method = &NetworkClient::logoutResponse; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 9;
+                return;
+            }
+        }
+        {
+            using _t = void (NetworkClient::*)(const QString & );
+            if (_t _q_method = &NetworkClient::captchaReceived; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 10;
+                return;
+            }
+        }
+        {
+            using _t = void (NetworkClient::*)(bool );
+            if (_t _q_method = &NetworkClient::usernameAvailability; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 11;
                 return;
             }
         }
         {
             using _t = void (NetworkClient::*)(bool );
             if (_t _q_method = &NetworkClient::emailAvailability; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
-                *result = 10;
+                *result = 12;
                 return;
             }
         }
         {
             using _t = void (NetworkClient::*)(bool , const QUrl & );
             if (_t _q_method = &NetworkClient::avatarUploaded; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
-                *result = 11;
+                *result = 13;
                 return;
             }
         }
         {
             using _t = void (NetworkClient::*)(const QString & , const QString & , const QString & , qint64 );
             if (_t _q_method = &NetworkClient::messageReceived; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
-                *result = 12;
-                return;
-            }
-        }
-        {
-            using _t = void (NetworkClient::*)(const QString & );
-            if (_t _q_method = &NetworkClient::messageSent; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
-                *result = 13;
-                return;
-            }
-        }
-        {
-            using _t = void (NetworkClient::*)(const QString & );
-            if (_t _q_method = &NetworkClient::messageDelivered; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 14;
                 return;
             }
         }
         {
             using _t = void (NetworkClient::*)(const QString & );
-            if (_t _q_method = &NetworkClient::networkError; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+            if (_t _q_method = &NetworkClient::messageSent; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
                 *result = 15;
+                return;
+            }
+        }
+        {
+            using _t = void (NetworkClient::*)(const QString & );
+            if (_t _q_method = &NetworkClient::messageDelivered; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 16;
+                return;
+            }
+        }
+        {
+            using _t = void (NetworkClient::*)(const QString & );
+            if (_t _q_method = &NetworkClient::networkError; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
+                *result = 17;
                 return;
             }
         }
         {
             using _t = void (NetworkClient::*)(bool , const QString & );
             if (_t _q_method = &NetworkClient::emailCodeVerified; *reinterpret_cast<_t *>(_a[1]) == _q_method) {
-                *result = 16;
+                *result = 18;
                 return;
             }
         }
@@ -591,13 +607,13 @@ int NetworkClient::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 24)
+        if (_id < 26)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 24;
+        _id -= 26;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 24)
+        if (_id < 26)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 24;
+        _id -= 26;
     }
     return _id;
 }
@@ -622,16 +638,16 @@ void NetworkClient::connectionError(const QString & _t1)
 }
 
 // SIGNAL 3
-void NetworkClient::loginResponse(bool _t1, const QString & _t2, const QString & _t3)
+void NetworkClient::loginResponse(bool _t1, const QString & _t2)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t3))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 3, _a);
 }
 
 // SIGNAL 4
-void NetworkClient::registerResponse(bool _t1, const QString & _t2, const QString & _t3, const QString & _t4, qint64 _t5)
+void NetworkClient::registerResponse(bool _t1, const QString & _t2)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t3))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t4))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t5))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 4, _a);
 }
 
@@ -643,79 +659,93 @@ void NetworkClient::verifyEmailResponse(bool _t1, const QString & _t2)
 }
 
 // SIGNAL 6
-void NetworkClient::resendVerificationResponse(bool _t1, const QString & _t2)
+void NetworkClient::sendVerificationResponse(bool _t1, const QString & _t2)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 6, _a);
 }
 
 // SIGNAL 7
-void NetworkClient::logoutResponse(bool _t1)
+void NetworkClient::resendVerificationResponse(bool _t1, const QString & _t2)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 7, _a);
 }
 
 // SIGNAL 8
-void NetworkClient::captchaReceived(const QString & _t1)
+void NetworkClient::emailCodeVerificationResponse(bool _t1, const QString & _t2)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 8, _a);
 }
 
 // SIGNAL 9
-void NetworkClient::usernameAvailability(bool _t1)
+void NetworkClient::logoutResponse(bool _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 9, _a);
 }
 
 // SIGNAL 10
-void NetworkClient::emailAvailability(bool _t1)
+void NetworkClient::captchaReceived(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 10, _a);
 }
 
 // SIGNAL 11
-void NetworkClient::avatarUploaded(bool _t1, const QUrl & _t2)
+void NetworkClient::usernameAvailability(bool _t1)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 11, _a);
 }
 
 // SIGNAL 12
-void NetworkClient::messageReceived(const QString & _t1, const QString & _t2, const QString & _t3, qint64 _t4)
+void NetworkClient::emailAvailability(bool _t1)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t3))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t4))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 12, _a);
 }
 
 // SIGNAL 13
-void NetworkClient::messageSent(const QString & _t1)
+void NetworkClient::avatarUploaded(bool _t1, const QUrl & _t2)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
     QMetaObject::activate(this, &staticMetaObject, 13, _a);
 }
 
 // SIGNAL 14
-void NetworkClient::messageDelivered(const QString & _t1)
+void NetworkClient::messageReceived(const QString & _t1, const QString & _t2, const QString & _t3, qint64 _t4)
 {
-    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t3))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t4))) };
     QMetaObject::activate(this, &staticMetaObject, 14, _a);
 }
 
 // SIGNAL 15
-void NetworkClient::networkError(const QString & _t1)
+void NetworkClient::messageSent(const QString & _t1)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
     QMetaObject::activate(this, &staticMetaObject, 15, _a);
 }
 
 // SIGNAL 16
+void NetworkClient::messageDelivered(const QString & _t1)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 16, _a);
+}
+
+// SIGNAL 17
+void NetworkClient::networkError(const QString & _t1)
+{
+    void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))) };
+    QMetaObject::activate(this, &staticMetaObject, 17, _a);
+}
+
+// SIGNAL 18
 void NetworkClient::emailCodeVerified(bool _t1, const QString & _t2)
 {
     void *_a[] = { nullptr, const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t1))), const_cast<void*>(reinterpret_cast<const void*>(std::addressof(_t2))) };
-    QMetaObject::activate(this, &staticMetaObject, 16, _a);
+    QMetaObject::activate(this, &staticMetaObject, 18, _a);
 }
 QT_WARNING_POP

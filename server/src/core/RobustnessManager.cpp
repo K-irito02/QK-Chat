@@ -394,8 +394,6 @@ PerformanceDegradationManager::PerformanceDegradationManager(QObject *parent)
 void PerformanceDegradationManager::setConfig(const DegradationConfig& config)
 {
     m_config = config;
-    qCInfo(robustness) << "Degradation config updated - CPU:" << config.cpuThreshold
-                       << "Memory:" << config.memoryThreshold;
 }
 
 PerformanceDegradationManager::DegradationLevel PerformanceDegradationManager::getCurrentLevel() const

@@ -91,11 +91,13 @@ QKChatClient_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QByteArray \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QDir \
+	D:/Qt/6.5.3/mingw_64/include/QtCore/QElapsedTimer \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QFile \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QFileInfo \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QFlags \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QHash \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QIODevice \
+	D:/Qt/6.5.3/mingw_64/include/QtCore/QJsonArray \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QJsonDocument \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QJsonObject \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QList \
@@ -112,6 +114,7 @@ QKChatClient_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QSharedDataPointer \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QString \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QTextStream \
+	D:/Qt/6.5.3/mingw_64/include/QtCore/QThread \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QThreadPool \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QTimer \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/QUrl \
@@ -174,6 +177,7 @@ QKChatClient_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qiodevicebase.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qiterable.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qiterator.h \
+	D:/Qt/6.5.3/mingw_64/include/QtCore/qjsonarray.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qjsondocument.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qjsonobject.h \
 	D:/Qt/6.5.3/mingw_64/include/QtCore/qjsonvalue.h \

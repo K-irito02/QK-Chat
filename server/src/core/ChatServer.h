@@ -194,11 +194,15 @@ private slots:
     void onConnectionManagerEvent();
     void onMessageEngineEvent();
     void onThreadManagerEvent();
+    
+    // 邮件发送结果处理
 
+    
     // 客户端连接处理
     void onClientConnected(QSslSocket* socket);
     void onClientDisconnected(const QString& clientId);
     void handleClientData(const QString& clientId);
+    void handleClientDataDirect(const QString& clientId);
     void handleClientDisconnected(const QString& clientId);
     void handleSocketError(const QString& clientId, QAbstractSocket::SocketError error);
 
@@ -211,6 +215,9 @@ private:
     ThreadPool* _threadPool;
     QTimer* _cleanupTimer;
     CacheManagerV2* _cacheManager;
+    MessageEngine* _messageEngine;
+    ConnectionManager* _connectionManager;
+    DatabasePool* _databasePool;
     
     // 客户端连接管理
     struct ClientInfo {
@@ -270,7 +277,7 @@ private:
     void setupSslServer();
     void setupCleanupTimer();
     void setupSystemInfoTimer();
-    void initializeEmailService();
+
     
     // SSL配置
     bool setupSslConfiguration();
@@ -315,7 +322,7 @@ private:
     void onPeerVerifyError(const QSslError& error);
     void cleanupConnections();
     void removeClient(QSslSocket* socket);
-    void processClientMessage(const QString& clientId, const QByteArray& messageData);
+    void processClientMessage(const QString& clientId, const QByteArray& messageData, QSslSocket* socket);
     
     // 消息处理
     void handleLogoutRequest(const QString& clientId);
@@ -323,10 +330,8 @@ private:
     void handleHeartbeat(const QString& clientId);
     void handleValidationRequest(const QString& clientId, const QVariantMap& data);
     void handleRegisterRequest(const QString& clientId, const QVariantMap& data);
-    void handleEmailVerificationRequest(const QString& clientId, const QVariantMap& data);
-    void handleSendEmailVerificationRequest(const QString& clientId, const QVariantMap& data);
-    void handleEmailCodeVerificationRequest(const QString& clientId, const QVariantMap& data);
-    void handleResendVerificationRequest(const QString& clientId, const QVariantMap& data);
+
+
     void handleLoginRequest(const QString& clientId, const QJsonObject& request);
     
     // 工具方法

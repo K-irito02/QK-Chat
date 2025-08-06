@@ -70,6 +70,7 @@ signals:
     void connectionLost(const QString& identifier, const QString& error);
     void connectionRestored(const QString& identifier);
     void connectionFailed(const QString& identifier, const QString& error);
+    void connectionRemoved(const QString& identifier);
 
 private slots:
     void onConnectionCheck();

@@ -377,13 +377,6 @@ void DashboardWidget::updateStatistics()
             QMetaObject::invokeMethod(this, "updateStatistics", Qt::QueuedConnection);
             return;
         }
-        
-        // 减少调试输出，避免日志过多
-        static int updateCount = 0;
-        updateCount++;
-        if (updateCount % 10 == 0) { // 每10次更新输出一次日志
-            qCInfo(dashboardWidget) << "Updating statistics... (update count:" << updateCount << ")";
-        }
 
         if (!_chatServer) {
             qCWarning(dashboardWidget) << "ChatServer is null, cannot update statistics";
@@ -403,10 +396,9 @@ void DashboardWidget::updateStatistics()
         }
 
         if (!serverRunning) {
-            qCInfo(dashboardWidget) << "ChatServer is not running, setting default values";
             if (_onlineUsersLabel) _onlineUsersLabel->setText("0");
             if (_totalUsersLabel) _totalUsersLabel->setText("0");
-            if (_messagesCountLabel) _messagesCountLabel->setText("0");
+            if (_messagesCountLabel) _totalUsersLabel->setText("0");
             if (_uptimeLabel) _uptimeLabel->setText("00:00:00");
             if (_cpuUsageLabel) _cpuUsageLabel->setText("0%");
             if (_memoryUsageLabel) _memoryUsageLabel->setText("0%");
@@ -414,9 +406,6 @@ void DashboardWidget::updateStatistics()
             if (_memoryProgressBar) _memoryProgressBar->setValue(0);
             return;
         }
-
-        // 服务器正在运行，更新实际数据
-        qCInfo(dashboardWidget) << "ChatServer is running, updating actual data";
 
         // 更新在线用户数 - 使用安全的缓存值
         int onlineUsers = 0;
@@ -559,10 +548,6 @@ void DashboardWidget::updateStatistics()
         _uiCache.cpuUsage = cpuUsage;
         _uiCache.memoryUsage = memoryUsage;
         _uiCache.lastUpdateTime = QDateTime::currentDateTime();
-
-        qCInfo(dashboardWidget) << "Statistics updated - Online:" << onlineUsers 
-                                << "Total:" << totalUsers << "Messages:" << messagesCount
-                                << "CPU:" << cpuUsage << "% Memory:" << memoryUsage << "%";
         
     } catch (const std::exception& e) {
         qCWarning(dashboardWidget) << "Exception in updateStatistics:" << e.what();
@@ -596,8 +581,6 @@ void DashboardWidget::startStatisticsUpdate()
 void DashboardWidget::performSafeStatisticsUpdate()
 {
     try {
-        qCInfo(dashboardWidget) << "Performing safe statistics update...";
-        
         // 重置更新标志
         _isUpdating = false;
         
@@ -607,7 +590,6 @@ void DashboardWidget::performSafeStatisticsUpdate()
         // 确保更新完成后重置标志
         _isUpdating = false;
         
-        qCInfo(dashboardWidget) << "Safe statistics update completed";
     } catch (const std::exception& e) {
         qCWarning(dashboardWidget) << "Exception in performSafeStatisticsUpdate:" << e.what();
         _isUpdating = false; // 确保异常时也重置标志
@@ -928,9 +910,6 @@ void DashboardWidget::initializeStaticData()
             _memoryProgressBar->setValue(memoryUsage);
         }
         _uiCache.memoryUsage = memoryUsage;
-
-        qCInfo(dashboardWidget) << "Static data initialized - Messages:" << messagesCount 
-                                << "CPU:" << cpuUsage << "% Memory:" << memoryUsage << "%";
         
     } catch (const std::exception& e) {
         qCWarning(dashboardWidget) << "Exception in initializeStaticData:" << e.what();

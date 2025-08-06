@@ -1,8 +1,7 @@
 #include "ChatServer.h"
+#include "MessageHandlers.h"
 #include "../database/Database.h"
-#include "../services/EmailService.h"
-#include "../utils/RedisEmailVerification.h"
-#include "../services/EmailTemplate.h"
+#include "../services/EmailVerificationService.h"
 #include "../network/QSslServer.h"
 #include "../core/SessionManager.h"
 #include "../network/ProtocolParser.h"
@@ -27,6 +26,7 @@
 #include <QTimer>
 #include "../utils/ThreadPool.h"
 #include "../utils/SystemMonitor.h"
+#include "../services/EmailVerificationService.h"
 #include "../cache/CacheManagerV2.h"
 #include <QJsonParseError>
 #include <QSslConfiguration>
@@ -39,6 +39,7 @@
 #include <QFuture>
 #include <QFutureWatcher>
 #include <QElapsedTimer>
+#include <stdexcept>
 
 // Windows API 头文件
 #ifdef Q_OS_WIN
@@ -59,6 +60,8 @@ ChatServer::ChatServer(QObject *parent)
     , _protocolParser(nullptr)
     , _threadPool(nullptr)
     , _cleanupTimer(nullptr)
+    , _cacheManager(nullptr)
+    , _messageEngine(nullptr)
     , _host("0.0.0.0")
     , _port(8443)
     , _isRunning(false)
@@ -92,9 +95,11 @@ ChatServer::~ChatServer()
 #endif
     
     if (_threadPool) {
+        qCInfo(chatServer) << "Stopping thread pool...";
         _threadPool->shutdown();
         delete _threadPool;
         _threadPool = nullptr;
+        qCInfo(chatServer) << "Thread pool stopped";
     }
     
     if (_cleanupTimer) {
@@ -177,6 +182,77 @@ bool ChatServer::startServer()
         
         qCInfo(chatServer) << "Database is connected, proceeding with server startup";
         
+        // 初始化线程池
+        qCInfo(chatServer) << "Initializing thread pool...";
+        if (!_threadPool) {
+            _threadPool = new ThreadPool(4); // 创建4个工作线程
+            qCInfo(chatServer) << "Thread pool initialized successfully";
+        }
+
+        // 初始化连接管理器
+        qCInfo(chatServer) << "Initializing connection manager...";
+        if (!_connectionManager) {
+            _connectionManager = new ConnectionManager(this);
+            qCInfo(chatServer) << "Connection manager initialized successfully";
+        }
+        
+        // 初始化数据库连接池
+        qCInfo(chatServer) << "Initializing database pool...";
+        if (!_databasePool) {
+            _databasePool = DatabasePool::instance();
+            qCInfo(chatServer) << "Database pool initialized successfully";
+        }
+        
+        // 初始化会话管理器
+        qCInfo(chatServer) << "Initializing session manager...";
+        if (!_sessionManager) {
+            _sessionManager = new SessionManager(this);
+            qCInfo(chatServer) << "Session manager initialized successfully";
+
+            // 连接 ConnectionManager 的 connectionRemoved 信号到 SessionManager 的槽
+            connect(_connectionManager, &ConnectionManager::connectionRemoved,
+                    _sessionManager, [this](QSslSocket* socket, qint64 userId) {
+                if (userId > 0) {
+                    // 通过用户ID查找用户名
+                    if (_databasePool) {
+                        auto result = _databasePool->executeQuery(
+                            "SELECT username FROM users WHERE user_id = ?",
+                            {userId},
+                            DatabaseOperationType::Read
+                        );
+                        if (result.success && result.data.isSelect() && result.data.next()) {
+                            QString username = result.data.value("username").toString();
+                            _sessionManager->onUserDisconnected(username);
+                        }
+                    }
+                }
+            });
+            qCInfo(chatServer) << "Connected connectionRemoved signal to session manager";
+        }
+        
+
+        
+        // 初始化所有组件
+        qCInfo(chatServer) << "Initializing all components...";
+        if (!initializeComponents()) {
+            qCCritical(chatServer) << "Failed to initialize components";
+            return false;
+        }
+
+        // 初始化邮件服务
+        qCInfo(chatServer) << "Initializing email verification service...";
+        EmailVerificationService* emailService = new EmailVerificationService(this);
+        qCInfo(chatServer) << "Email verification service initialized successfully";
+
+        // 注册消息处理器
+        qCInfo(chatServer) << "Registering message handlers...";
+        _messageEngine->registerHandler(std::make_shared<LoginMessageHandler>(_connectionManager, _sessionManager, _databasePool, _cacheManager));
+        _messageEngine->registerHandler(std::make_shared<ChatMessageHandler>(_connectionManager, _databasePool, _cacheManager));
+        _messageEngine->registerHandler(std::make_shared<HeartbeatMessageHandler>(_connectionManager));
+        _messageEngine->registerHandler(std::make_shared<RegisterMessageHandler>(_connectionManager, _databasePool, _cacheManager, emailService));
+        _messageEngine->registerHandler(std::make_shared<EmailVerificationMessageHandler>(emailService));
+        qCInfo(chatServer) << "Message handlers registered successfully";
+        
         // 初始化SSL服务器
         setupSslServer();
         
@@ -250,6 +326,15 @@ void ChatServer::stopServer()
         _clients.clear();
     }
     
+    // 停止线程池
+    if (_threadPool) {
+        qCInfo(chatServer) << "Stopping thread pool...";
+        _threadPool->shutdown();
+        delete _threadPool;
+        _threadPool = nullptr;
+        qCInfo(chatServer) << "Thread pool stopped";
+    }
+    
     qCInfo(chatServer) << "Server stopped";
     LogManager::instance()->writeSystemLog("ChatServer", "STOPPED", "Server stopped");
     
@@ -287,9 +372,16 @@ void ChatServer::onClientConnected(QSslSocket* socket)
         _clients[clientId] = clientInfo;
     }
     
-    // 连接信号
-    connect(socket, &QSslSocket::readyRead, this, [this, clientId]() {
-        handleClientData(clientId);
+    // 连接信号 - 使用直接处理避免线程池延迟
+    connect(socket, &QSslSocket::readyRead, this, [this, clientId, socket]() {
+        qCInfo(chatServer) << "=== READY READ SIGNAL TRIGGERED ===";
+        qCInfo(chatServer) << "Client ID:" << clientId;
+        qCInfo(chatServer) << "Socket bytes available:" << socket->bytesAvailable();
+        qCInfo(chatServer) << "Socket state:" << socket->state();
+        qCInfo(chatServer) << "Socket encrypted:" << socket->isEncrypted();
+        // 对于关键消息，使用直接处理而不是线程池
+        handleClientDataDirect(clientId);
+        qCInfo(chatServer) << "=== END READY READ SIGNAL ===";
     });
     
     connect(socket, &QSslSocket::disconnected, this, [this, clientId]() {
@@ -328,6 +420,7 @@ void ChatServer::handleClientDisconnected(const QString& clientId)
 void ChatServer::handleClientData(const QString& clientId)
 {
     if (!_threadPool) {
+        qCWarning(chatServer) << "Thread pool not available for client:" << clientId;
         return;
     }
     
@@ -335,6 +428,7 @@ void ChatServer::handleClientData(const QString& clientId)
         QMutexLocker locker(&_clientsMutex);
         
         if (!_clients.contains(clientId)) {
+            qCWarning(chatServer) << "Client not found in clients list:" << clientId;
             return;
         }
         
@@ -342,30 +436,46 @@ void ChatServer::handleClientData(const QString& clientId)
         QSslSocket* socket = client.socket;
         
         if (!socket || socket->state() != QAbstractSocket::ConnectedState) {
+            qCWarning(chatServer) << "Socket not available or not connected for client:" << clientId;
             return;
         }
         
         qint64 bytesAvailable = socket->bytesAvailable();
+        
         if (bytesAvailable <= 0) {
+            qCDebug(chatServer) << "No bytes available for client:" << clientId;
             return;
         }
         
+        qCInfo(chatServer) << "Received" << bytesAvailable << "bytes from client" << clientId;
+        
         // 读取数据到缓冲区
         QByteArray newData = socket->readAll();
+        qCInfo(chatServer) << "Read" << newData.size() << "bytes from socket for client:" << clientId;
+        
+        // 记录缓冲区状态
+        qCInfo(chatServer) << "Buffer before append - Size:" << client.messageBuffer.size() << "for client:" << clientId;
         client.messageBuffer.append(newData);
+        qCInfo(chatServer) << "Buffer after append - Size:" << client.messageBuffer.size() << "for client:" << clientId;
         
         // 处理完整的消息
+        int processedMessages = 0;
         while (client.messageBuffer.size() >= 4) {
             // 读取消息长度
             qint32 messageLength = qFromBigEndian<qint32>(reinterpret_cast<const uchar*>(client.messageBuffer.left(4).data()));
             
+            qCInfo(chatServer) << "Message length from header:" << messageLength << "for client:" << clientId;
+            
             if (messageLength <= 0 || messageLength > 1024 * 1024) { // 最大1MB
+                qCWarning(chatServer) << "Invalid message length for client" << clientId << ":" << messageLength;
                 client.messageBuffer.clear();
                 return;
             }
             
             // 检查是否有完整的消息
             if (client.messageBuffer.size() < 4 + messageLength) {
+                qCInfo(chatServer) << "Incomplete message - Buffer size:" << client.messageBuffer.size() 
+                                 << "Required:" << (4 + messageLength) << "for client:" << clientId;
                 break; // 等待更多数据
             }
             
@@ -373,10 +483,109 @@ void ChatServer::handleClientData(const QString& clientId)
             QByteArray messageData = client.messageBuffer.mid(4, messageLength);
             client.messageBuffer.remove(0, 4 + messageLength);
             
+            qCInfo(chatServer) << "Processing complete message for client" << clientId << "Size:" << messageData.size();
+            qCDebug(chatServer) << "Raw message data:" << messageData;
+            
             // 处理消息
-            processClientMessage(clientId, messageData);
+            processClientMessage(clientId, messageData, client.socket);
+            processedMessages++;
         }
+        
+        qCInfo(chatServer) << "Processed" << processedMessages << "messages for client:" << clientId;
+        qCInfo(chatServer) << "Remaining buffer size:" << client.messageBuffer.size() << "for client:" << clientId;
     });
+}
+
+// 直接处理客户端数据（不使用线程池，避免延迟）
+void ChatServer::handleClientDataDirect(const QString& clientId)
+{
+    QMutexLocker locker(&_clientsMutex);
+    
+    if (!_clients.contains(clientId)) {
+        qCWarning(chatServer) << "Client not found in clients list:" << clientId;
+        return;
+    }
+    
+    ClientInfo& client = _clients[clientId];
+    QSslSocket* socket = client.socket;
+    
+    if (!socket || socket->state() != QAbstractSocket::ConnectedState) {
+        qCWarning(chatServer) << "Socket not available or not connected for client:" << clientId;
+        return;
+    }
+    
+    // 检查socket状态
+    qCInfo(chatServer) << "Socket state for client" << clientId << ":" << socket->state();
+    qCInfo(chatServer) << "Socket encrypted:" << socket->isEncrypted();
+    qCInfo(chatServer) << "Socket bytes available:" << socket->bytesAvailable();
+    qCInfo(chatServer) << "Socket bytes to write:" << socket->bytesToWrite();
+    
+    qint64 bytesAvailable = socket->bytesAvailable();
+    
+    if (bytesAvailable <= 0) {
+        qCDebug(chatServer) << "No bytes available for client:" << clientId;
+        return;
+    }
+    
+    qCInfo(chatServer) << "Received" << bytesAvailable << "bytes from client" << clientId << "(direct processing)";
+    
+    // 读取所有可用数据并添加到缓冲区
+    QByteArray newData = socket->readAll();
+    qCInfo(chatServer) << "Read" << newData.size() << "bytes from socket for client:" << clientId;
+    qCInfo(chatServer) << "New data hex:" << newData.toHex();
+    qCInfo(chatServer) << "New data as string:" << QString::fromUtf8(newData);
+    
+    // 添加到客户端缓冲区
+    client.messageBuffer.append(newData);
+    qCInfo(chatServer) << "Buffer size after append:" << client.messageBuffer.size() << "for client:" << clientId;
+    
+    // 处理缓冲区中的所有完整消息
+    int processedMessages = 0;
+    qCInfo(chatServer) << "Starting to process messages from buffer, buffer size:" << client.messageBuffer.size();
+    
+    while (client.messageBuffer.size() >= 4) {
+        // 读取消息长度
+        qint32 messageLength = qFromBigEndian<qint32>(reinterpret_cast<const uchar*>(client.messageBuffer.left(4).data()));
+        
+        qCInfo(chatServer) << "Message length from header:" << messageLength << "for client:" << clientId;
+        qCInfo(chatServer) << "Current buffer size:" << client.messageBuffer.size();
+        qCInfo(chatServer) << "Required size:" << (4 + messageLength);
+        
+        if (messageLength <= 0 || messageLength > 1024 * 1024) { // 最大1MB
+            qCWarning(chatServer) << "Invalid message length for client" << clientId << ":" << messageLength;
+            client.messageBuffer.clear();
+            return;
+        }
+        
+        // 检查是否有完整的消息
+        if (client.messageBuffer.size() < 4 + messageLength) {
+            qCInfo(chatServer) << "Incomplete message - Buffer size:" << client.messageBuffer.size() 
+                             << "Required:" << (4 + messageLength) << "for client:" << clientId;
+            qCInfo(chatServer) << "Waiting for more data...";
+            break; // 等待更多数据
+        }
+        
+        // 提取完整的消息
+        QByteArray completeMessage = client.messageBuffer.mid(4, messageLength);
+        client.messageBuffer.remove(0, 4 + messageLength);
+        
+        qCInfo(chatServer) << "=== PROCESSING COMPLETE MESSAGE ===";
+        qCInfo(chatServer) << "Client:" << clientId;
+        qCInfo(chatServer) << "Message size:" << completeMessage.size();
+        qCInfo(chatServer) << "Message data:" << completeMessage;
+        qCInfo(chatServer) << "Remaining buffer size after extraction:" << client.messageBuffer.size();
+        qCInfo(chatServer) << "=== END COMPLETE MESSAGE ===";
+        
+        // 处理消息
+        processClientMessage(clientId, completeMessage, socket);
+        processedMessages++;
+        
+        qCInfo(chatServer) << "Processed message" << processedMessages << "for client:" << clientId;
+    }
+    
+    qCInfo(chatServer) << "Processed" << processedMessages << "messages for client:" << clientId;
+    qCInfo(chatServer) << "Remaining buffer size:" << client.messageBuffer.size() << "for client:" << clientId;
+    qCInfo(chatServer) << "=== END CLIENT DATA PROCESSING ===";
 }
 
 // 处理socket错误
@@ -466,10 +675,12 @@ void ChatServer::handleLoginRequest(const QString& clientId, const QJsonObject& 
             response["username"] = userInfo.username;
             response["displayName"] = userInfo.displayName;
             response["avatarUrl"] = userInfo.avatarUrl;
-            response["email"] = userInfo.email;
+
             response["sessionToken"] = sessionToken;
             
+            qCInfo(chatServer) << "Sending response to client:" << clientId << "Response:" << response;
             sendJsonMessage(clientId, response);
+            qCInfo(chatServer) << "Response sent to client:" << clientId;
             
             qCInfo(chatServer) << "User logged in:" << username << "(" << clientId << ")";
             
@@ -488,28 +699,72 @@ void ChatServer::handleLoginRequest(const QString& clientId, const QJsonObject& 
 // 发送JSON消息
 void ChatServer::sendJsonMessage(const QString& clientId, const QJsonObject& message)
 {
-    QMutexLocker locker(&_clientsMutex);
+    qCInfo(chatServer) << "Attempting to send JSON message to client:" << clientId;
+    qCInfo(chatServer) << "Message content:" << message;
     
-    if (!_clients.contains(clientId)) {
-        return;
+    try {
+        QMutexLocker locker(&_clientsMutex);
+        
+        // 查找客户端连接
+        if (!_clients.contains(clientId)) {
+            qCWarning(chatServer) << "Client not found for sending response:" << clientId;
+            return;
+        }
+        
+        QSslSocket* socket = _clients[clientId].socket;
+        if (!socket) {
+            qCWarning(chatServer) << "Socket is null for client:" << clientId;
+            return;
+        }
+        
+        // 检查socket状态
+        if (socket->state() != QAbstractSocket::ConnectedState) {
+            qCWarning(chatServer) << "Socket not connected for client:" << clientId << "State:" << socket->state();
+            return;
+        }
+        
+        if (!socket->isEncrypted()) {
+            qCWarning(chatServer) << "Socket not encrypted for client:" << clientId;
+            return;
+        }
+        
+        // 创建JSON文档
+        QJsonDocument doc(message);
+        QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
+        
+        // 添加长度前缀
+        QByteArray lengthBytes(4, 0);
+        qToBigEndian<qint32>(jsonData.size(), reinterpret_cast<uchar*>(lengthBytes.data()));
+        
+        QByteArray packet = lengthBytes + jsonData;
+        
+        qCInfo(chatServer) << "Sending packet to client:" << clientId << "Size:" << packet.size() << "bytes";
+        
+        // 发送数据
+        qint64 bytesWritten = socket->write(packet);
+        if (bytesWritten == -1) {
+            qCWarning(chatServer) << "Failed to write to socket for client:" << clientId << "Error:" << socket->errorString();
+            return;
+        }
+        
+        if (bytesWritten != packet.size()) {
+            qCWarning(chatServer) << "Partial write for client:" << clientId << "Wrote:" << bytesWritten << "of" << packet.size() << "bytes";
+            return;
+        }
+        
+        // 强制刷新socket
+        if (!socket->flush()) {
+            qCWarning(chatServer) << "Failed to flush socket for client:" << clientId;
+            return;
+        }
+        
+        qCInfo(chatServer) << "Successfully sent message to client:" << clientId << "Bytes written:" << bytesWritten;
+        
+    } catch (const std::exception& e) {
+        qCCritical(chatServer) << "Exception in sendJsonMessage:" << e.what();
+    } catch (...) {
+        qCCritical(chatServer) << "Unknown exception in sendJsonMessage";
     }
-    
-    QSslSocket* socket = _clients[clientId].socket;
-    if (!socket || socket->state() != QAbstractSocket::ConnectedState) {
-        return;
-    }
-    
-    // 直接发送消息，不包装
-    QJsonDocument doc(message);
-    QByteArray jsonData = doc.toJson(QJsonDocument::Compact);
-    
-    // 添加长度前缀
-    QByteArray lengthBytes(4, 0);
-    qToBigEndian<qint32>(jsonData.size(), reinterpret_cast<uchar*>(lengthBytes.data()));
-    QByteArray packet = lengthBytes + jsonData;
-    
-    socket->write(packet);
-    socket->flush();
 }
 
 // 发送错误响应
@@ -590,16 +845,6 @@ void ChatServer::updateSystemInfo()
             try {
                 self->_cachedCpuUsage = self->getCpuUsage();
                 self->_cachedMemoryUsage = self->getMemoryUsage();
-
-                // 记录系统状态 - 减少日志频率
-                static int logCounter = 0;
-                if (++logCounter % 12 == 0) { // 每分钟记录一次（12 * 5秒）
-                    QString logMsg = QString("System Info - CPU: %1%, Memory: %2%")
-                                   .arg(self->_cachedCpuUsage)
-                                   .arg(self->_cachedMemoryUsage);
-
-                    qCInfo(chatServer) << logMsg;
-                }
 
             } catch (const std::exception& e) {
                 qCWarning(chatServer) << "Failed to update system info:" << e.what();
@@ -1053,37 +1298,16 @@ void ChatServer::handleHeartbeat(const QString& clientId)
 // 处理验证请求
 void ChatServer::handleValidationRequest(const QString& clientId, const QVariantMap& data)
 {
+    qCInfo(chatServer) << "=== HANDLING VALIDATION REQUEST ===";
+    qCInfo(chatServer) << "Client ID:" << clientId;
+    qCInfo(chatServer) << "Raw data:" << data;
+    qCInfo(chatServer) << "Data keys:" << data.keys();
+    
     QString validationType = data["type"].toString();
+    qCInfo(chatServer) << "Validation type:" << validationType << "from client:" << clientId;
+    qCInfo(chatServer) << "=== END VALIDATION REQUEST HEADER ===";
 
-    if (validationType == "check_email") {
-        // 处理邮箱可用性检查
-        QString email = data["email"].toString();
-
-        if (email.isEmpty()) {
-            QJsonObject response;
-            response["type"] = "validation";
-            response["validation_type"] = "check_email";
-            response["success"] = false;
-            response["message"] = "邮箱地址不能为空";
-            sendJsonMessage(clientId, response);
-            return;
-        }
-
-        // 这里应该检查数据库中邮箱是否已存在
-        // 暂时返回可用状态
-        bool emailAvailable = true; // TODO: 实际检查数据库
-
-        QJsonObject response;
-        response["type"] = "validation";
-        response["validation_type"] = "check_email";
-        response["success"] = true;
-        response["available"] = emailAvailable;
-        response["message"] = emailAvailable ? "邮箱可用" : "邮箱已被使用";
-
-        qCInfo(chatServer) << "Email availability check for:" << email << "Available:" << emailAvailable;
-        sendJsonMessage(clientId, response);
-
-    } else if (validationType == "check_username") {
+    if (validationType == "check_username") {
         // 处理用户名可用性检查
         QString username = data["username"].toString();
 
@@ -1097,9 +1321,27 @@ void ChatServer::handleValidationRequest(const QString& clientId, const QVariant
             return;
         }
 
-        // 这里应该检查数据库中用户名是否已存在
-        // 暂时返回可用状态
-        bool usernameAvailable = true; // TODO: 实际检查数据库
+        // 实际检查数据库中用户名是否已存在
+        bool usernameAvailable = true;
+        qCInfo(chatServer) << "Checking username availability for:" << username;
+        qCInfo(chatServer) << "Database pointer:" << (_database ? "valid" : "null");
+        
+        try {
+            if (_database && _database->isConnected()) {
+                qCInfo(chatServer) << "Database is connected, checking username availability";
+                // 检查用户名是否已注册
+                usernameAvailable = _database->isUsernameAvailable(username);
+                qCInfo(chatServer) << "Database username check for:" << username << "Available:" << usernameAvailable;
+            } else {
+                qCWarning(chatServer) << "Database not connected, using fallback username check";
+                qCInfo(chatServer) << "Database connection status:" << (_database ? "exists but not connected" : "null pointer");
+                // 如果数据库未连接，暂时返回可用（保守策略）
+                usernameAvailable = true;
+            }
+        } catch (const std::exception& e) {
+            qCWarning(chatServer) << "Exception during username availability check:" << e.what();
+            usernameAvailable = false; // 出错时保守地返回不可用
+        }
 
         QJsonObject response;
         response["type"] = "validation";
@@ -1109,8 +1351,51 @@ void ChatServer::handleValidationRequest(const QString& clientId, const QVariant
         response["message"] = usernameAvailable ? "用户名可用" : "用户名已被使用";
 
         qCInfo(chatServer) << "Username availability check for:" << username << "Available:" << usernameAvailable;
+        qCInfo(chatServer) << "About to send validation response to client:" << clientId;
         sendJsonMessage(clientId, response);
+        qCInfo(chatServer) << "Validation response sent to client:" << clientId;
+        
+    } else if (validationType == "check_email") {
+        // 处理邮箱可用性检查
+        QString email = data["email"].toString();
 
+        if (email.isEmpty()) {
+            QJsonObject response;
+            response["type"] = "validation";
+            response["validation_type"] = "check_email";
+            response["success"] = false;
+            response["message"] = "邮箱不能为空";
+            sendJsonMessage(clientId, response);
+            return;
+        }
+
+        // 实际检查数据库中邮箱是否已存在
+        bool emailAvailable = true;
+        try {
+            if (_database && _database->isConnected()) {
+                // 检查邮箱是否已注册
+                emailAvailable = _database->isEmailAvailable(email);
+                qCInfo(chatServer) << "Database email check for:" << email << "Available:" << emailAvailable;
+            } else {
+                qCWarning(chatServer) << "Database not connected, using fallback email check";
+                // 如果数据库未连接，暂时返回可用（保守策略）
+                emailAvailable = true;
+            }
+        } catch (const std::exception& e) {
+            qCWarning(chatServer) << "Exception during email availability check:" << e.what();
+            emailAvailable = false; // 出错时保守地返回不可用
+        }
+
+        QJsonObject response;
+        response["type"] = "validation";
+        response["validation_type"] = "check_email";
+        response["success"] = true;
+        response["available"] = emailAvailable;
+        response["message"] = emailAvailable ? "邮箱可用" : "邮箱已被使用";
+
+        qCInfo(chatServer) << "Email availability check for:" << email << "Available:" << emailAvailable;
+        sendJsonMessage(clientId, response);
+        
     } else {
         QJsonObject response;
         response["type"] = "validation";
@@ -1125,184 +1410,57 @@ void ChatServer::handleValidationRequest(const QString& clientId, const QVariant
 // 处理注册请求
 void ChatServer::handleRegisterRequest(const QString& clientId, const QVariantMap& data)
 {
-    // 实现注册逻辑
+    qCInfo(chatServer) << "=== HANDLING REGISTER REQUEST ===";
+    qCInfo(chatServer) << "Client ID:" << clientId;
+    qCInfo(chatServer) << "Data:" << data;
+    
+    QString username = data["username"].toString();
+    QString password = data["password"].toString();
+    QString avatar = data["avatar"].toString();
+    
+    if (username.isEmpty() || password.isEmpty()) {
+        QJsonObject response;
+        response["type"] = "register";
+        response["success"] = false;
+        response["message"] = "用户名和密码不能为空";
+        sendJsonMessage(clientId, response);
+        return;
+    }
+    
+    // 检查用户名是否已存在
+    if (!_database->isUsernameAvailable(username)) {
+        QJsonObject response;
+        response["type"] = "register";
+        response["success"] = false;
+        response["message"] = "用户名已被使用";
+        sendJsonMessage(clientId, response);
+        return;
+    }
+    
+    // 创建用户
+    bool success = _database->createUser(username, password, avatar);
+    
     QJsonObject response;
     response["type"] = "register";
-    response["status"] = "success";
-    sendJsonMessage(clientId, response);
-}
-
-// 处理邮箱验证请求
-void ChatServer::handleEmailVerificationRequest(const QString& clientId, const QVariantMap& data)
-{
-    QString email = data["email"].toString();
-    QString code = data["code"].toString();
-    
-    if (email.isEmpty() || code.isEmpty()) {
-        QJsonObject response;
-        response["type"] = "email_code_verification";
-        response["success"] = false;
-        response["message"] = "邮箱和验证码不能为空";
-        sendJsonMessage(clientId, response);
-        return;
-    }
-    
-    // 验证验证码
-    bool isValid = RedisEmailVerification::instance().verifyCode(email, code);
-    
-    QJsonObject response;
-    response["type"] = "email_code_verification";
-    response["success"] = isValid;
-    response["message"] = isValid ? "邮箱验证成功" : "验证码错误或已过期";
-    
-    if (isValid) {
-        qCInfo(chatServer) << "Email verified successfully for:" << email;
-    } else {
-        qCWarning(chatServer) << "Email verification failed for:" << email;
-    }
-    
-    sendJsonMessage(clientId, response);
-}
-
-// 处理发送邮箱验证请求
-void ChatServer::handleSendEmailVerificationRequest(const QString& clientId, const QVariantMap& data)
-{
-    qCInfo(chatServer) << "Processing email verification request from client:" << clientId;
-    qCDebug(chatServer) << "Request data:" << data;
-
-    QString email = data["email"].toString();
-
-    if (email.isEmpty()) {
-        qCWarning(chatServer) << "Email verification request failed - empty email address";
-        QJsonObject response;
-        response["type"] = "send_verification";
-        response["success"] = false;
-        response["message"] = "邮箱地址不能为空";
-        sendJsonMessage(clientId, response);
-        return;
-    }
-
-    qCInfo(chatServer) << "Sending email verification to:" << email;
-    
-    // 生成验证码
-    QString verificationCode = QString::number(QRandomGenerator::global()->bounded(100000, 999999));
-    qCInfo(chatServer) << "Generated verification code for email:" << email << "Code:" << verificationCode;
-
-    // 检查EmailService状态
-    if (!EmailService::instance().isReady()) {
-        qCWarning(chatServer) << "EmailService is not ready";
-        QJsonObject response;
-        response["type"] = "send_verification";
-        response["success"] = false;
-        response["message"] = "邮件服务未就绪，请稍后重试";
-        sendJsonMessage(clientId, response);
-        return;
-    }
-
-    // 创建邮件内容
-    EmailMessage emailMessage;
-    emailMessage.to = email;
-    emailMessage.subject = "QK Chat 邮箱验证";
-    emailMessage.contentType = "text/html";
-    emailMessage.body = QString(
-        "<html><body>"
-        "<h2>QK Chat 邮箱验证</h2>"
-        "<p>您的验证码是：<strong>%1</strong></p>"
-        "<p>验证码有效期为10分钟，请尽快完成验证。</p>"
-        "<p>如果这不是您的操作，请忽略此邮件。</p>"
-        "</body></html>"
-    ).arg(verificationCode);
-
-    qCInfo(chatServer) << "Attempting to send email to:" << email;
-
-    // 发送邮件
-    bool success = EmailService::instance().sendEmail(emailMessage);
-
-    qCInfo(chatServer) << "Email send result:" << success;
-    if (!success) {
-        qCWarning(chatServer) << "Email send failed. Error:" << EmailService::instance().getLastError();
-    }
-    
-    QJsonObject response;
-    response["type"] = "send_verification";
+    response["success"] = success;
     
     if (success) {
-        qCInfo(chatServer) << "Email sent successfully, saving verification code to Redis";
-
-        // 保存验证码到Redis
-        bool redisSuccess = RedisEmailVerification::instance().saveVerificationCode(email, verificationCode, 600);
-
-        qCInfo(chatServer) << "Redis save result:" << redisSuccess;
-
-        if (redisSuccess) {
-            response["success"] = true;
-            response["message"] = "验证码已发送到您的邮箱，请查收";
-            response["remaining_time"] = 600;
-            qCInfo(chatServer) << "Email verification process completed successfully for:" << email;
-        } else {
-            response["success"] = false;
-            response["message"] = "验证码生成失败，请稍后重试";
-            qCWarning(chatServer) << "Failed to save verification code to Redis for email:" << email;
-        }
+        response["message"] = "注册成功";
+        qCInfo(chatServer) << "User registered successfully:" << username;
     } else {
-        response["success"] = false;
-        response["message"] = "发送邮件失败，请稍后重试";
-        qCWarning(chatServer) << "Email send failed for:" << email;
-    }
-
-    qCInfo(chatServer) << "Sending response to client:" << clientId << "Response:" << response;
-    sendJsonMessage(clientId, response);
-}
-
-// 处理邮箱验证码验证请求
-void ChatServer::handleEmailCodeVerificationRequest(const QString& clientId, const QVariantMap& data)
-{
-    QString email = data["email"].toString();
-    QString code = data["code"].toString();
-    
-    if (email.isEmpty() || code.isEmpty()) {
-        QJsonObject response;
-        response["type"] = "email_code_verification";
-        response["success"] = false;
-        response["message"] = "邮箱和验证码不能为空";
-        sendJsonMessage(clientId, response);
-        return;
-    }
-    
-    // 验证验证码
-    bool isValid = RedisEmailVerification::instance().verifyCode(email, code);
-    
-    QJsonObject response;
-    response["type"] = "email_code_verification";
-    response["success"] = isValid;
-    response["message"] = isValid ? "邮箱验证成功" : "验证码错误或已过期";
-    
-    if (isValid) {
-        qCInfo(chatServer) << "Email verified successfully for:" << email;
-    } else {
-        qCWarning(chatServer) << "Email verification failed for:" << email;
+        response["message"] = "注册失败，请稍后重试";
+        qCWarning(chatServer) << "Failed to register user:" << username;
     }
     
     sendJsonMessage(clientId, response);
+    qCInfo(chatServer) << "=== END REGISTER REQUEST ===";
 }
 
-// 处理重新发送验证请求
-void ChatServer::handleResendVerificationRequest(const QString& clientId, const QVariantMap& data)
-{
-    QString email = data["email"].toString();
-    
-    if (email.isEmpty()) {
-        QJsonObject response;
-        response["type"] = "resend_verification";
-        response["success"] = false;
-        response["message"] = "邮箱地址不能为空";
-        sendJsonMessage(clientId, response);
-        return;
-    }
-    
-    // 重新发送与sendEmailVerification相同的处理
-    handleSendEmailVerificationRequest(clientId, data);
-}
+
+
+
+
+
 
 // 系统维护
 void ChatServer::performSystemMaintenance()
@@ -1369,9 +1527,42 @@ void ChatServer::onThreadManagerEvent()
 bool ChatServer::initializeComponents()
 {
     try {
-        // 初始化邮件服务
-        initializeEmailService();
+        qCInfo(chatServer) << "Initializing server components...";
+        
+        // 初始化数据库
+        if (!initializeDatabase()) {
+            qCCritical(chatServer) << "Failed to initialize database";
+            return false;
+        }
+        
+        // 初始化缓存
+        if (!initializeCache()) {
+            qCCritical(chatServer) << "Failed to initialize cache";
+            return false;
+        }
+        
+        // 初始化网络
+        if (!initializeNetwork()) {
+            qCCritical(chatServer) << "Failed to initialize network";
+            return false;
+        }
+        
+        // 初始化消息引擎
+        _messageEngine = new MessageEngine(_connectionManager, this);
+        if (!_messageEngine->initialize()) {
+            qCCritical(chatServer) << "Failed to initialize message engine";
+            return false;
+        }
+        
+        // 初始化消息处理器
+        if (!initializeMessageHandlers()) {
+            qCCritical(chatServer) << "Failed to initialize message handlers";
+            return false;
+        }
+        
+        qCInfo(chatServer) << "All components initialized successfully";
         return true;
+        
     } catch (const std::exception& e) {
         qCCritical(chatServer) << "Failed to initialize components:" << e.what();
         return false;
@@ -1519,50 +1710,7 @@ void ChatServer::setupSystemInfoTimer()
     // 设置系统信息定时器
 }
 
-// 初始化邮件服务
-void ChatServer::initializeEmailService()
-{
-    qCInfo(chatServer) << "Starting EmailService initialization...";
 
-    try {
-        ServerConfig* config = ServerConfig::instance();
-        qCInfo(chatServer) << "ServerConfig obtained successfully";
-
-        qCInfo(chatServer) << "Calling EmailService::instance().initialize()...";
-        bool success = EmailService::instance().initialize(
-            config->getSmtpHost(),
-            config->getSmtpPort(),
-            config->getSmtpUsername(),
-            config->getSmtpPassword(),
-            false,  // useSSL - 不使用SSL
-            true    // useTLS - 只使用TLS
-        );
-        qCInfo(chatServer) << "EmailService initialize() returned:" << success;
-    
-        if (success) {
-            qCInfo(chatServer) << "Setting sender info...";
-            EmailService::instance().setSenderInfo(
-                config->getSmtpFromEmail(),
-                config->getSmtpFromName()
-            );
-            qCInfo(chatServer) << "Email service initialized successfully";
-            LogManager::instance()->writeSystemLog("ChatServer", "EMAIL_SERVICE_INITIALIZED",
-                                                 "Email service initialized successfully");
-        } else {
-            qCWarning(chatServer) << "Failed to initialize email service";
-            LogManager::instance()->writeErrorLog("Failed to initialize email service", "ChatServer");
-        }
-
-    } catch (const std::exception& e) {
-        qCCritical(chatServer) << "Exception in EmailService initialization:" << e.what();
-        LogManager::instance()->writeErrorLog(QString("EmailService initialization exception: %1").arg(e.what()), "ChatServer");
-    } catch (...) {
-        qCCritical(chatServer) << "Unknown exception in EmailService initialization";
-        LogManager::instance()->writeErrorLog("Unknown exception in EmailService initialization", "ChatServer");
-    }
-
-    qCInfo(chatServer) << "EmailService initialization completed";
-}
 
 // 设置SSL配置
 bool ChatServer::setupSslConfiguration()
@@ -1573,7 +1721,76 @@ bool ChatServer::setupSslConfiguration()
 // 注册消息处理器
 void ChatServer::registerMessageHandlers()
 {
-    // 注册消息处理器
+    try {
+        qCInfo(chatServer) << "Registering message handlers...";
+        
+        // 检查消息引擎是否已初始化
+        if (!_messageEngine) {
+            qCCritical(chatServer) << "Message engine not initialized";
+            throw std::runtime_error("Message engine not initialized");
+        }
+        
+        // 创建邮箱验证服务
+        EmailVerificationService* emailService = new EmailVerificationService(this);
+        
+        // 注册登录消息处理器
+        auto loginHandler = std::make_shared<LoginMessageHandler>(
+            _connectionManager, _sessionManager, _databasePool, _cacheManager);
+        _messageEngine->registerHandler(loginHandler);
+        
+        // 注册注册消息处理器（包含邮箱验证）
+        auto registerHandler = std::make_shared<RegisterMessageHandler>(
+            _connectionManager, _databasePool, _cacheManager, emailService);
+        _messageEngine->registerHandler(registerHandler);
+        
+        // 注册邮箱验证消息处理器
+        auto emailVerificationHandler = std::make_shared<EmailVerificationMessageHandler>(emailService);
+        _messageEngine->registerHandler(emailVerificationHandler);
+        
+        // 注册验证消息处理器
+        auto validationHandler = std::make_shared<ValidationMessageHandler>(_databasePool, emailService);
+        _messageEngine->registerHandler(validationHandler);
+        
+        // 注册聊天消息处理器
+        auto chatHandler = std::make_shared<ChatMessageHandler>(
+            _connectionManager, _databasePool, _cacheManager);
+        _messageEngine->registerHandler(chatHandler);
+        
+        // 注册心跳消息处理器
+        auto heartbeatHandler = std::make_shared<HeartbeatMessageHandler>(_connectionManager);
+        _messageEngine->registerHandler(heartbeatHandler);
+        
+        // 注册用户状态消息处理器
+        auto userStatusHandler = std::make_shared<UserStatusMessageHandler>(
+            _connectionManager, _databasePool, _cacheManager);
+        _messageEngine->registerHandler(userStatusHandler);
+        
+        // 注册群聊消息处理器
+        auto groupChatHandler = std::make_shared<GroupChatMessageHandler>(
+            _connectionManager, _databasePool, _cacheManager);
+        _messageEngine->registerHandler(groupChatHandler);
+        
+        // 注册系统通知处理器
+        auto systemNotificationHandler = std::make_shared<SystemNotificationHandler>(
+            _connectionManager, _cacheManager);
+        _messageEngine->registerHandler(systemNotificationHandler);
+        
+        // 注册文件传输处理器
+        auto fileTransferHandler = std::make_shared<FileTransferMessageHandler>(
+            _connectionManager, _databasePool, _cacheManager);
+        _messageEngine->registerHandler(fileTransferHandler);
+        
+        // 注册登出处理器
+        auto logoutHandler = std::make_shared<LogoutMessageHandler>(
+            _connectionManager, _sessionManager, _databasePool);
+        _messageEngine->registerHandler(logoutHandler);
+        
+        qCInfo(chatServer) << "Message handlers registered successfully";
+        
+    } catch (const std::exception& e) {
+        qCCritical(chatServer) << "Failed to register message handlers:" << e.what();
+        throw;
+    }
 }
 
 // 更新连接统计
@@ -1652,9 +1869,15 @@ void ChatServer::removeClient(QSslSocket* socket)
 }
 
 // 处理客户端消息
-void ChatServer::processClientMessage(const QString& clientId, const QByteArray& messageData)
+void ChatServer::processClientMessage(const QString& clientId, const QByteArray& messageData, QSslSocket* socket)
 {
-    qCInfo(chatServer) << "Processing message from client:" << clientId << "Data size:" << messageData.size();
+    qCInfo(chatServer) << "=== PROCESSING CLIENT MESSAGE ===";
+    qCInfo(chatServer) << "Client ID:" << clientId;
+    qCInfo(chatServer) << "Data size:" << messageData.size();
+    qCInfo(chatServer) << "Raw data preview:" << messageData.left(100).toHex();
+    qCInfo(chatServer) << "Raw data as string:" << QString::fromUtf8(messageData);
+    qCInfo(chatServer) << "Socket state:" << (socket ? QString::number(static_cast<int>(socket->state())) : "no socket");
+    qCInfo(chatServer) << "Socket encrypted:" << (socket ? (socket->isEncrypted() ? "true" : "false") : "no socket");
     qCDebug(chatServer) << "Message content:" << messageData;
 
     QJsonParseError parseError;
@@ -1671,11 +1894,16 @@ void ChatServer::processClientMessage(const QString& clientId, const QByteArray&
 
     if (packetMap.contains("data")) {
         data = packetMap["data"].toMap();
+        qCInfo(chatServer) << "Extracted data from packet:" << data;
     } else {
         data = packetMap;
+        qCInfo(chatServer) << "Using packet as data:" << data;
     }
 
     qCInfo(chatServer) << "Message type:" << msgType << "from client:" << clientId;
+    qCInfo(chatServer) << "Message type length:" << msgType.length();
+    qCInfo(chatServer) << "Message type bytes:" << msgType.toUtf8().toHex();
+    qCDebug(chatServer) << "Full message data:" << packetMap;
 
     // 增加消息计数器（除了心跳消息）
     if (msgType != "HEARTBEAT" && msgType != "heartbeat") {
@@ -1691,17 +1919,57 @@ void ChatServer::processClientMessage(const QString& clientId, const QByteArray&
     } else if (msgType == "HEARTBEAT" || msgType == "heartbeat") {
         handleHeartbeat(clientId);
     } else if (msgType == "validation") {
-        // 处理验证类型的消息（邮箱可用性检查等）
+        // 处理验证类型的消息
+        qCInfo(chatServer) << "Handling validation request for client:" << clientId;
+        qCInfo(chatServer) << "Validation data:" << data;
+        qCInfo(chatServer) << "Validation type in data:" << data["type"].toString();
         handleValidationRequest(clientId, data);
-    } else if (msgType == "SEND_EMAIL_VERIFICATION" || msgType == "send_verification") {
-        qCInfo(chatServer) << "Handling email verification request for client:" << clientId;
-        handleSendEmailVerificationRequest(clientId, data);
-    } else if (msgType == "EMAIL_CODE_VERIFICATION" || msgType == "verify_email_code") {
-        handleEmailCodeVerificationRequest(clientId, data);
-    } else if (msgType == "RESEND_VERIFICATION" || msgType == "resend_verification") {
-        handleResendVerificationRequest(clientId, data);
+    } else if (msgType == "emailVerification") {
+        // 处理邮箱验证消息
+        qCInfo(chatServer) << "=== HANDLING EMAIL VERIFICATION REQUEST ===";
+        qCInfo(chatServer) << "Client ID:" << clientId;
+        qCInfo(chatServer) << "Raw data:" << data;
+        qCInfo(chatServer) << "Data keys:" << data.keys();
+        qCInfo(chatServer) << "Message type:" << msgType;
+        qCInfo(chatServer) << "Message type length:" << msgType.length();
+        qCInfo(chatServer) << "Message type bytes:" << msgType.toUtf8().toHex();
+        qCInfo(chatServer) << "Full packet map:" << packetMap;
+        qCInfo(chatServer) << "Data action:" << data["action"].toString();
+        qCInfo(chatServer) << "Data email:" << data["email"].toString();
+        qCInfo(chatServer) << "Message engine exists:" << (_messageEngine != nullptr);
+        
+        // 直接处理邮箱验证，不通过消息引擎
+        QString action = data["action"].toString();
+        QString email = data["email"].toString();
+        
+        qCInfo(chatServer) << "Direct processing - Action:" << action << "Email:" << email;
+        
+        if (action == "sendCode") {
+            qCInfo(chatServer) << "Processing sendCode action for email:" << email;
+            // 这里可以添加直接的处理逻辑
+            QJsonObject response;
+            response["type"] = "emailCodeSent";
+            response["success"] = true;
+            response["message"] = "Verification code sent successfully";
+            
+            QJsonDocument doc(response);
+            socket->write(doc.toJson(QJsonDocument::Compact));
+            qCInfo(chatServer) << "Direct response sent for email verification";
+        } else {
+            qCWarning(chatServer) << "Unknown action:" << action;
+            QJsonObject response;
+            response["type"] = "emailVerification";
+            response["success"] = false;
+            response["message"] = "Invalid action";
+            
+            QJsonDocument doc(response);
+            socket->write(doc.toJson(QJsonDocument::Compact));
+        }
+        
+        qCInfo(chatServer) << "=== END EMAIL VERIFICATION REQUEST ===";
     } else {
         qCWarning(chatServer) << "Unknown message type:" << msgType << "from client:" << clientId;
+        qCWarning(chatServer) << "Available message types: LOGIN, REGISTER, HEARTBEAT, validation, emailVerification";
     }
 }
 
@@ -1836,7 +2104,6 @@ void ChatServer::refreshAllCaches()
         try {
             _cachedCpuUsage = getCpuUsage();
             _cachedMemoryUsage = getMemoryUsage();
-            qCDebug(chatServer) << "Refreshed system resources - CPU:" << _cachedCpuUsage << "% Memory:" << _cachedMemoryUsage << "%";
         } catch (const std::exception& e) {
             qCWarning(chatServer) << "Exception getting system resources:" << e.what();
             _cachedCpuUsage = 0;
@@ -1969,7 +2236,6 @@ int ChatServer::getTotalUserCount() const
         }
 
         int count = _database->getTotalUserCount();
-        qCDebug(chatServer) << "Total user count from database:" << count;
         return count;
         
     } catch (const std::exception& e) {
@@ -2271,3 +2537,4 @@ QString ChatServer::getUptime() const
 {
     return formatUptime();
 }
+

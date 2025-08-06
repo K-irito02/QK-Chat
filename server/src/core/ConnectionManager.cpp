@@ -115,6 +115,24 @@ std::shared_ptr<ClientConnection> ConnectionManager::getConnectionByUserId(qint6
     return m_userConnections.value(userId);
 }
 
+std::shared_ptr<ClientConnection> ConnectionManager::getConnectionBySessionToken(const QString& sessionToken) const
+{
+    if (sessionToken.isEmpty()) {
+        return nullptr;
+    }
+    
+    // 遍历所有连接查找匹配的会话令牌
+    auto snapshot = m_socketConnections.snapshot();
+    for (auto it = snapshot.begin(); it != snapshot.end(); ++it) {
+        auto conn = it.value();
+        if (conn && conn->getSessionToken() == sessionToken) {
+            return conn;
+        }
+    }
+    
+    return nullptr;
+}
+
 QList<std::shared_ptr<ClientConnection>> ConnectionManager::getAllConnections() const
 {
     return m_socketConnections.values();

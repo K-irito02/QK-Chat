@@ -336,7 +336,7 @@
 		"C:/Program Files/CMake/share/cmake-4.0/Modules/FindPackageHandleStandardArgs.cmake",
 		"C:/Program Files/CMake/share/cmake-4.0/Modules/FindPackageMessage.cmake",
 		"D:/QT_Learn/Projects/QKChatApp/server/config/dev.conf",
-		"D:/QT_Learn/Projects/QKChatApp/server/data/mysql_init.sql",
+		"D:/QT_Learn/Projects/QKChatApp/server/data/mysql_init_fixed.sql",
 		"D:/QT_Learn/Projects/QKChatApp/server/certs/server.crt",
 		"D:/QT_Learn/Projects/QKChatApp/server/certs/server.key"
 	],
@@ -527,15 +527,21 @@
 			null
 		],
 		[
-			"D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailService.h",
+			"D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailVerificationService.h",
 			"MU",
-			"GQ6NBGVJMG/moc_EmailService.cpp",
+			"GQ6NBGVJMG/moc_EmailVerificationService.cpp",
 			null
 		],
 		[
-			"D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailTemplate.h",
+			"D:/QT_Learn/Projects/QKChatApp/server/src/services/RedisService.h",
 			"MU",
-			"GQ6NBGVJMG/moc_EmailTemplate.cpp",
+			"GQ6NBGVJMG/moc_RedisService.cpp",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/services/SimpleSmtpClient.h",
+			"MU",
+			"GQ6NBGVJMG/moc_SimpleSmtpClient.cpp",
 			null
 		],
 		[
@@ -566,12 +572,6 @@
 			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.h",
 			"MU",
 			"VSCBVMNR7M/moc_LogManager.cpp",
-			null
-		],
-		[
-			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/RedisEmailVerification.h",
-			"MU",
-			"VSCBVMNR7M/moc_RedisEmailVerification.cpp",
 			null
 		],
 		[
@@ -634,6 +634,7 @@
 		"D:/QT_Learn/Projects/QKChatApp/server/src/cache",
 		"D:/QT_Learn/Projects/QKChatApp/server/src/crypto",
 		"D:/QT_Learn/Projects/QKChatApp/server/src/network",
+		"D:/QT_Learn/Projects/QKChatApp/server/src/services",
 		"D:/QT_Learn/Projects/QKChatApp/server/src/utils",
 		"D:/QT_Learn/Projects/QKChatApp/server/src/config",
 		"D:/QT_Learn/Projects/QKChatApp/server/src/admin",
@@ -836,12 +837,17 @@
 			null
 		],
 		[
-			"D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailService.cpp",
+			"D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailVerificationService.cpp",
 			"MU",
 			null
 		],
 		[
-			"D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailTemplate.cpp",
+			"D:/QT_Learn/Projects/QKChatApp/server/src/services/RedisService.cpp",
+			"MU",
+			null
+		],
+		[
+			"D:/QT_Learn/Projects/QKChatApp/server/src/services/SimpleSmtpClient.cpp",
 			"MU",
 			null
 		],
@@ -862,11 +868,6 @@
 		],
 		[
 			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.cpp",
-			"MU",
-			null
-		],
-		[
-			"D:/QT_Learn/Projects/QKChatApp/server/src/utils/RedisEmailVerification.cpp",
 			"MU",
 			null
 		],

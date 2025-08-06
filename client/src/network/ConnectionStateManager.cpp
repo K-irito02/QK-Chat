@@ -253,9 +253,7 @@ void ConnectionStateManager::triggerEvent(ConnectionEvent event)
             emit connectionEstablished();
         } else if (oldState == Connected && newState != Connected) {
             emit connectionLost();
-        } else if (newState == Authenticating) {
-            // 对于邮箱验证等不需要认证的功能，直接进入Connected状态
-            // 这里不需要额外处理，因为newState已经是Connected了
+
         } else if (newState == Reconnecting) {
             incrementRetryAttempt();
             if (_currentRetryAttempt <= _maxRetryAttempts) {

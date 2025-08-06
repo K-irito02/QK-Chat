@@ -53,7 +53,10 @@ public:
         // 系统消息
         HEARTBEAT = 0x0F01,
         HEARTBEAT_RESPONSE = 0x0F02,
-        ERROR_MESSAGE = 0x0FFF
+        ERROR_MESSAGE = 0x0FFF,
+        
+        // 邮箱验证
+        EMAIL_VERIFICATION = 0x0A01
     };
     
     // 解析消息

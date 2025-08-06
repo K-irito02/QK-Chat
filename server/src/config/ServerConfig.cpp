@@ -328,12 +328,12 @@ QString ServerConfig::getSmtpPassword() const
     return getValue("SMTP/password", "ssvbzaqvotjcchjh").toString();
 }
 
-QString ServerConfig::getSmtpFromEmail() const
+QString ServerConfig::getFromEmail() const
 {
     return getValue("SMTP/from_email", "saokiritoasuna00@qq.com").toString();
 }
 
-QString ServerConfig::getSmtpFromName() const
+QString ServerConfig::getFromName() const
 {
     return getValue("SMTP/from_name", "QK Chat").toString();
 }

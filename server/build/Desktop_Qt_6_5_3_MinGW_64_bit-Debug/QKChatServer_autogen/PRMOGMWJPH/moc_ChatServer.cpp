@@ -77,13 +77,14 @@ static constexpr auto qt_meta_stringdata_CLASSChatServerENDCLASS = QtMocHelpers:
     "socket",
     "onClientDisconnected",
     "handleClientData",
+    "handleClientDataDirect",
     "handleClientDisconnected",
     "handleSocketError",
     "QAbstractSocket::SocketError"
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSChatServerENDCLASS_t {
-    uint offsetsAndSizes[84];
+    uint offsetsAndSizes[86];
     char stringdata0[11];
     char stringdata1[14];
     char stringdata2[1];
@@ -123,9 +124,10 @@ struct qt_meta_stringdata_CLASSChatServerENDCLASS_t {
     char stringdata36[7];
     char stringdata37[21];
     char stringdata38[17];
-    char stringdata39[25];
-    char stringdata40[18];
-    char stringdata41[29];
+    char stringdata39[23];
+    char stringdata40[25];
+    char stringdata41[18];
+    char stringdata42[29];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSChatServerENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -170,9 +172,10 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSChatServerENDCLASS_t qt_meta_st
         QT_MOC_LITERAL(512, 6),  // "socket"
         QT_MOC_LITERAL(519, 20),  // "onClientDisconnected"
         QT_MOC_LITERAL(540, 16),  // "handleClientData"
-        QT_MOC_LITERAL(557, 24),  // "handleClientDisconnected"
-        QT_MOC_LITERAL(582, 17),  // "handleSocketError"
-        QT_MOC_LITERAL(600, 28)   // "QAbstractSocket::SocketError"
+        QT_MOC_LITERAL(557, 22),  // "handleClientDataDirect"
+        QT_MOC_LITERAL(580, 24),  // "handleClientDisconnected"
+        QT_MOC_LITERAL(605, 17),  // "handleSocketError"
+        QT_MOC_LITERAL(623, 28)   // "QAbstractSocket::SocketError"
     },
     "ChatServer",
     "serverStarted",
@@ -213,6 +216,7 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSChatServerENDCLASS_t qt_meta_st
     "socket",
     "onClientDisconnected",
     "handleClientData",
+    "handleClientDataDirect",
     "handleClientDisconnected",
     "handleSocketError",
     "QAbstractSocket::SocketError"
@@ -227,7 +231,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSChatServerENDCLASS[] = {
       11,       // revision
        0,       // classname
        0,    0, // classinfo
-      28,   14, // methods
+      29,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -235,36 +239,37 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSChatServerENDCLASS[] = {
       16,       // signalCount
 
  // signals: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    0,  182,    2, 0x06,    1 /* Public */,
-       3,    0,  183,    2, 0x06,    2 /* Public */,
-       4,    1,  184,    2, 0x06,    3 /* Public */,
-       6,    2,  187,    2, 0x06,    5 /* Public */,
-       9,    2,  192,    2, 0x06,    8 /* Public */,
-      10,    1,  197,    2, 0x06,   11 /* Public */,
-      12,    1,  200,    2, 0x06,   13 /* Public */,
-      13,    1,  203,    2, 0x06,   15 /* Public */,
-      14,    3,  206,    2, 0x06,   17 /* Public */,
-      18,    1,  213,    2, 0x06,   21 /* Public */,
-      20,    2,  216,    2, 0x06,   23 /* Public */,
-      21,    1,  221,    2, 0x06,   26 /* Public */,
-      22,    0,  224,    2, 0x06,   28 /* Public */,
-      23,    1,  225,    2, 0x06,   29 /* Public */,
-      25,    1,  228,    2, 0x06,   31 /* Public */,
-      26,    0,  231,    2, 0x06,   33 /* Public */,
+       1,    0,  188,    2, 0x06,    1 /* Public */,
+       3,    0,  189,    2, 0x06,    2 /* Public */,
+       4,    1,  190,    2, 0x06,    3 /* Public */,
+       6,    2,  193,    2, 0x06,    5 /* Public */,
+       9,    2,  198,    2, 0x06,    8 /* Public */,
+      10,    1,  203,    2, 0x06,   11 /* Public */,
+      12,    1,  206,    2, 0x06,   13 /* Public */,
+      13,    1,  209,    2, 0x06,   15 /* Public */,
+      14,    3,  212,    2, 0x06,   17 /* Public */,
+      18,    1,  219,    2, 0x06,   21 /* Public */,
+      20,    2,  222,    2, 0x06,   23 /* Public */,
+      21,    1,  227,    2, 0x06,   26 /* Public */,
+      22,    0,  230,    2, 0x06,   28 /* Public */,
+      23,    1,  231,    2, 0x06,   29 /* Public */,
+      25,    1,  234,    2, 0x06,   31 /* Public */,
+      26,    0,  237,    2, 0x06,   33 /* Public */,
 
  // slots: name, argc, parameters, tag, flags, initial metatype offsets
-      27,    0,  232,    2, 0x08,   34 /* Private */,
-      28,    0,  233,    2, 0x08,   35 /* Private */,
-      29,    0,  234,    2, 0x08,   36 /* Private */,
-      30,    0,  235,    2, 0x08,   37 /* Private */,
-      31,    0,  236,    2, 0x08,   38 /* Private */,
-      32,    0,  237,    2, 0x08,   39 /* Private */,
-      33,    0,  238,    2, 0x08,   40 /* Private */,
-      34,    1,  239,    2, 0x08,   41 /* Private */,
-      37,    1,  242,    2, 0x08,   43 /* Private */,
-      38,    1,  245,    2, 0x08,   45 /* Private */,
-      39,    1,  248,    2, 0x08,   47 /* Private */,
-      40,    2,  251,    2, 0x08,   49 /* Private */,
+      27,    0,  238,    2, 0x08,   34 /* Private */,
+      28,    0,  239,    2, 0x08,   35 /* Private */,
+      29,    0,  240,    2, 0x08,   36 /* Private */,
+      30,    0,  241,    2, 0x08,   37 /* Private */,
+      31,    0,  242,    2, 0x08,   38 /* Private */,
+      32,    0,  243,    2, 0x08,   39 /* Private */,
+      33,    0,  244,    2, 0x08,   40 /* Private */,
+      34,    1,  245,    2, 0x08,   41 /* Private */,
+      37,    1,  248,    2, 0x08,   43 /* Private */,
+      38,    1,  251,    2, 0x08,   45 /* Private */,
+      39,    1,  254,    2, 0x08,   47 /* Private */,
+      40,    1,  257,    2, 0x08,   49 /* Private */,
+      41,    2,  260,    2, 0x08,   51 /* Private */,
 
  // signals: parameters
     QMetaType::Void,
@@ -296,7 +301,8 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSChatServerENDCLASS[] = {
     QMetaType::Void, QMetaType::QString,    7,
     QMetaType::Void, QMetaType::QString,    7,
     QMetaType::Void, QMetaType::QString,    7,
-    QMetaType::Void, QMetaType::QString, 0x80000000 | 41,    7,    5,
+    QMetaType::Void, QMetaType::QString,    7,
+    QMetaType::Void, QMetaType::QString, 0x80000000 | 42,    7,    5,
 
        0        // eod
 };
@@ -382,6 +388,9 @@ Q_CONSTINIT const QMetaObject ChatServer::staticMetaObject = { {
         // method 'handleClientData'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
+        // method 'handleClientDataDirect'
+        QtPrivate::TypeAndForceComplete<void, std::false_type>,
+        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'handleClientDisconnected'
         QtPrivate::TypeAndForceComplete<void, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
@@ -425,8 +434,9 @@ void ChatServer::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
         case 23: _t->onClientConnected((*reinterpret_cast< std::add_pointer_t<QSslSocket*>>(_a[1]))); break;
         case 24: _t->onClientDisconnected((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
         case 25: _t->handleClientData((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 26: _t->handleClientDisconnected((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
-        case 27: _t->handleSocketError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QAbstractSocket::SocketError>>(_a[2]))); break;
+        case 26: _t->handleClientDataDirect((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 27: _t->handleClientDisconnected((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1]))); break;
+        case 28: _t->handleSocketError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QAbstractSocket::SocketError>>(_a[2]))); break;
         default: ;
         }
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
@@ -439,7 +449,7 @@ void ChatServer::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, 
                 *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType::fromType< QSslSocket* >(); break;
             }
             break;
-        case 27:
+        case 28:
             switch (*reinterpret_cast<int*>(_a[1])) {
             default: *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType(); break;
             case 1:
@@ -583,13 +593,13 @@ int ChatServer::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 28)
+        if (_id < 29)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 28;
+        _id -= 29;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 28)
+        if (_id < 29)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 28;
+        _id -= 29;
     }
     return _id;
 }

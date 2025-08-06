@@ -73,14 +73,16 @@ set(SOURCES
     src/network/QSslServer.cpp
     src/network/NetworkEventHandler.cpp
     src/network/NonBlockingConnectionManager.cpp
-    src/services/EmailService.cpp
-    src/services/EmailTemplate.cpp
+    src/services/EmailVerificationService.cpp
+    src/services/RedisService.cpp
+    src/services/SimpleSmtpClient.cpp
+
     src/utils/AdminAuth.cpp
     src/utils/AdminManager.cpp
     src/utils/LogManager.cpp
     src/utils/AutoRecovery.cpp
     src/utils/StackTraceLogger.cpp
-    src/utils/RedisEmailVerification.cpp
+
     src/utils/SystemMonitor.cpp
     src/config/ServerConfig.cpp
     src/utils/ThreadPool.cpp
@@ -123,14 +125,16 @@ set(HEADERS
     src/network/QSslServer.h
     src/network/NetworkEventHandler.h
     src/network/NonBlockingConnectionManager.h
-    src/services/EmailService.h
-    src/services/EmailTemplate.h
+    src/services/EmailVerificationService.h
+    src/services/RedisService.h
+    src/services/SimpleSmtpClient.h
+
     src/utils/AdminAuth.h
     src/utils/AdminManager.h
     src/utils/LogManager.h
     src/utils/AutoRecovery.h
     src/utils/StackTraceLogger.h
-    src/utils/RedisEmailVerification.h
+
     src/config/ServerConfig.h
     src/utils/ThreadPool.h
     src/utils/LockFreeStructures.h
@@ -250,6 +254,7 @@ target_include_directories(QKChatServer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src/cache
     ${CMAKE_CURRENT_SOURCE_DIR}/src/crypto
     ${CMAKE_CURRENT_SOURCE_DIR}/src/network
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/services
     ${CMAKE_CURRENT_SOURCE_DIR}/src/utils
     ${CMAKE_CURRENT_SOURCE_DIR}/src/config
     ${CMAKE_CURRENT_SOURCE_DIR}/src/admin
@@ -320,8 +325,8 @@ configure_file(
 
 # 复制数据库初始化脚本
 configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/data/mysql_init.sql
-    ${CMAKE_BINARY_DIR}/bin/data/mysql_init.sql 
+    ${CMAKE_CURRENT_SOURCE_DIR}/data/mysql_init_fixed.sql
+    ${CMAKE_BINARY_DIR}/bin/data/mysql_init_fixed.sql 
     COPYONLY
 )
 

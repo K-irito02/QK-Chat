@@ -62,66 +62,6 @@
                         {
                             "name": "success",
                             "type": "bool"
-                        },
-                        {
-                            "name": "message",
-                            "type": "QString"
-                        }
-                    ],
-                    "name": "verifyEmailResponse",
-                    "returnType": "void"
-                },
-                {
-                    "access": "public",
-                    "arguments": [
-                        {
-                            "name": "success",
-                            "type": "bool"
-                        },
-                        {
-                            "name": "message",
-                            "type": "QString"
-                        }
-                    ],
-                    "name": "sendVerificationResponse",
-                    "returnType": "void"
-                },
-                {
-                    "access": "public",
-                    "arguments": [
-                        {
-                            "name": "success",
-                            "type": "bool"
-                        },
-                        {
-                            "name": "message",
-                            "type": "QString"
-                        }
-                    ],
-                    "name": "resendVerificationResponse",
-                    "returnType": "void"
-                },
-                {
-                    "access": "public",
-                    "arguments": [
-                        {
-                            "name": "success",
-                            "type": "bool"
-                        },
-                        {
-                            "name": "message",
-                            "type": "QString"
-                        }
-                    ],
-                    "name": "emailCodeVerificationResponse",
-                    "returnType": "void"
-                },
-                {
-                    "access": "public",
-                    "arguments": [
-                        {
-                            "name": "success",
-                            "type": "bool"
                         }
                     ],
                     "name": "logoutResponse",
@@ -158,6 +98,36 @@
                         }
                     ],
                     "name": "emailAvailability",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "arguments": [
+                        {
+                            "name": "success",
+                            "type": "bool"
+                        },
+                        {
+                            "name": "message",
+                            "type": "QString"
+                        }
+                    ],
+                    "name": "emailVerificationCodeSent",
+                    "returnType": "void"
+                },
+                {
+                    "access": "public",
+                    "arguments": [
+                        {
+                            "name": "success",
+                            "type": "bool"
+                        },
+                        {
+                            "name": "message",
+                            "type": "QString"
+                        }
+                    ],
+                    "name": "emailVerificationCodeVerified",
                     "returnType": "void"
                 },
                 {
@@ -229,21 +199,6 @@
                         }
                     ],
                     "name": "networkError",
-                    "returnType": "void"
-                },
-                {
-                    "access": "public",
-                    "arguments": [
-                        {
-                            "name": "success",
-                            "type": "bool"
-                        },
-                        {
-                            "name": "message",
-                            "type": "QString"
-                        }
-                    ],
-                    "name": "emailCodeVerified",
                     "returnType": "void"
                 }
             ],

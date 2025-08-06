@@ -1,11 +1,14 @@
 D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/PRMOGMWJPH/moc_SessionManager.cpp: D:/QT_Learn/Projects/QKChatApp/server/src/core/SessionManager.h \
   D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/QKChatServer_autogen/moc_predefs.h \
+  D:/QT_Learn/Projects/QKChatApp/server/src/database/Database.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QHash \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QList \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QMutex \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QObject \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QString \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QTimer \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QVariant \
   D:/Qt/6.5.3/mingw_64/include/QtCore/q20memory.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/q20type_traits.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qalgorithms.h \
@@ -116,6 +119,15 @@ D:/QT_Learn/Projects/QKChatApp/server/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qvarlengtharray.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qversiontagging.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qxptype_traits.h \
+  D:/Qt/6.5.3/mingw_64/include/QtSql/QSqlDatabase \
+  D:/Qt/6.5.3/mingw_64/include/QtSql/QSqlError \
+  D:/Qt/6.5.3/mingw_64/include/QtSql/QSqlQuery \
+  D:/Qt/6.5.3/mingw_64/include/QtSql/qsqldatabase.h \
+  D:/Qt/6.5.3/mingw_64/include/QtSql/qsqlerror.h \
+  D:/Qt/6.5.3/mingw_64/include/QtSql/qsqlquery.h \
+  D:/Qt/6.5.3/mingw_64/include/QtSql/qtsql-config.h \
+  D:/Qt/6.5.3/mingw_64/include/QtSql/qtsqlexports.h \
+  D:/Qt/6.5.3/mingw_64/include/QtSql/qtsqlglobal.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include-fixed/limits.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include-fixed/syslimits.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/algorithm \

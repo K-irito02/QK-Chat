@@ -70,6 +70,8 @@ void NonBlockingConnectionManager::removeConnection(const QString& identifier)
             }
         }
         m_connections.remove(identifier);
+
+        emit connectionRemoved(identifier);
         
         qCInfo(nonBlockingConnectionManager) << "Removed connection:" << identifier;
     }

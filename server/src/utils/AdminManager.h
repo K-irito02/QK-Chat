@@ -29,7 +29,7 @@ public:
     
     // 管理员账号管理
     bool createAdminAccount(const QString &username, const QString &password, 
-                          const QString &email = "", const QString &displayName = "");
+                          const QString &displayName = "");
     bool updateAdminPassword(qint64 adminId, const QString &newPassword);
     bool deleteAdminAccount(qint64 adminId);
     bool isAdminAccount(qint64 userId) const;

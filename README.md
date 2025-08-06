@@ -87,7 +87,7 @@ client/
 │   ├── create-group.png
 │   ├── delete.png
 │   ├── edit.png
-│   ├── email-verification.svg
+
 │   ├── email.png
 │   ├── emoji.png
 │   ├── exit.png
@@ -120,7 +120,7 @@ client/
 │   └── video.png
 ├── qml/               # QML界面
 │   ├── ChatMainWindow.qml # 聊天主窗口
-│   ├── EmailVerificationDialog.qml # 邮箱验证对话框
+
 │   ├── LoginWindow.qml    # 登录窗口
 │   ├── RegisterWindow.qml # 注册窗口
 │   ├── main.qml       # 主界面

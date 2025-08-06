@@ -30,7 +30,10 @@ enum class MessageType {
     UserStatus = 7,
     FileTransfer = 8,
     SystemNotification = 9,
-    EmailVerification = 10
+    EmailVerification = 10,
+    EmailValidation = 11,
+    UsernameValidation = 12,
+    EmailAvailability = 13,
 };
 
 /**

@@ -134,7 +134,7 @@ client/
 │       └── DiagnosticManager.h
 ├── qml/                  # QML界面文件
 │   ├── ChatMainWindow.qml # 聊天主窗口
-│   ├── EmailVerificationDialog.qml # 邮箱验证对话框
+
 │   ├── LoginWindow.qml  # 登录界面
 │   ├── RegisterWindow.qml # 注册界面
 │   ├── main.qml         # 主窗口
@@ -171,7 +171,7 @@ client/
 │   ├── create-group.png # 创建群组
 │   ├── delete.png       # 删除图标
 │   ├── edit.png         # 编辑图标
-│   ├── email-verification.svg # 邮箱验证图标
+
 │   ├── email.png        # 邮箱图标
 │   ├── emoji.png        # 表情图标
 │   ├── exit.png         # 退出图标

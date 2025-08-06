@@ -41,7 +41,7 @@ public:
     void clearStoredCredentials();
     
     // 用户信息管理
-    bool saveUserInfo(const QString &username, const QString &email, const QUrl &avatar);
+    bool saveUserInfo(const QString &username, const QUrl &avatar);
     QVariantMap getUserInfo();
     void clearUserInfo();
     

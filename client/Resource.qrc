@@ -18,7 +18,6 @@
         <file>icons/delete.png</file>
         <file>icons/edit.png</file>
         <file>icons/email.png</file>
-        <file>icons/email-verification.svg</file>
         <file>icons/emoji.png</file>
         <file>icons/exit.png</file>
         <file>icons/eye.png</file>
@@ -48,13 +47,13 @@
         <file>icons/sun.png</file>
         <file>icons/user.png</file>
         <file>icons/video.png</file>
+        <file>icons/security.png</file>
     </qresource>
     <qresource prefix="/QKChatClient">
         <file>qml/main.qml</file>
         <file>qml/LoginWindow.qml</file>
         <file>qml/RegisterWindow.qml</file>
         <file>qml/ChatMainWindow.qml</file>
-        <file>qml/EmailVerificationDialog.qml</file>
         <file>qml/components/CustomButton.qml</file>
         <file>qml/components/CustomTextField.qml</file>
         <file>qml/components/AvatarSelector.qml</file>

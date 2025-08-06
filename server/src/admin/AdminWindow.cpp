@@ -370,8 +370,6 @@ void AdminWindow::updateServerStatus()
             isRunning = false;
         }
 
-        qCDebug(adminWindow) << "Server running status:" << isRunning << "Cached status:" << _isServerRunning;
-
         // 更新服务器状态显示
         if (isRunning) {
             if (_serverStatusLabel) {

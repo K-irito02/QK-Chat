@@ -1,4 +1,5 @@
 #include "SessionManager.h"
+#include "../database/Database.h"
 #include <QTimer>
 #include <QUuid>
 #include <QLoggingCategory>
@@ -8,6 +9,7 @@ Q_LOGGING_CATEGORY(sessionManager, "qkchat.server.sessionmanager")
 
 SessionManager::SessionManager(QObject *parent)
     : QObject(parent)
+    , m_database(new Database(this)) // 创建数据库实例
     , _cleanupTimer(nullptr)
 {
     setupCleanupTimer();
@@ -258,6 +260,21 @@ int SessionManager::getActiveSessionCount() const
     }
     
     return count;
+}
+
+void SessionManager::onUserDisconnected(const QString& identifier)
+{
+    if (!m_database || !m_database->isConnected()) {
+        qCWarning(sessionManager) << "Database not available, cannot clear sessions for user" << identifier;
+        return;
+    }
+
+    Database::UserInfo userInfo = m_database->getUserByUsername(identifier);
+    if (userInfo.id > 0) {
+        removeUserSessions(userInfo.id);
+    } else {
+        qCWarning(sessionManager) << "Could not find user ID for identifier:" << identifier;
+    }
 }
 
 int SessionManager::getUserSessionCount(qint64 userId) const

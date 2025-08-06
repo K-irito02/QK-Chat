@@ -50,11 +50,15 @@ QString Validator::getUsernameError(const QString &username) const
     return QString();
 }
 
-bool Validator::isValidEmail(const QString &email) const
+bool Validator::validateEmail(const QString &email) const
 {
-    // 简单的邮箱验证正则表达式
-    QRegularExpression regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    return regex.match(email).hasMatch();
+    if (email.isEmpty()) {
+        return false;
+    }
+    
+    // 简单的邮箱格式验证
+    QRegularExpression emailRegex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    return emailRegex.match(email).hasMatch();
 }
 
 QString Validator::getEmailError(const QString &email) const
@@ -63,13 +67,17 @@ QString Validator::getEmailError(const QString &email) const
         return "邮箱不能为空";
     }
     
-    QRegularExpression regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    if (!regex.match(email).hasMatch()) {
+    QRegularExpression emailRegex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    if (!emailRegex.match(email).hasMatch()) {
         return "邮箱格式不正确";
     }
     
     return QString();
 }
+
+
+
+
 
 bool Validator::isValidPassword(const QString &password) const
 {
@@ -117,16 +125,7 @@ bool Validator::isPasswordMatched(const QString &password, const QString &confir
     return password == confirmPassword;
 }
 
-bool Validator::isValidVerificationCode(const QString &code) const
-{
-    // 简单验证码验证（4-6位数字或字母）
-    if (code.length() < 4 || code.length() > 6) {
-        return false;
-    }
-    
-    QRegularExpression regex("^[a-zA-Z0-9]+$");
-    return regex.match(code).hasMatch();
-}
+
 
 bool Validator::isValidImageFile(const QString &filePath) const
 {

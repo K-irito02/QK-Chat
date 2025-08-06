@@ -388,12 +388,7 @@ Rectangle {
                 }
             }
             
-            Text {
-                text: "修改邮箱后需要重新验证"
-                font.pixelSize: 12
-                color: Material.theme === Material.Dark ? "#888888" : "#666666"
-                Layout.fillWidth: true
-            }
+
         }
         
         // 按钮区域

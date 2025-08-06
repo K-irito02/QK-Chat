@@ -155,13 +155,13 @@ void LocalDatabase::clearStoredCredentials()
     executeQuery(sql);
 }
 
-bool LocalDatabase::saveUserInfo(const QString &username, const QString &email, const QUrl &avatar)
+bool LocalDatabase::saveUserInfo(const QString &username, const QUrl &avatar)
 {
     if (!initialize()) return false;
     
-    QString sql = "INSERT OR REPLACE INTO user_info (id, username, email, avatar, updated_at) VALUES (1, ?, ?, ?, ?)";
+    QString sql = "INSERT OR REPLACE INTO user_info (id, username, avatar, updated_at) VALUES (1, ?, ?, ?)";
     QVariantList params;
-    params << username << email << avatar.toString() << QDateTime::currentSecsSinceEpoch();
+    params << username << avatar.toString() << QDateTime::currentSecsSinceEpoch();
     
     return executeQuery(sql, params);
 }
@@ -170,14 +170,14 @@ QVariantMap LocalDatabase::getUserInfo()
 {
     if (!initialize()) return QVariantMap();
     
-    QString sql = "SELECT username, email, avatar FROM user_info WHERE id = 1";
+    QString sql = "SELECT username, avatar FROM user_info WHERE id = 1";
     QSqlQuery query = prepareQuery(sql);
     
     QVariantMap userInfo;
     if (query.exec() && query.next()) {
         userInfo["username"] = query.value(0).toString();
-        userInfo["email"] = query.value(1).toString();
-        userInfo["avatar"] = query.value(2).toString();
+
+        userInfo["avatar"] = query.value(1).toString();
     }
     
     return userInfo;
@@ -353,7 +353,7 @@ bool LocalDatabase::createTables()
         CREATE TABLE IF NOT EXISTS user_info (
             id INTEGER PRIMARY KEY,
             username TEXT NOT NULL,
-            email TEXT NOT NULL,
+    
             avatar TEXT,
             updated_at INTEGER NOT NULL
         )

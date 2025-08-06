@@ -24,7 +24,7 @@ FLUSH PRIVILEGES;
 USE qkchat;
 
 -- 显示创建结果
-SELECT '数据库和用户创建完成' AS status;
-SELECT '数据库: qkchat' AS info;
-SELECT '用户: qkchat_user@localhost' AS info;
-SELECT '密码: 3143285505' AS info;
+SELECT 'Database and user created successfully' AS status;
+SELECT 'Database: qkchat' AS info;
+SELECT 'User: qkchat_user@localhost' AS info;
+SELECT 'Password: 3143285505' AS info;

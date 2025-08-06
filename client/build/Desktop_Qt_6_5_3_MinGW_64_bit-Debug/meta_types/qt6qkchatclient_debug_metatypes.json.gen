@@ -361,21 +361,6 @@
                         "designable": true,
                         "final": false,
                         "index": 2,
-                        "name": "email",
-                        "notify": "emailChanged",
-                        "read": "email",
-                        "required": false,
-                        "scriptable": true,
-                        "stored": true,
-                        "type": "QString",
-                        "user": false,
-                        "write": "setEmail"
-                    },
-                    {
-                        "constant": false,
-                        "designable": true,
-                        "final": false,
-                        "index": 3,
                         "name": "password",
                         "notify": "passwordChanged",
                         "read": "password",
@@ -390,7 +375,7 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 4,
+                        "index": 3,
                         "name": "displayName",
                         "notify": "displayNameChanged",
                         "read": "displayName",
@@ -405,7 +390,7 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 5,
+                        "index": 4,
                         "name": "avatar",
                         "notify": "avatarChanged",
                         "read": "avatar",
@@ -420,7 +405,7 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 6,
+                        "index": 5,
                         "name": "status",
                         "notify": "statusChanged",
                         "read": "status",
@@ -435,7 +420,7 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 7,
+                        "index": 6,
                         "name": "token",
                         "notify": "tokenChanged",
                         "read": "token",
@@ -450,7 +435,7 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 8,
+                        "index": 7,
                         "name": "isLoggedIn",
                         "notify": "isLoggedInChanged",
                         "read": "isLoggedIn",
@@ -465,7 +450,7 @@
                         "constant": false,
                         "designable": true,
                         "final": false,
-                        "index": 9,
+                        "index": 8,
                         "name": "lastOnline",
                         "notify": "lastOnlineChanged",
                         "read": "lastOnline",
@@ -487,11 +472,6 @@
                     {
                         "access": "public",
                         "name": "usernameChanged",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "name": "emailChanged",
                         "returnType": "void"
                     },
                     {
@@ -1753,6 +1733,10 @@
                                 "type": "QString"
                             },
                             {
+                                "name": "verificationCode",
+                                "type": "QString"
+                            },
+                            {
                                 "name": "password",
                                 "type": "QString"
                             },
@@ -1870,29 +1854,7 @@
                                 "type": "QString"
                             }
                         ],
-                        "name": "sendEmailVerification",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                            {
-                                "name": "email",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "resendEmailVerification",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                            {
-                                "name": "token",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "verifyEmailToken",
+                        "name": "sendEmailVerificationCode",
                         "returnType": "void"
                     },
                     {
@@ -1909,6 +1871,17 @@
                         ],
                         "name": "verifyEmailCode",
                         "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "input",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "testMethod",
+                        "returnType": "QString"
                     },
                     {
                         "access": "public",
@@ -2075,10 +2048,6 @@
                                 "type": "QString"
                             },
                             {
-                                "name": "email",
-                                "type": "QString"
-                            },
-                            {
                                 "name": "userId",
                                 "type": "qint64"
                             }
@@ -2171,50 +2140,17 @@
                     },
                     {
                         "access": "public",
-                        "name": "emailVerified",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
                         "arguments": [
                             {
-                                "name": "error",
+                                "name": "success",
+                                "type": "bool"
+                            },
+                            {
+                                "name": "message",
                                 "type": "QString"
                             }
                         ],
-                        "name": "emailVerificationFailed",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "name": "emailVerificationResent",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                            {
-                                "name": "error",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "emailVerificationResendFailed",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "name": "emailCodeVerified",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                            {
-                                "name": "error",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "emailCodeVerificationFailed",
+                        "name": "emailVerificationCodeSent",
                         "returnType": "void"
                     },
                     {
@@ -2229,7 +2165,7 @@
                                 "type": "QString"
                             }
                         ],
-                        "name": "emailVerificationSent",
+                        "name": "emailVerificationCodeVerified",
                         "returnType": "void"
                     }
                 ],
@@ -2277,36 +2213,6 @@
                     },
                     {
                         "access": "private",
-                        "arguments": [
-                            {
-                                "name": "success",
-                                "type": "bool"
-                            },
-                            {
-                                "name": "message",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "onEmailVerificationSent",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "private",
-                        "arguments": [
-                            {
-                                "name": "success",
-                                "type": "bool"
-                            },
-                            {
-                                "name": "message",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "onEmailCodeVerificationResponse",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "private",
                         "name": "resetLoginAttempts",
                         "returnType": "void"
                     },
@@ -2314,15 +2220,22 @@
                         "access": "private",
                         "arguments": [
                             {
-                                "name": "success",
+                                "name": "available",
                                 "type": "bool"
-                            },
-                            {
-                                "name": "message",
-                                "type": "QString"
                             }
                         ],
-                        "name": "onVerifyEmailResponse",
+                        "name": "onUsernameAvailability",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "available",
+                                "type": "bool"
+                            }
+                        ],
+                        "name": "onEmailAvailability",
                         "returnType": "void"
                     },
                     {
@@ -2337,7 +2250,22 @@
                                 "type": "QString"
                             }
                         ],
-                        "name": "onResendVerificationResponse",
+                        "name": "onEmailVerificationCodeSent",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "private",
+                        "arguments": [
+                            {
+                                "name": "success",
+                                "type": "bool"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "onEmailVerificationCodeVerified",
                         "returnType": "void"
                     }
                 ],
@@ -3274,66 +3202,6 @@
                             {
                                 "name": "success",
                                 "type": "bool"
-                            },
-                            {
-                                "name": "message",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "verifyEmailResponse",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                            {
-                                "name": "success",
-                                "type": "bool"
-                            },
-                            {
-                                "name": "message",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "sendVerificationResponse",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                            {
-                                "name": "success",
-                                "type": "bool"
-                            },
-                            {
-                                "name": "message",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "resendVerificationResponse",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                            {
-                                "name": "success",
-                                "type": "bool"
-                            },
-                            {
-                                "name": "message",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "emailCodeVerificationResponse",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                            {
-                                "name": "success",
-                                "type": "bool"
                             }
                         ],
                         "name": "logoutResponse",
@@ -3370,6 +3238,36 @@
                             }
                         ],
                         "name": "emailAvailability",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "success",
+                                "type": "bool"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "emailVerificationCodeSent",
+                        "returnType": "void"
+                    },
+                    {
+                        "access": "public",
+                        "arguments": [
+                            {
+                                "name": "success",
+                                "type": "bool"
+                            },
+                            {
+                                "name": "message",
+                                "type": "QString"
+                            }
+                        ],
+                        "name": "emailVerificationCodeVerified",
                         "returnType": "void"
                     },
                     {
@@ -3441,21 +3339,6 @@
                             }
                         ],
                         "name": "networkError",
-                        "returnType": "void"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                            {
-                                "name": "success",
-                                "type": "bool"
-                            },
-                            {
-                                "name": "message",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "emailCodeVerified",
                         "returnType": "void"
                     }
                 ],
@@ -4135,7 +4018,7 @@
                                 "type": "QString"
                             }
                         ],
-                        "name": "isValidEmail",
+                        "name": "validateEmail",
                         "returnType": "bool"
                     },
                     {
@@ -4184,17 +4067,6 @@
                             }
                         ],
                         "name": "isPasswordMatched",
-                        "returnType": "bool"
-                    },
-                    {
-                        "access": "public",
-                        "arguments": [
-                            {
-                                "name": "code",
-                                "type": "QString"
-                            }
-                        ],
-                        "name": "isValidVerificationCode",
                         "returnType": "bool"
                     },
                     {

@@ -3,7 +3,6 @@ import QtQuick.Controls 2.15
 import QtQuick.Controls.Material 2.15
 import QtQuick.Window 2.15
 import QKChatClient 1.0
-import "."
 
 ApplicationWindow {
     id: mainWindow
@@ -24,7 +23,7 @@ ApplicationWindow {
     property bool showLogin: true
     property bool isLoggedIn: false
     property alias userController: userController
-    property string prefillEmail: ""
+
     
     // 监听全局configManager的主题变化
     Connections {
@@ -61,9 +60,8 @@ ApplicationWindow {
             console.log("登录失败:", error)
         }
         
-        function onRegisterSuccess(username, email, userId) {
+        function onRegisterSuccess(username, userId) {
             console.log("注册成功")
-            prefillEmail = email
             showLogin = true
         }
         

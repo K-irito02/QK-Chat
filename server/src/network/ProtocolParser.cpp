@@ -116,7 +116,10 @@ ProtocolParser::MessageType ProtocolParser::getMessageTypeFromString(const QStri
         // 系统消息
         {"heartbeat", HEARTBEAT},
         {"heartbeat_response", HEARTBEAT_RESPONSE},
-        {"error", ERROR_MESSAGE}
+        {"error", ERROR_MESSAGE},
+        
+        // 邮箱验证
+        {"emailVerification", EMAIL_VERIFICATION}
     };
     
     return typeMap.value(typeString, ERROR_MESSAGE);
@@ -155,7 +158,10 @@ QString ProtocolParser::getStringFromMessageType(MessageType type)
         // 系统消息
         {HEARTBEAT, "heartbeat"},
         {HEARTBEAT_RESPONSE, "heartbeat_response"},
-        {ERROR_MESSAGE, "error"}
+        {ERROR_MESSAGE, "error"},
+        
+        // 邮箱验证
+        {EMAIL_VERIFICATION, "emailVerification"}
     };
     
     return stringMap.value(type, "unknown");

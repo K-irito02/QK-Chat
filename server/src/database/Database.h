@@ -53,23 +53,15 @@ public:
     bool createUser(const QString &username, const QString &email, const QString &passwordHash, const QString &avatarUrl = "");
     UserInfo getUserById(qint64 userId);
     UserInfo getUserByUsername(const QString &username);
-    UserInfo getUserByEmail(const QString &email);
+
     bool updateUser(qint64 userId, const QVariantMap &data);
     
-    // 邮箱验证相关
-    bool createEmailVerification(qint64 userId, const QString &email, const QString &token, const QString &tokenType = "register", int expiryHours = 24);
-    bool verifyEmailToken(const QString &token, QString *email = nullptr);
-    bool verifyEmailCode(const QString &email, const QString &code);
-    bool saveEmailVerificationCode(const QString &email, const QString &code, int expirySeconds = 600);
-    bool markEmailVerificationUsed(const QString &token);
-    bool isEmailVerificationValid(const QString &token);
-    bool updateUserEmailVerification(qint64 userId, bool verified);
-    bool resendEmailVerification(qint64 userId, const QString &email, const QString &token);
-    QString getEmailVerificationToken(qint64 userId, const QString &tokenType = "register");
-    bool cleanupExpiredVerifications();
+
     bool deleteUser(qint64 userId);
     bool isUsernameAvailable(const QString &username);
     bool isEmailAvailable(const QString &email);
+    UserInfo getUserByEmail(const QString &email);
+
     QList<UserInfo> getActiveUsers(int limit = 100);
     bool updateUserLastOnline(qint64 userId, const QDateTime &lastOnline = QDateTime::currentDateTime());
     int getTotalUserCount() const;

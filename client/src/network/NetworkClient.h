@@ -4,16 +4,24 @@
 #include <QObject>
 #include <QSslSocket>
 #include <QTimer>
-#include <QUrl>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 #include <QVariantMap>
+#include <QByteArray>
+#include <QString>
+#include <QUrl>
+#include <QDateTime>
+#include <QThread>
+#include <QElapsedTimer>
+#include <QMutex>
 #include "SSLConfigManager.h"
 #include "ConnectionStateManager.h"
 #include "ErrorHandler.h"
 #include "ReconnectManager.h"
 #include "HeartbeatManager.h"
-#include <QJsonObject>
 
 /**
  * @brief 网络客户端类
@@ -40,13 +48,10 @@ public:
     
     // 用户认证
     void login(const QString &usernameOrEmail, const QString &password, const QString &captcha = "");
-    void registerUser(const QString &username, const QString &email, const QString &password, const QUrl &avatar);
+    void registerUser(const QString &username, const QString &email, const QString &verificationCode, const QString &password, const QUrl &avatar);
     void logout();
     
-    // 邮箱验证
-    void verifyEmail(const QString &token);
-    void sendEmailVerification(const QString &email);
-    void resendVerification(const QString &email);
+
     
     // 验证码
     void requestCaptcha();
@@ -54,6 +59,11 @@ public:
     // 用户名/邮箱可用性检查
     void checkUsernameAvailability(const QString &username);
     void checkEmailAvailability(const QString &email);
+    
+    // 邮箱验证
+    void sendEmailVerificationCode(const QString &email);
+    void verifyEmailCode(const QString &email, const QString &code);
+
     
     // 头像上传
     void uploadAvatar(const QUrl &filePath);
@@ -66,7 +76,7 @@ public:
     void stopHeartbeat();
     void sendHeartbeat();
     
-    void verifyEmailCode(const QString &email, const QString &code);
+
     
 signals:
     void connected();
@@ -75,16 +85,17 @@ signals:
     
     void loginResponse(bool success, const QString &message);
     void registerResponse(bool success, const QString &message);
-    void verifyEmailResponse(bool success, const QString &message);
-    void sendVerificationResponse(bool success, const QString &message);
-    void resendVerificationResponse(bool success, const QString &message);
-    void emailCodeVerificationResponse(bool success, const QString &message);
+
     void logoutResponse(bool success);
     
     void captchaReceived(const QString &captchaImage);
     
     void usernameAvailability(bool available);
     void emailAvailability(bool available);
+    
+    void emailVerificationCodeSent(bool success, const QString &message);
+    void emailVerificationCodeVerified(bool success, const QString &message);
+
     
     void avatarUploaded(bool success, const QUrl &avatarUrl);
     
@@ -93,7 +104,7 @@ signals:
     void messageDelivered(const QString &messageId);
     
     void networkError(const QString &error);
-    void emailCodeVerified(bool success, const QString &message);
+
     
 private slots:
     void onConnected();
@@ -122,6 +133,8 @@ private:
     void handleValidationResponse(const QVariantMap &data);
     void handleHeartbeatResponse(const QVariantMap &data);
     void handleErrorResponse(const QVariantMap &data);
+    void handleEmailVerificationResponse(const QVariantMap &data);
+    void handleEmailCodeSentResponse(const QVariantMap &data);
     
     QSslSocket *_sslSocket;
     QTimer *_heartbeatTimer;
@@ -136,6 +149,7 @@ private:
     bool _isConnected;
     QByteArray _readBuffer;
     QString _authToken;
+    QMutex *_sendMutex; // 线程安全保护
     
     static const int HEARTBEAT_INTERVAL = 30000; // 30 seconds
     static const int CONNECTION_TIMEOUT = 10000; // 10 seconds

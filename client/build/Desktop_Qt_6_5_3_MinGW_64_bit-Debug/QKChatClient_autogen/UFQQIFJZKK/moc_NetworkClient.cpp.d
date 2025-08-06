@@ -5,9 +5,13 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/QT_Learn/Projects/QKChatApp/client/src/network/HeartbeatManager.h \
   D:/QT_Learn/Projects/QKChatApp/client/src/network/ReconnectManager.h \
   D:/QT_Learn/Projects/QKChatApp/client/src/network/SSLConfigManager.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QByteArray \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QDateTime \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QElapsedTimer \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QFlags \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QIODevice \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QJsonArray \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QJsonDocument \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QJsonObject \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QList \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QLoggingCategory \
@@ -18,6 +22,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/QQueue \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QSharedDataPointer \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QString \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/QThread \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QTimer \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QUrl \
   D:/Qt/6.5.3/mingw_64/include/QtCore/QVariant \
@@ -57,7 +62,9 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdarwinhelpers.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdatastream.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdatetime.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qdeadlinetimer.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qdebug.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qelapsedtimer.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qexceptionhandling.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qflags.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qfloat16.h \
@@ -72,6 +79,8 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qiodevicebase.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qiterable.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qiterator.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qjsonarray.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qjsondocument.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qjsonobject.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qjsonvalue.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qlist.h \
@@ -126,6 +135,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtdeprecationmarkers.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtenvironmentvariables.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtextstream.h \
+  D:/Qt/6.5.3/mingw_64/include/QtCore/qthread.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtimer.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtmetamacros.h \
   D:/Qt/6.5.3/mingw_64/include/QtCore/qtnoop.h \
@@ -192,6 +202,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/allocated_ptr.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/allocator.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/atomic_base.h \
+  D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/atomic_futex.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/atomic_lockfree_defines.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/basic_string.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/basic_string.tcc \
@@ -234,6 +245,8 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/specfun.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/std_abs.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/std_function.h \
+  D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/std_mutex.h \
+  D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/std_thread.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stl_algo.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stl_algobase.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stl_bvector.h \
@@ -260,6 +273,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/string_view.tcc \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/stringfwd.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/uniform_int_dist.h \
+  D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/unique_lock.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/unique_ptr.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/unordered_map.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/bits/uses_allocator.h \
@@ -269,6 +283,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/chrono \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/clocale \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/cmath \
+  D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/condition_variable \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/cstddef \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/cstdint \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/cstdio \
@@ -288,6 +303,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/ext/string_conversions.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/ext/type_traits.h \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/functional \
+  D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/future \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/initializer_list \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/iosfwd \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/iterator \
@@ -295,6 +311,7 @@ D:/QT_Learn/Projects/QKChatApp/client/build/Desktop_Qt_6_5_3_MinGW_64_bit-Debug/
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/list \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/map \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/memory \
+  D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/mutex \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/new \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/numeric \
   D:/Qt/Tools/mingw1120_64/lib/gcc/x86_64-w64-mingw32/11.2.0/include/c++/optional \

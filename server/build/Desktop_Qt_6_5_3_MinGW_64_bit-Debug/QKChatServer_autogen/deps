@@ -46,7 +46,7 @@ QKChatServer_autogen/timestamp: \
 	D:/QT_Learn/Projects/QKChatApp/server/certs/server.crt \
 	D:/QT_Learn/Projects/QKChatApp/server/certs/server.key \
 	D:/QT_Learn/Projects/QKChatApp/server/config/dev.conf \
-	D:/QT_Learn/Projects/QKChatApp/server/data/mysql_init.sql \
+	D:/QT_Learn/Projects/QKChatApp/server/data/mysql_init_fixed.sql \
 	D:/QT_Learn/Projects/QKChatApp/server/src/admin/AdminWindow.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/admin/AdminWindow.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/admin/DashboardWidget.cpp \
@@ -108,10 +108,12 @@ QKChatServer_autogen/timestamp: \
 	D:/QT_Learn/Projects/QKChatApp/server/src/network/ProtocolParser.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/network/QSslServer.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/network/QSslServer.h \
-	D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailService.cpp \
-	D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailService.h \
-	D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailTemplate.cpp \
-	D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailTemplate.h \
+	D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailVerificationService.cpp \
+	D:/QT_Learn/Projects/QKChatApp/server/src/services/EmailVerificationService.h \
+	D:/QT_Learn/Projects/QKChatApp/server/src/services/RedisService.cpp \
+	D:/QT_Learn/Projects/QKChatApp/server/src/services/RedisService.h \
+	D:/QT_Learn/Projects/QKChatApp/server/src/services/SimpleSmtpClient.cpp \
+	D:/QT_Learn/Projects/QKChatApp/server/src/services/SimpleSmtpClient.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/AdminAuth.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/AdminAuth.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/AdminManager.cpp \
@@ -121,8 +123,6 @@ QKChatServer_autogen/timestamp: \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/LockFreeStructures.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/LogManager.h \
-	D:/QT_Learn/Projects/QKChatApp/server/src/utils/RedisEmailVerification.cpp \
-	D:/QT_Learn/Projects/QKChatApp/server/src/utils/RedisEmailVerification.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/StackTraceLogger.cpp \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/StackTraceLogger.h \
 	D:/QT_Learn/Projects/QKChatApp/server/src/utils/SystemMonitor.cpp \
@@ -366,10 +366,8 @@ QKChatServer_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QNetworkInterface \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QNetworkReply \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QNetworkRequest \
-	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslCertificate \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslCipher \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslConfiguration \
-	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslKey \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslPreSharedKeyAuthenticator \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QSslSocket \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/QTcpServer \
@@ -386,7 +384,6 @@ QKChatServer_autogen/timestamp: \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslcipher.h \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslconfiguration.h \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslerror.h \
-	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslkey.h \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslpresharedkeyauthenticator.h \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qsslsocket.h \
 	D:/Qt/6.5.3/mingw_64/include/QtNetwork/qtcpserver.h \

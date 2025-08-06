@@ -11,7 +11,6 @@
 	[
 		"D:/QT_Learn/Projects/QKChatApp/client/qml/RegisterWindow.qml",
 		"D:/QT_Learn/Projects/QKChatApp/client/qml/ChatMainWindow.qml",
-		"D:/QT_Learn/Projects/QKChatApp/client/qml/EmailVerificationDialog.qml",
 		"D:/QT_Learn/Projects/QKChatApp/client/qml/LoginWindow.qml",
 		"D:/QT_Learn/Projects/QKChatApp/client/qml/main.qml",
 		"D:/QT_Learn/Projects/QKChatApp/client/qml/components/AddPage.qml",
@@ -30,7 +29,6 @@
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/send.png",
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/avatar2.png",
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/groups-empty.png",
-		"D:/QT_Learn/Projects/QKChatApp/client/icons/email-verification.svg",
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/mic.png",
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/delete.png",
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/message-sending.png",
@@ -41,6 +39,7 @@
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/moon.png",
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/attach.png",
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/keyboard.png",
+		"D:/QT_Learn/Projects/QKChatApp/client/icons/security.png",
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/message-settings.png",
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/arrow-right.png",
 		"D:/QT_Learn/Projects/QKChatApp/client/icons/avatar3.png",

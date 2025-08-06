@@ -27,10 +27,7 @@ QString UserModel::username() const
     return _username;
 }
 
-QString UserModel::email() const
-{
-    return _email;
-}
+
 
 QString UserModel::displayName() const
 {
@@ -79,13 +76,7 @@ void UserModel::setUsername(const QString &username)
     }
 }
 
-void UserModel::setEmail(const QString &email)
-{
-    if (_email != email) {
-        _email = email;
-        emit emailChanged();
-    }
-}
+
 
 void UserModel::setPassword(const QString &password)
 {
@@ -174,14 +165,7 @@ void UserModel::updateUserInfo(const QVariantMap &userInfo)
         }
     }
     
-    if (userInfo.contains("email")) {
-        QString newEmail = userInfo["email"].toString();
-        if (_email != newEmail) {
-            _email = newEmail;
-            changed = true;
-            emit emailChanged();
-        }
-    }
+
     
     if (userInfo.contains("displayName")) {
         QString newDisplayName = userInfo["displayName"].toString();
@@ -220,7 +204,7 @@ QVariantMap UserModel::toVariantMap() const
     QVariantMap userInfo;
     userInfo["id"] = _userId;
     userInfo["username"] = _username;
-    userInfo["email"] = _email;
+    
     userInfo["displayName"] = _displayName;
     userInfo["avatarUrl"] = _avatar;
     userInfo["status"] = _status;
@@ -237,7 +221,7 @@ void UserModel::clear()
     
     _userId = 0;
     _username.clear();
-    _email.clear();
+    
     _displayName.clear();
     _avatar = QUrl();
     _status.clear();
@@ -248,7 +232,7 @@ void UserModel::clear()
     if (hadData) {
         emit userIdChanged();
         emit usernameChanged();
-        emit emailChanged();
+
         emit displayNameChanged();
         emit avatarChanged();
         emit statusChanged();
@@ -263,5 +247,5 @@ void UserModel::clear()
 
 bool UserModel::isValid() const
 {
-    return !_username.isEmpty() && !_email.isEmpty();
+    return !_username.isEmpty();
 } 

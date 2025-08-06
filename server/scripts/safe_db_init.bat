@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 echo ========================================
 echo QK Chat Server - 安全数据库设置
 echo ========================================
@@ -100,4 +101,4 @@ echo 密码：3143285505
 echo.
 echo 您现在可以启动QK Chat Server了。
 echo.
-pause 
+pause

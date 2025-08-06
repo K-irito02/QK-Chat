@@ -170,8 +170,8 @@ bool Database::createUser(const QString &username, const QString &email, const Q
     QString hashedPassword = QString(QCryptographicHash::hash((passwordHash + salt).toUtf8(), QCryptographicHash::Sha256).toHex());
 
     QSqlQuery query(_database);
-    query.prepare("INSERT INTO users (username, email, password_hash, salt, avatar_url, display_name, bio, status, email_verified) "
-                  "VALUES (?, ?, ?, ?, ?, ?, '', 'inactive', FALSE)");
+    query.prepare("INSERT INTO users (username, email, password_hash, salt, avatar_url, display_name, bio, status) "
+                  "VALUES (?, ?, ?, ?, ?, ?, '', 'active')");
     query.addBindValue(username);
     query.addBindValue(email);
     query.addBindValue(hashedPassword);
@@ -182,211 +182,13 @@ bool Database::createUser(const QString &username, const QString &email, const Q
     return executeQuery(query);
 }
 
-// 邮箱验证相关方法
-bool Database::createEmailVerification(qint64 userId, const QString &email, const QString &token, const QString &tokenType, int expiryHours)
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        return false;
-    }
-    
-    QSqlQuery query(_database);
-    query.prepare("INSERT INTO email_verifications (user_id, email, verification_token, token_type, expires_at) "
-                  "VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL ? HOUR))");
-    query.addBindValue(userId);
-    query.addBindValue(email);
-    query.addBindValue(token);
-    query.addBindValue(tokenType);
-    query.addBindValue(expiryHours);
-    
-    return executeQuery(query);
-}
 
-bool Database::verifyEmailToken(const QString &token, QString *email)
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        return false;
-    }
-    
-    QSqlQuery query(_database);
-    query.prepare("SELECT user_id, email FROM email_verifications "
-                  "WHERE verification_token = ? AND expires_at > NOW() AND used = FALSE");
-    query.addBindValue(token);
-    
-    if (executeQuery(query) && query.next()) {
-        if (email) {
-            *email = query.value("email").toString();
-        }
-        return true;
-    }
-    
-    return false;
-}
 
-bool Database::verifyEmailCode(const QString &email, const QString &code)
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        return false;
-    }
-    
-    QSqlQuery query(_database);
-    query.prepare("SELECT user_id FROM email_verification_codes "
-                  "WHERE email = ? AND verification_code = ? AND expires_at > NOW() AND used = FALSE");
-    query.addBindValue(email);
-    query.addBindValue(code);
-    
-    if (executeQuery(query) && query.next()) {
-        // 标记验证码为已使用
-        QSqlQuery updateQuery(_database);
-        updateQuery.prepare("UPDATE email_verification_codes SET used = TRUE, used_at = NOW() "
-                           "WHERE email = ? AND verification_code = ?");
-        updateQuery.addBindValue(email);
-        updateQuery.addBindValue(code);
-        executeQuery(updateQuery);
-        
-        return true;
-    }
-    
-    return false;
-}
 
-bool Database::saveEmailVerificationCode(const QString &email, const QString &code, int expirySeconds)
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        return false;
-    }
-    
-    // 先删除该邮箱的旧验证码
-    QSqlQuery deleteQuery(_database);
-    deleteQuery.prepare("DELETE FROM email_verification_codes WHERE email = ?");
-    deleteQuery.addBindValue(email);
-    executeQuery(deleteQuery);
-    
-    // 插入新的验证码
-    QSqlQuery query(_database);
-    query.prepare(QString("INSERT INTO email_verification_codes (email, verification_code, expires_at, created_at) "
-                  "VALUES (?, ?, DATE_ADD(NOW(), INTERVAL %1 SECOND), NOW())").arg(expirySeconds));
-    query.addBindValue(email);
-    query.addBindValue(code);
-    
-    return executeQuery(query);
-}
 
-bool Database::markEmailVerificationUsed(const QString &token)
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        return false;
-    }
-    
-    QSqlQuery query(_database);
-    query.prepare("UPDATE email_verifications SET used = TRUE, used_at = NOW() "
-                  "WHERE verification_token = ?");
-    query.addBindValue(token);
-    
-    return executeQuery(query);
-}
 
-bool Database::isEmailVerificationValid(const QString &token)
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        return false;
-    }
-    
-    QSqlQuery query(_database);
-    query.prepare("SELECT COUNT(*) FROM email_verifications "
-                  "WHERE verification_token = ? AND expires_at > NOW() AND used = FALSE");
-    query.addBindValue(token);
-    
-    if (executeQuery(query) && query.next()) {
-        return query.value(0).toInt() > 0;
-    }
-    
-    return false;
-}
 
-bool Database::updateUserEmailVerification(qint64 userId, bool verified)
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        return false;
-    }
-    
-    QSqlQuery query(_database);
-    query.prepare("UPDATE users SET email_verified = ?, status = ? WHERE id = ?");
-    query.addBindValue(verified);
-    query.addBindValue(verified ? "active" : "unverified");
-    query.addBindValue(userId);
-    
-    return executeQuery(query);
-}
 
-bool Database::resendEmailVerification(qint64 userId, const QString &email, const QString &token)
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        return false;
-    }
-    
-    // 使旧的验证令牌失效
-    QSqlQuery query(_database);
-    query.prepare("UPDATE email_verifications SET used = TRUE WHERE user_id = ? AND token_type = 'register'");
-    query.addBindValue(userId);
-    if (!executeQuery(query)) {
-        return false;
-    }
-    
-    // 创建新的验证令牌
-    return createEmailVerification(userId, email, token, "register");
-}
-
-QString Database::getEmailVerificationToken(qint64 userId, const QString &tokenType)
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        return QString();
-    }
-    
-    QSqlQuery query(_database);
-    query.prepare("SELECT verification_token FROM email_verifications "
-                  "WHERE user_id = ? AND token_type = ? AND expires_at > NOW() AND used = FALSE "
-                  "ORDER BY created_at DESC LIMIT 1");
-    query.addBindValue(userId);
-    query.addBindValue(tokenType);
-    
-    if (executeQuery(query) && query.next()) {
-        return query.value(0).toString();
-    }
-    
-    return QString();
-}
-
-bool Database::cleanupExpiredVerifications()
-{
-    QMutexLocker locker(&_mutex);
-    
-    if (!isConnected() && !initialize()) {
-        return false;
-    }
-    
-    QSqlQuery query(_database);
-    query.prepare("DELETE FROM email_verifications WHERE expires_at < NOW()");
-    
-    return executeQuery(query);
-}
 
 Database::UserInfo Database::getUserById(qint64 userId)
 {
@@ -484,6 +286,8 @@ Database::UserInfo Database::getUserByEmail(const QString &email)
     return userInfo;
 }
 
+
+
 bool Database::updateUser(qint64 userId, const QVariantMap &data)
 {
     QMutexLocker locker(&_mutex);
@@ -572,6 +376,8 @@ bool Database::isEmailAvailable(const QString &email)
     return false;
 }
 
+
+
 QList<Database::UserInfo> Database::getActiveUsers(int limit)
 {
     QMutexLocker locker(&_mutex);
@@ -582,7 +388,7 @@ QList<Database::UserInfo> Database::getActiveUsers(int limit)
     }
     
     QSqlQuery query(_database);
-    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, bio, "
+    query.prepare("SELECT id, username, password_hash, salt, avatar_url, display_name, bio, "
                   "status, last_online, created_at, updated_at FROM users "
                   "WHERE status = 'active' ORDER BY last_online DESC LIMIT ?");
     query.addBindValue(limit);
@@ -592,16 +398,15 @@ QList<Database::UserInfo> Database::getActiveUsers(int limit)
             UserInfo userInfo;
             userInfo.id = query.value(0).toLongLong();
             userInfo.username = query.value(1).toString();
-            userInfo.email = query.value(2).toString();
-            userInfo.passwordHash = query.value(3).toString();
-            userInfo.salt = query.value(4).toString();
-            userInfo.avatarUrl = query.value(5).toString();
-            userInfo.displayName = query.value(6).toString();
-            userInfo.bio = query.value(7).toString();
-            userInfo.status = query.value(8).toString();
-            userInfo.lastOnline = query.value(9).toDateTime();
-            userInfo.createdAt = query.value(10).toDateTime();
-            userInfo.updatedAt = query.value(11).toDateTime();
+            userInfo.passwordHash = query.value(2).toString();
+            userInfo.salt = query.value(3).toString();
+            userInfo.avatarUrl = query.value(4).toString();
+            userInfo.displayName = query.value(5).toString();
+            userInfo.bio = query.value(6).toString();
+            userInfo.status = query.value(7).toString();
+            userInfo.lastOnline = query.value(8).toDateTime();
+            userInfo.createdAt = query.value(9).toDateTime();
+            userInfo.updatedAt = query.value(10).toDateTime();
             users.append(userInfo);
         }
     }
@@ -635,10 +440,9 @@ Database::UserInfo Database::authenticateUser(const QString &usernameOrEmail, co
     }
 
     QSqlQuery query(_database);
-    query.prepare("SELECT id, username, email, password_hash, salt, avatar_url, display_name, bio, "
+    query.prepare("SELECT id, username, password_hash, salt, avatar_url, display_name, bio, "
                   "status, last_online, created_at, updated_at FROM users "
-                  "WHERE (username = ? OR email = ?) AND status = 'active'");
-    query.addBindValue(usernameOrEmail);
+                  "WHERE username = ? AND status = 'active'");
     query.addBindValue(usernameOrEmail);
 
     if (executeQuery(query) && query.next()) {
@@ -652,16 +456,15 @@ Database::UserInfo Database::authenticateUser(const QString &usernameOrEmail, co
         if (dbPasswordHash == providedPasswordHash) {
             userInfo.id = query.value(0).toLongLong();
             userInfo.username = query.value(1).toString();
-            userInfo.email = query.value(2).toString();
             userInfo.passwordHash = dbPasswordHash; // Store the hash from DB
             userInfo.salt = salt;
-            userInfo.avatarUrl = query.value(5).toString();
-            userInfo.displayName = query.value(6).toString();
-            userInfo.bio = query.value(7).toString();
-            userInfo.status = query.value(8).toString();
-            userInfo.lastOnline = query.value(9).toDateTime();
-            userInfo.createdAt = query.value(10).toDateTime();
-            userInfo.updatedAt = query.value(11).toDateTime();
+            userInfo.avatarUrl = query.value(3).toString();
+            userInfo.displayName = query.value(4).toString();
+            userInfo.bio = query.value(5).toString();
+            userInfo.status = query.value(6).toString();
+            userInfo.lastOnline = query.value(7).toDateTime();
+            userInfo.createdAt = query.value(8).toDateTime();
+            userInfo.updatedAt = query.value(9).toDateTime();
         }
     }
     

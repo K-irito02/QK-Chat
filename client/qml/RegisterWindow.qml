@@ -9,17 +9,11 @@ Page {
     id: registerPage
     
     signal switchToLogin()
-    signal registrationSuccess(string username, string email, int userId)
+    signal registrationSuccess(string username, int userId)
     
     property alias userController: userController
-    property string registeredEmail: ""
-    property bool emailVerified: false
     property string statusMessage: ""
     property color statusColor: "black"
-
-    // 独立的加载状态
-    property bool sendingCode: false
-    property bool verifyingCode: false
     
     UserController {
         id: userController
@@ -156,94 +150,152 @@ Page {
                     }
                 }
                 
-                // 邮箱输入区域
+                // 邮箱输入
+                CustomTextField {
+                    id: emailField
+                    Layout.fillWidth: true
+                    placeholderText: "邮箱"
+                    iconSource: "qrc:/icons/email.png"
+                    
+                    property string validationError: ""
+                    
+                    onCustomTextChanged: {
+                        if (text.length > 0) {
+                            // 实时验证邮箱
+                            var validator = Qt.createQmlObject("import QKChatClient 1.0; Validator {}", registerPage);
+                            if (validator) {
+                                validationError = validator.getEmailError(text);
+                                errorMessage = validationError;
+                            }
+                        } else {
+                            errorMessage = "";
+                            validationError = "";
+                        }
+                    }
+                    
+                    onCustomEditingFinished: {
+                        console.log("=== EMAIL FIELD EDITING FINISHED ===");
+                        console.log("Email text:", text);
+                        console.log("Validation error:", validationError);
+                        
+                        if (text.length > 0 && validationError === "") {
+                            console.log("Calling checkEmailAvailability");
+                            // 检查邮箱可用性
+                            userController.checkEmailAvailability(text);
+                        } else {
+                            console.log("Not calling checkEmailAvailability - text length:", text.length, "validation error:", validationError);
+                        }
+                        
+                        console.log("=== END EMAIL FIELD EDITING FINISHED ===");
+                    }
+                }
+                
+                // 验证码输入区域
                 RowLayout {
                     Layout.fillWidth: true
-                    spacing: 10
-
+                    spacing: 8
+                    
                     CustomTextField {
-                        id: emailField
+                        id: verificationCodeField
                         Layout.fillWidth: true
-                        placeholderText: "邮箱地址"
-                        iconSource: "qrc:/icons/email.png"
-
+                        placeholderText: "验证码"
+                        iconSource: "qrc:/icons/security.png"
+                        maximumLength: 6
+                        
                         property string validationError: ""
-
+                        
                         onCustomTextChanged: {
                             if (text.length > 0) {
-                                var validator = Qt.createQmlObject("import QKChatClient 1.0; Validator {}", registerPage);
-                                if (validator) {
-                                    validationError = validator.getEmailError(text);
+                                if (text.length !== 6) {
+                                    validationError = "验证码必须是6位数字";
                                     errorMessage = validationError;
+                                } else {
+                                    errorMessage = "";
+                                    validationError = "";
                                 }
                             } else {
                                 errorMessage = "";
                                 validationError = "";
                             }
                         }
-
-                        onCustomEditingFinished: {
-                            if (text.length > 0 && validationError === "") {
-                                userController.checkEmailAvailability(text);
-                            }
-                        }
                     }
-
+                    
                     CustomButton {
                         id: sendCodeButton
-                        Layout.preferredWidth: 120
-                        text: sendingCode ? "发送中..." : "发送验证码"
-                        enabled: !sendingCode &&
-                                emailField.text.length > 0 &&
-                                emailField.validationError === ""
-
+                        Layout.preferredWidth: 80
+                        text: "发送验证码"
+                        enabled: emailField.text.length > 0 && 
+                                emailField.validationError === "" &&
+                                !userController.isLoading
+                        
                         onClicked: {
-                            if (emailField.text.length > 0 && emailField.validationError === "") {
-                                registeredEmail = emailField.text
-                                sendingCode = true
-                                console.log("Starting email verification for:", registeredEmail)
-                                userController.sendEmailVerification(registeredEmail)
+                            console.log("=== QML: SEND VERIFICATION CODE BUTTON CLICKED ===");
+                            console.log("Email field text:", emailField.text);
+                            console.log("Email field length:", emailField.text.length);
+                            console.log("UserController exists:", userController !== null);
+                            console.log("UserController type:", typeof userController);
+                            console.log("UserController object:", userController);
+                            
+                            // 测试UserController的其他方法
+                            if (userController) {
+                                console.log("UserController isLoading:", userController.isLoading);
+                                console.log("UserController errorMessage:", userController.errorMessage);
+                                
+                                // 测试一个简单的Q_INVOKABLE方法
+                                try {
+                                    console.log("Testing testMethod...");
+                                    var testResult = userController.testMethod("test input");
+                                    console.log("testMethod result:", testResult);
+                                } catch (e) {
+                                    console.error("Error calling testMethod:", e);
+                                }
+                                
+                                // 测试validateEmail方法
+                                try {
+                                    console.log("Testing validateEmail method...");
+                                    var result = userController.validateEmail(emailField.text);
+                                    console.log("validateEmail result:", result);
+                                } catch (e) {
+                                    console.error("Error calling validateEmail:", e);
+                                }
+                                
+                                // 测试sendEmailVerificationCode方法
+                                if (typeof userController.sendEmailVerificationCode === 'function') {
+                                    console.log("Calling userController.sendEmailVerificationCode");
+                                    console.log("Method exists, calling with email:", emailField.text);
+                                    try {
+                                        userController.sendEmailVerificationCode(emailField.text);
+                                        sendCodeButton.enabled = false;
+                                        // 60秒后重新启用
+                                        timer.start();
+                                        console.log("Button disabled and timer started");
+                                    } catch (e) {
+                                        console.error("Error calling sendEmailVerificationCode:", e);
+                                    }
+                                } else {
+                                    console.error("sendEmailVerificationCode method not available");
+                                    console.log("Available methods:", Object.getOwnPropertyNames(userController));
+                                    console.log("All properties:", Object.keys(userController));
+                                }
+                            } else {
+                                console.error("UserController is null");
+                            }
+                            
+                            console.log("=== END QML: SEND VERIFICATION CODE BUTTON CLICKED ===");
+                        }
+                        
+                        Timer {
+                            id: timer
+                            interval: 60000
+                            repeat: false
+                            onTriggered: {
+                                sendCodeButton.enabled = true;
                             }
                         }
                     }
                 }
+                
 
-                // 验证码输入区域
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 10
-
-                    CustomTextField {
-                        id: verificationCodeField
-                        Layout.fillWidth: true
-                        placeholderText: "请输入6位验证码"
-                        iconSource: "qrc:/icons/lock.png"
-                        maximumLength: 6
-                        enabled: registeredEmail.length > 0
-
-                        onCustomTextChanged: {
-                            // 清除错误信息
-                            errorMessage = ""
-                        }
-                    }
-
-                    CustomButton {
-                        id: verifyCodeButton
-                        Layout.preferredWidth: 120
-                        text: verifyingCode ? "验证中..." : "验证"
-                        enabled: !verifyingCode &&
-                                verificationCodeField.text.length === 6 &&
-                                registeredEmail.length > 0
-
-                        onClicked: {
-                            if (verificationCodeField.text.length === 6 && registeredEmail.length > 0) {
-                                verifyingCode = true
-                                console.log("Starting code verification for:", registeredEmail, "Code:", verificationCodeField.text)
-                                userController.verifyEmailCode(registeredEmail, verificationCodeField.text)
-                            }
-                        }
-                    }
-                }
                 
                 // 密码输入
                 CustomTextField {
@@ -349,12 +401,14 @@ Page {
                 enabled: !userController.isLoading &&
                         usernameField.text.length > 0 &&
                         emailField.text.length > 0 &&
+                        verificationCodeField.text.length > 0 &&
                         passwordField.text.length > 0 &&
                         confirmPasswordField.text.length > 0 &&
                         usernameField.validationError === "" &&
+                        emailField.validationError === "" &&
+                        verificationCodeField.validationError === "" &&
                         passwordField.validationError === "" &&
-                        confirmPasswordField.errorMessage === "" &&
-                        emailVerified  // 必须完成邮箱验证
+                        confirmPasswordField.errorMessage === ""
                 isPrimary: true
 
                 onClicked: performRegister();
@@ -381,11 +435,12 @@ Page {
     // 注册函数
     function performRegister() {
         if (userController.isLoading) return;
-        if (!usernameField.text || !emailField.text || !passwordField.text) return;
+        if (!usernameField.text || !emailField.text || !verificationCodeField.text || !passwordField.text) return;
         
         userController.registerUser(
             usernameField.text,
             emailField.text,
+            verificationCodeField.text,
             passwordField.text,
             avatarSelector.selectedAvatar
         );
@@ -409,46 +464,37 @@ Page {
         
         function onEmailAvailabilityResult(isAvailable) {
             if (!isAvailable) {
-                emailField.errorMessage = "邮箱已被注册";
+                emailField.errorMessage = "邮箱已被使用";
             }
         }
         
-        function onEmailVerificationSent(success, message) {
-            sendingCode = false  // 重置发送状态
-            console.log("Email verification sent result:", success, message)
-
+        function onEmailVerificationCodeSent(success, message) {
             if (success) {
-                statusMessage = "验证码已发送到您的邮箱，请查收"
-                statusColor = "green"
-                // 启用验证码输入框
-                verificationCodeField.enabled = true
-                verificationCodeField.forceActiveFocus()
+                statusMessage = "验证码已发送到您的邮箱";
+                statusColor = Material.color(Material.Green);
+                // 发送成功后启用验证码输入框
+                verificationCodeField.enabled = true;
+                verificationCodeField.forceActiveFocus();
             } else {
-                statusMessage = "发送失败: " + message
-                statusColor = "red"
-                emailField.errorMessage = message
+                statusMessage = "验证码发送失败：" + message;
+                statusColor = Material.color(Material.Red);
+                // 发送失败后重新启用发送按钮
+                sendCodeButton.enabled = true;
+                timer.stop();
             }
         }
-
-        function onEmailCodeVerified() {
-            verifyingCode = false  // 重置验证状态
-            console.log("Email code verification successful")
-
-            statusMessage = "邮箱验证成功！"
-            statusColor = "green"
-            emailVerified = true
-            // 验证成功后，不自动注册，让用户手动点击注册按钮
+        
+        function onEmailVerificationCodeVerified(success, message) {
+            if (success) {
+                statusMessage = "验证码验证成功";
+                statusColor = Material.color(Material.Green);
+            } else {
+                statusMessage = "验证码验证失败：" + message;
+                statusColor = Material.color(Material.Red);
+            }
         }
+        
 
-        function onEmailCodeVerificationFailed(error) {
-            verifyingCode = false  // 重置验证状态
-            console.log("Email code verification failed:", error)
-
-            statusMessage = "验证失败: " + error
-            statusColor = "red"
-            verificationCodeField.errorMessage = "验证码错误，请重试"
-            emailVerified = false
-        }
     }
     
     // 页面激活时的处理
@@ -456,22 +502,9 @@ Page {
         usernameField.forceActiveFocus();
     }
 
-    // 重置表单状态
-    function resetEmailVerification() {
-        emailVerified = false
-        registeredEmail = ""
-        statusMessage = ""
-        sendingCode = false
-        verifyingCode = false
-        verificationCodeField.text = ""
-        verificationCodeField.enabled = false
-    }
-
     // 清除状态信息
     function clearStatus() {
         statusMessage = ""
         statusColor = "black"
-        sendingCode = false
-        verifyingCode = false
     }
 }

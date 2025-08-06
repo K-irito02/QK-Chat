@@ -18,7 +18,7 @@ class UserModel : public QObject
     Q_OBJECT
     Q_PROPERTY(qint64 userId READ userId WRITE setUserId NOTIFY userIdChanged)
     Q_PROPERTY(QString username READ username WRITE setUsername NOTIFY usernameChanged)
-    Q_PROPERTY(QString email READ email WRITE setEmail NOTIFY emailChanged)
+
     Q_PROPERTY(QString password READ password WRITE setPassword NOTIFY passwordChanged)
     Q_PROPERTY(QString displayName READ displayName WRITE setDisplayName NOTIFY displayNameChanged)
     Q_PROPERTY(QUrl avatar READ avatar WRITE setAvatar NOTIFY avatarChanged)
@@ -34,7 +34,7 @@ public:
     // Getter方法
     qint64 userId() const;
     QString username() const;
-    QString email() const;
+
     QString password() const { return _password; }
     QString displayName() const;
     QUrl avatar() const;
@@ -46,7 +46,7 @@ public:
     // Setter方法
     void setUserId(qint64 userId);
     void setUsername(const QString &username);
-    void setEmail(const QString &email);
+
     void setPassword(const QString &password);
     void setDisplayName(const QString &displayName);
     void setAvatar(const QUrl &avatar);
@@ -64,7 +64,7 @@ public:
 signals:
     void userIdChanged();
     void usernameChanged();
-    void emailChanged();
+
     void passwordChanged();
     void displayNameChanged();
     void avatarChanged();
@@ -77,7 +77,7 @@ signals:
 private:
     qint64 _userId;
     QString _username;
-    QString _email;
+
     QString _password;
     QString _displayName;
     QUrl _avatar;

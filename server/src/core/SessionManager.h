@@ -7,6 +7,7 @@
 #include <QDateTime>
 #include <QMutex>
 #include <QTimer>
+#include "../database/Database.h"
 
 /**
  * @brief 会话管理器
@@ -23,6 +24,9 @@ class SessionManager : public QObject
 public:
     explicit SessionManager(QObject *parent = nullptr);
     ~SessionManager();
+
+public slots:
+    void onUserDisconnected(const QString& identifier);
     
     // 会话管理
     QString createSession(qint64 userId, const QString &ipAddress, int expirationHours = 24);
@@ -49,6 +53,8 @@ signals:
     void sessionExpired(qint64 userId, const QString &sessionToken);
     
 private:
+    Database* m_database;
+
     struct SessionInfo {
         qint64 userId{0};
         QString deviceInfo{};

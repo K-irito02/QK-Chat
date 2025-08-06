@@ -276,9 +276,6 @@ Page {
     
     // 页面激活时的处理
     Component.onCompleted: {
-        if (mainWindow.prefillEmail.length > 0) {
-            usernameField.text = mainWindow.prefillEmail
-        }
         passwordField.forceActiveFocus()
     }
 }

@@ -24,7 +24,9 @@ CREATE TABLE IF NOT EXISTS users (
     bio TEXT DEFAULT NULL COMMENT '个人简介',
     status ENUM('active', 'inactive', 'banned', 'deleted') DEFAULT 'inactive' COMMENT '账户状态',
     email_verified BOOLEAN DEFAULT FALSE COMMENT '邮箱是否已验证',
-    verification_token VARCHAR(64) DEFAULT NULL COMMENT '邮箱验证令牌',
+    verification_code VARCHAR(10) DEFAULT NULL COMMENT '验证码',
+    verification_expires TIMESTAMP NULL DEFAULT NULL COMMENT '验证码过期时间',
+
     last_online TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最后在线时间',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -32,7 +34,9 @@ CREATE TABLE IF NOT EXISTS users (
     UNIQUE INDEX idx_username (username),
     UNIQUE INDEX idx_email (email),
     INDEX idx_status (status),
-    INDEX idx_last_online (last_online)
+    INDEX idx_last_online (last_online),
+    INDEX idx_email_verified (email_verified),
+    INDEX idx_verification_expires (verification_expires)
 ) ENGINE=InnoDB COMMENT='用户表';
 
 -- 用户会话表
@@ -309,41 +313,7 @@ CREATE TABLE IF NOT EXISTS user_activity_stats (
     INDEX idx_last_activity (last_activity)
 ) ENGINE=InnoDB COMMENT='用户活动统计表';
 
--- 邮箱验证记录表
-CREATE TABLE IF NOT EXISTS email_verifications (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
-    email VARCHAR(100) NOT NULL COMMENT '邮箱地址',
-    verification_token VARCHAR(64) NOT NULL UNIQUE COMMENT '验证令牌',
-    token_type ENUM('register', 'reset_password', 'change_email') DEFAULT 'register' COMMENT '令牌类型',
-    expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
-    used BOOLEAN DEFAULT FALSE COMMENT '是否已使用',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    used_at TIMESTAMP NULL DEFAULT NULL COMMENT '使用时间',
-    
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id),
-    INDEX idx_verification_token (verification_token),
-    INDEX idx_email (email),
-    INDEX idx_expires_at (expires_at),
-    INDEX idx_token_type (token_type)
-) ENGINE=InnoDB COMMENT='邮箱验证记录表';
 
--- 邮箱验证码表
-CREATE TABLE IF NOT EXISTS email_verification_codes (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(100) NOT NULL COMMENT '邮箱地址',
-    verification_code VARCHAR(6) NOT NULL COMMENT '验证码',
-    expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
-    used BOOLEAN DEFAULT FALSE COMMENT '是否已使用',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    used_at TIMESTAMP NULL DEFAULT NULL COMMENT '使用时间',
-    
-    INDEX idx_email (email),
-    INDEX idx_verification_code (verification_code),
-    INDEX idx_expires_at (expires_at),
-    INDEX idx_email_code (email, verification_code)
-) ENGINE=InnoDB COMMENT='邮箱验证码表';
 
 -- 创建默认管理员用户（用于测试）
 INSERT INTO users (username, email, password_hash, salt, display_name, status) VALUES 
@@ -445,6 +415,10 @@ BEGIN
     -- 清理过期密钥
     DELETE FROM encryption_keys WHERE expires_at < NOW() AND expires_at IS NOT NULL;
     
+    -- 清理过期的邮箱验证码
+    UPDATE users SET verification_code = NULL, verification_expires = NULL 
+    WHERE verification_expires < NOW();
+    
     -- 清理30天前的系统日志
     DELETE FROM system_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY);
     
@@ -452,6 +426,53 @@ BEGIN
     DELETE FROM server_stats WHERE stat_date < DATE_SUB(NOW(), INTERVAL 1 YEAR);
     
     SELECT 'Cleanup completed' as status;
+END //
+DELIMITER ;
+
+-- 存储过程：设置邮箱验证码
+DELIMITER //
+CREATE PROCEDURE SetEmailVerificationCode(
+    IN p_email VARCHAR(100),
+    IN p_code VARCHAR(10),
+    IN p_expires_minutes INT DEFAULT 5
+)
+BEGIN
+    UPDATE users 
+    SET verification_code = p_code,
+        verification_expires = DATE_ADD(NOW(), INTERVAL p_expires_minutes MINUTE)
+    WHERE email = p_email;
+    
+    SELECT ROW_COUNT() as updated_rows;
+END //
+DELIMITER ;
+
+-- 存储过程：验证邮箱验证码
+DELIMITER //
+CREATE PROCEDURE VerifyEmailCode(
+    IN p_email VARCHAR(100),
+    IN p_code VARCHAR(10)
+)
+BEGIN
+    DECLARE v_user_id BIGINT UNSIGNED;
+    DECLARE v_verified BOOLEAN DEFAULT FALSE;
+    
+    SELECT id INTO v_user_id
+    FROM users 
+    WHERE email = p_email 
+    AND verification_code = p_code 
+    AND verification_expires > NOW();
+    
+    IF v_user_id IS NOT NULL THEN
+        UPDATE users 
+        SET email_verified = TRUE,
+            verification_code = NULL,
+            verification_expires = NULL
+        WHERE id = v_user_id;
+        
+        SET v_verified = TRUE;
+    END IF;
+    
+    SELECT v_verified as is_valid;
 END //
 DELIMITER ;
 

@@ -43,7 +43,7 @@ static constexpr auto qt_meta_stringdata_CLASSValidatorENDCLASS = QtMocHelpers::
     "",
     "username",
     "getUsernameError",
-    "isValidEmail",
+    "validateEmail",
     "email",
     "getEmailError",
     "isValidPassword",
@@ -51,8 +51,6 @@ static constexpr auto qt_meta_stringdata_CLASSValidatorENDCLASS = QtMocHelpers::
     "getPasswordError",
     "isPasswordMatched",
     "confirmPassword",
-    "isValidVerificationCode",
-    "code",
     "isValidImageFile",
     "filePath",
     "isValidImageSize",
@@ -60,13 +58,13 @@ static constexpr auto qt_meta_stringdata_CLASSValidatorENDCLASS = QtMocHelpers::
 );
 #else  // !QT_MOC_HAS_STRING_DATA
 struct qt_meta_stringdata_CLASSValidatorENDCLASS_t {
-    uint offsetsAndSizes[38];
+    uint offsetsAndSizes[34];
     char stringdata0[10];
     char stringdata1[16];
     char stringdata2[1];
     char stringdata3[9];
     char stringdata4[17];
-    char stringdata5[13];
+    char stringdata5[14];
     char stringdata6[6];
     char stringdata7[14];
     char stringdata8[16];
@@ -74,12 +72,10 @@ struct qt_meta_stringdata_CLASSValidatorENDCLASS_t {
     char stringdata10[17];
     char stringdata11[18];
     char stringdata12[16];
-    char stringdata13[24];
-    char stringdata14[5];
+    char stringdata13[17];
+    char stringdata14[9];
     char stringdata15[17];
-    char stringdata16[9];
-    char stringdata17[17];
-    char stringdata18[10];
+    char stringdata16[10];
 };
 #define QT_MOC_LITERAL(ofs, len) \
     uint(sizeof(qt_meta_stringdata_CLASSValidatorENDCLASS_t::offsetsAndSizes) + ofs), len 
@@ -90,27 +86,25 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSValidatorENDCLASS_t qt_meta_str
         QT_MOC_LITERAL(26, 0),  // ""
         QT_MOC_LITERAL(27, 8),  // "username"
         QT_MOC_LITERAL(36, 16),  // "getUsernameError"
-        QT_MOC_LITERAL(53, 12),  // "isValidEmail"
-        QT_MOC_LITERAL(66, 5),  // "email"
-        QT_MOC_LITERAL(72, 13),  // "getEmailError"
-        QT_MOC_LITERAL(86, 15),  // "isValidPassword"
-        QT_MOC_LITERAL(102, 8),  // "password"
-        QT_MOC_LITERAL(111, 16),  // "getPasswordError"
-        QT_MOC_LITERAL(128, 17),  // "isPasswordMatched"
-        QT_MOC_LITERAL(146, 15),  // "confirmPassword"
-        QT_MOC_LITERAL(162, 23),  // "isValidVerificationCode"
-        QT_MOC_LITERAL(186, 4),  // "code"
-        QT_MOC_LITERAL(191, 16),  // "isValidImageFile"
-        QT_MOC_LITERAL(208, 8),  // "filePath"
-        QT_MOC_LITERAL(217, 16),  // "isValidImageSize"
-        QT_MOC_LITERAL(234, 9)   // "maxSizeMB"
+        QT_MOC_LITERAL(53, 13),  // "validateEmail"
+        QT_MOC_LITERAL(67, 5),  // "email"
+        QT_MOC_LITERAL(73, 13),  // "getEmailError"
+        QT_MOC_LITERAL(87, 15),  // "isValidPassword"
+        QT_MOC_LITERAL(103, 8),  // "password"
+        QT_MOC_LITERAL(112, 16),  // "getPasswordError"
+        QT_MOC_LITERAL(129, 17),  // "isPasswordMatched"
+        QT_MOC_LITERAL(147, 15),  // "confirmPassword"
+        QT_MOC_LITERAL(163, 16),  // "isValidImageFile"
+        QT_MOC_LITERAL(180, 8),  // "filePath"
+        QT_MOC_LITERAL(189, 16),  // "isValidImageSize"
+        QT_MOC_LITERAL(206, 9)   // "maxSizeMB"
     },
     "Validator",
     "isValidUsername",
     "",
     "username",
     "getUsernameError",
-    "isValidEmail",
+    "validateEmail",
     "email",
     "getEmailError",
     "isValidPassword",
@@ -118,8 +112,6 @@ Q_CONSTINIT static const qt_meta_stringdata_CLASSValidatorENDCLASS_t qt_meta_str
     "getPasswordError",
     "isPasswordMatched",
     "confirmPassword",
-    "isValidVerificationCode",
-    "code",
     "isValidImageFile",
     "filePath",
     "isValidImageSize",
@@ -135,7 +127,7 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSValidatorENDCLASS[] = {
       11,       // revision
        0,       // classname
        0,    0, // classinfo
-      11,   14, // methods
+      10,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -143,17 +135,16 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSValidatorENDCLASS[] = {
        0,       // signalCount
 
  // methods: name, argc, parameters, tag, flags, initial metatype offsets
-       1,    1,   80,    2, 0x102,    1 /* Public | MethodIsConst  */,
-       4,    1,   83,    2, 0x102,    3 /* Public | MethodIsConst  */,
-       5,    1,   86,    2, 0x102,    5 /* Public | MethodIsConst  */,
-       7,    1,   89,    2, 0x102,    7 /* Public | MethodIsConst  */,
-       8,    1,   92,    2, 0x102,    9 /* Public | MethodIsConst  */,
-      10,    1,   95,    2, 0x102,   11 /* Public | MethodIsConst  */,
-      11,    2,   98,    2, 0x102,   13 /* Public | MethodIsConst  */,
-      13,    1,  103,    2, 0x102,   16 /* Public | MethodIsConst  */,
-      15,    1,  106,    2, 0x102,   18 /* Public | MethodIsConst  */,
-      17,    2,  109,    2, 0x102,   20 /* Public | MethodIsConst  */,
-      17,    1,  114,    2, 0x122,   23 /* Public | MethodCloned | MethodIsConst  */,
+       1,    1,   74,    2, 0x102,    1 /* Public | MethodIsConst  */,
+       4,    1,   77,    2, 0x102,    3 /* Public | MethodIsConst  */,
+       5,    1,   80,    2, 0x102,    5 /* Public | MethodIsConst  */,
+       7,    1,   83,    2, 0x102,    7 /* Public | MethodIsConst  */,
+       8,    1,   86,    2, 0x102,    9 /* Public | MethodIsConst  */,
+      10,    1,   89,    2, 0x102,   11 /* Public | MethodIsConst  */,
+      11,    2,   92,    2, 0x102,   13 /* Public | MethodIsConst  */,
+      13,    1,   97,    2, 0x102,   16 /* Public | MethodIsConst  */,
+      15,    2,  100,    2, 0x102,   18 /* Public | MethodIsConst  */,
+      15,    1,  105,    2, 0x122,   21 /* Public | MethodCloned | MethodIsConst  */,
 
  // methods: parameters
     QMetaType::Bool, QMetaType::QString,    3,
@@ -164,9 +155,8 @@ Q_CONSTINIT static const uint qt_meta_data_CLASSValidatorENDCLASS[] = {
     QMetaType::QString, QMetaType::QString,    9,
     QMetaType::Bool, QMetaType::QString, QMetaType::QString,    9,   12,
     QMetaType::Bool, QMetaType::QString,   14,
-    QMetaType::Bool, QMetaType::QString,   16,
-    QMetaType::Bool, QMetaType::QString, QMetaType::Int,   16,   18,
-    QMetaType::Bool, QMetaType::QString,   16,
+    QMetaType::Bool, QMetaType::QString, QMetaType::Int,   14,   16,
+    QMetaType::Bool, QMetaType::QString,   14,
 
        0        // eod
 };
@@ -186,7 +176,7 @@ Q_CONSTINIT const QMetaObject Validator::staticMetaObject = { {
         // method 'getUsernameError'
         QtPrivate::TypeAndForceComplete<QString, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        // method 'isValidEmail'
+        // method 'validateEmail'
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'getEmailError'
@@ -201,9 +191,6 @@ Q_CONSTINIT const QMetaObject Validator::staticMetaObject = { {
         // method 'isPasswordMatched'
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
-        // method 'isValidVerificationCode'
-        QtPrivate::TypeAndForceComplete<bool, std::false_type>,
         QtPrivate::TypeAndForceComplete<const QString &, std::false_type>,
         // method 'isValidImageFile'
         QtPrivate::TypeAndForceComplete<bool, std::false_type>,
@@ -229,7 +216,7 @@ void Validator::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
         case 1: { QString _r = _t->getUsernameError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])));
             if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = std::move(_r); }  break;
-        case 2: { bool _r = _t->isValidEmail((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])));
+        case 2: { bool _r = _t->validateEmail((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
         case 3: { QString _r = _t->getEmailError((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])));
             if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = std::move(_r); }  break;
@@ -239,13 +226,11 @@ void Validator::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, v
             if (_a[0]) *reinterpret_cast< QString*>(_a[0]) = std::move(_r); }  break;
         case 6: { bool _r = _t->isPasswordMatched((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<QString>>(_a[2])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 7: { bool _r = _t->isValidVerificationCode((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])));
+        case 7: { bool _r = _t->isValidImageFile((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 8: { bool _r = _t->isValidImageFile((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])));
+        case 8: { bool _r = _t->isValidImageSize((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 9: { bool _r = _t->isValidImageSize((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])),(*reinterpret_cast< std::add_pointer_t<int>>(_a[2])));
-            if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
-        case 10: { bool _r = _t->isValidImageSize((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])));
+        case 9: { bool _r = _t->isValidImageSize((*reinterpret_cast< std::add_pointer_t<QString>>(_a[1])));
             if (_a[0]) *reinterpret_cast< bool*>(_a[0]) = std::move(_r); }  break;
         default: ;
         }
@@ -271,13 +256,13 @@ int Validator::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 11)
+        if (_id < 10)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 11;
+        _id -= 10;
     } else if (_c == QMetaObject::RegisterMethodArgumentMetaType) {
-        if (_id < 11)
+        if (_id < 10)
             *reinterpret_cast<QMetaType *>(_a[0]) = QMetaType();
-        _id -= 11;
+        _id -= 10;
     }
     return _id;
 }

@@ -24,8 +24,12 @@ public:
     Q_INVOKABLE QString getUsernameError(const QString &username) const;
     
     // 邮箱验证规则
-    Q_INVOKABLE bool isValidEmail(const QString &email) const;
+    Q_INVOKABLE bool validateEmail(const QString &email) const;
     Q_INVOKABLE QString getEmailError(const QString &email) const;
+    
+    
+
+
     
     // 密码验证规则
     Q_INVOKABLE bool isValidPassword(const QString &password) const;
@@ -35,7 +39,7 @@ public:
     Q_INVOKABLE bool isPasswordMatched(const QString &password, const QString &confirmPassword) const;
     
     // 验证码验证
-    Q_INVOKABLE bool isValidVerificationCode(const QString &code) const;
+
     
     // 文件验证
     Q_INVOKABLE bool isValidImageFile(const QString &filePath) const;

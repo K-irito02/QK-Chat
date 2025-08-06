@@ -136,6 +136,7 @@ public:
     // 连接查询
     std::shared_ptr<ClientConnection> getConnection(QSslSocket* socket) const;
     std::shared_ptr<ClientConnection> getConnectionByUserId(qint64 userId) const;
+    std::shared_ptr<ClientConnection> getConnectionBySessionToken(const QString& sessionToken) const;
     QList<std::shared_ptr<ClientConnection>> getAllConnections() const;
     QList<std::shared_ptr<ClientConnection>> getAuthenticatedConnections() const;
     

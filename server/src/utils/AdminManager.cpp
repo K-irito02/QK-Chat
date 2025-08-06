@@ -44,7 +44,7 @@ AdminManager::~AdminManager()
 }
 
 bool AdminManager::createAdminAccount(const QString &username, const QString &password, 
-                                    const QString &email, const QString &displayName)
+                                    const QString &displayName)
 {
     QMutexLocker locker(&_mutex);
     
@@ -78,18 +78,17 @@ bool AdminManager::createAdminAccount(const QString &username, const QString &pa
     QString passwordHash = hashPassword(password, salt);
     
     // 准备邮箱和显示名称
-    QString adminEmail = email.isEmpty() ? QString("%1@qkchat.com").arg(username) : email;
+
     QString adminDisplayName = displayName.isEmpty() ? QString("管理员-%1").arg(username) : displayName;
     
     // 创建管理员账号
     QSqlQuery query(_database->getDatabase());
     query.prepare(R"(
-        INSERT INTO users (username, email, password_hash, salt, display_name, status, created_at)
-        VALUES (?, ?, ?, ?, ?, 'active', NOW())
+        INSERT INTO users (username, password_hash, salt, display_name, status, created_at)
+        VALUES (?, ?, ?, ?, 'active', NOW())
     )");
     
     query.addBindValue(username);
-    query.addBindValue(adminEmail);
     query.addBindValue(passwordHash);
     query.addBindValue(salt);
     query.addBindValue(adminDisplayName);
@@ -516,7 +515,7 @@ QList<QVariantMap> AdminManager::getAdminList() const
             QVariantMap adminInfo;
             adminInfo["id"] = user.id;
             adminInfo["username"] = user.username;
-            adminInfo["email"] = user.email;
+    
             adminInfo["display_name"] = user.displayName;
             adminInfo["last_online"] = user.lastOnline;
             adminInfo["status"] = user.status;

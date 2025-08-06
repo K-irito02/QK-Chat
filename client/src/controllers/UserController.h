@@ -50,7 +50,7 @@ public:
     
     // 用户操作方法
     Q_INVOKABLE void login(const QString &usernameOrEmail, const QString &password, const QString &captcha = "");
-    Q_INVOKABLE void registerUser(const QString &username, const QString &email, const QString &password, const QUrl &avatar);
+    Q_INVOKABLE void registerUser(const QString &username, const QString &email, const QString &verificationCode, const QString &password, const QUrl &avatar);
     Q_INVOKABLE void logout();
     Q_INVOKABLE void refreshCaptcha();
     Q_INVOKABLE void connectToServer(const QString &host = "localhost", int port = 8443);
@@ -62,11 +62,15 @@ public:
     Q_INVOKABLE bool checkUsernameAvailability(const QString &username);
     Q_INVOKABLE bool checkEmailAvailability(const QString &email);
     
-    // 邮箱验证相关方法
-    Q_INVOKABLE void sendEmailVerification(const QString &email);
-    Q_INVOKABLE void resendEmailVerification(const QString &email);
-    Q_INVOKABLE void verifyEmailToken(const QString &token);
+    // 邮箱验证
+    Q_INVOKABLE void sendEmailVerificationCode(const QString &email);
     Q_INVOKABLE void verifyEmailCode(const QString &email, const QString &code);
+    
+    // 测试方法
+    Q_INVOKABLE QString testMethod(const QString &input);
+
+    
+
     
     // 头像管理
     Q_INVOKABLE QStringList getDefaultAvatars() const;
@@ -85,7 +89,7 @@ signals:
     
     void loginSuccess();
     void loginFailed(const QString &error);
-    void registerSuccess(const QString &username, const QString &email, qint64 userId);
+    void registerSuccess(const QString &username, qint64 userId);
     void registerFailed(const QString &error);
     void logoutSuccess();
     
@@ -95,26 +99,27 @@ signals:
     void usernameAvailabilityResult(bool isAvailable);
     void emailAvailabilityResult(bool isAvailable);
     
-    // 邮箱验证信号
-    void emailVerified();
-    void emailVerificationFailed(const QString &error);
-    void emailVerificationResent();
-    void emailVerificationResendFailed(const QString &error);
-    void emailCodeVerified();
-    void emailCodeVerificationFailed(const QString &error);
-    void emailVerificationSent(bool success, const QString &message);
+    void emailVerificationCodeSent(bool success, const QString &message);
+    void emailVerificationCodeVerified(bool success, const QString &message);
+
+    
+
     
 private slots:
     void onLoginResponse(bool success, const QString &message);
     void onRegisterResponse(bool success, const QString &message);
     void onNetworkError(const QString &error);
-    void onEmailVerificationSent(bool success, const QString &message);
-    void onEmailCodeVerificationResponse(bool success, const QString &message);
+
     void resetLoginAttempts();
-    
-    // 邮箱验证响应处理
-    void onVerifyEmailResponse(bool success, const QString &message);
-    void onResendVerificationResponse(bool success, const QString &message);
+
+
+
+    // 新增的槽函数，用于处理来自NetworkClient的信号
+    void onUsernameAvailability(bool available);
+    void onEmailAvailability(bool available);
+    void onEmailVerificationCodeSent(bool success, const QString &message);
+    void onEmailVerificationCodeVerified(bool success, const QString &message);
+
     
 private:
     void setIsLoading(bool loading);

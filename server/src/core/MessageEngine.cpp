@@ -84,6 +84,13 @@ void MessageEngine::shutdown()
 
 bool MessageEngine::submitMessage(const Message& message)
 {
+    qCInfo(messageEngine) << "=== SUBMITTING MESSAGE TO ENGINE ===";
+    qCInfo(messageEngine) << "Message ID:" << message.id;
+    qCInfo(messageEngine) << "Message type:" << static_cast<int>(message.type);
+    qCInfo(messageEngine) << "Message data:" << message.data;
+    qCInfo(messageEngine) << "Message timestamp:" << message.timestamp;
+    qCInfo(messageEngine) << "Message source socket:" << (message.sourceSocket ? "valid" : "null");
+    
     if (!validateMessage(message)) {
         qCWarning(messageEngine) << "Invalid message submitted:" << message.id;
         return false;
@@ -102,6 +109,7 @@ bool MessageEngine::submitMessage(const Message& message)
     updateMessageStats(message.type, true);
     
     logMessageEvent("MESSAGE_SUBMITTED", message);
+    qCInfo(messageEngine) << "=== END SUBMITTING MESSAGE ===";
     return true;
 }
 
@@ -147,7 +155,7 @@ void MessageEngine::registerHandler(std::shared_ptr<MessageHandler> handler)
     m_handlers.insert(handlerName, handler);
     
     // 更新类型处理器映射
-    for (int i = static_cast<int>(MessageType::Unknown); i <= static_cast<int>(MessageType::EmailVerification); ++i) {
+    for (int i = static_cast<int>(MessageType::Unknown); i <= static_cast<int>(MessageType::SystemNotification); ++i) {
         MessageType type = static_cast<MessageType>(i);
         if (handler->canHandle(type)) {
             QStringList handlers = m_typeHandlers.value(type);

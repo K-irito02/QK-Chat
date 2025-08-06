@@ -24,7 +24,9 @@ CREATE TABLE IF NOT EXISTS users (
     bio TEXT DEFAULT NULL COMMENT '个人简介',
     status ENUM('active', 'inactive', 'banned', 'deleted') DEFAULT 'inactive' COMMENT '账户状态',
     email_verified BOOLEAN DEFAULT FALSE COMMENT '邮箱是否已验证',
-    verification_token VARCHAR(64) DEFAULT NULL COMMENT '邮箱验证令牌',
+    verification_code VARCHAR(10) DEFAULT NULL COMMENT '验证码',
+    verification_expires TIMESTAMP NULL DEFAULT NULL COMMENT '验证码过期时间',
+
     last_online TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT '最后在线时间',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
@@ -32,7 +34,9 @@ CREATE TABLE IF NOT EXISTS users (
     UNIQUE INDEX idx_username (username),
     UNIQUE INDEX idx_email (email),
     INDEX idx_status (status),
-    INDEX idx_last_online (last_online)
+    INDEX idx_last_online (last_online),
+    INDEX idx_email_verified (email_verified),
+    INDEX idx_verification_expires (verification_expires)
 ) ENGINE=InnoDB COMMENT='用户表';
 
 -- 用户会话表
@@ -309,51 +313,10 @@ CREATE TABLE IF NOT EXISTS user_activity_stats (
     INDEX idx_last_activity (last_activity)
 ) ENGINE=InnoDB COMMENT='用户活动统计表';
 
--- 邮箱验证记录表
-CREATE TABLE IF NOT EXISTS email_verifications (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT UNSIGNED NOT NULL COMMENT '用户ID',
-    email VARCHAR(100) NOT NULL COMMENT '邮箱地址',
-    verification_token VARCHAR(64) NOT NULL UNIQUE COMMENT '验证令牌',
-    token_type ENUM('register', 'reset_password', 'change_email') DEFAULT 'register' COMMENT '令牌类型',
-    expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
-    used BOOLEAN DEFAULT FALSE COMMENT '是否已使用',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    used_at TIMESTAMP NULL DEFAULT NULL COMMENT '使用时间',
-    
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    INDEX idx_user_id (user_id),
-    INDEX idx_verification_token (verification_token),
-    INDEX idx_email (email),
-    INDEX idx_expires_at (expires_at),
-    INDEX idx_token_type (token_type)
-) ENGINE=InnoDB COMMENT='邮箱验证记录表';
-
--- 邮箱验证码表
-CREATE TABLE IF NOT EXISTS email_verification_codes (
-    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    email VARCHAR(100) NOT NULL COMMENT '邮箱地址',
-    verification_code VARCHAR(6) NOT NULL COMMENT '验证码',
-    expires_at TIMESTAMP NOT NULL COMMENT '过期时间',
-    used BOOLEAN DEFAULT FALSE COMMENT '是否已使用',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    used_at TIMESTAMP NULL DEFAULT NULL COMMENT '使用时间',
-    
-    INDEX idx_email (email),
-    INDEX idx_verification_code (verification_code),
-    INDEX idx_expires_at (expires_at),
-    INDEX idx_email_code (email, verification_code)
-) ENGINE=InnoDB COMMENT='邮箱验证码表';
-
 -- 创建默认管理员用户（用于测试）
 INSERT INTO users (username, email, password_hash, salt, display_name, status) VALUES 
 ('admin', 'admin@qkchat.com', SHA2(CONCAT('QKchat2024!', 'admin_salt'), 256), 'admin_salt', '系统管理员', 'active')
 ON DUPLICATE KEY UPDATE username=username;
-
--- 注意：复合索引已在表定义中创建，这里不再重复创建
--- user_sessions表已有 idx_user_expires (user_id, expires_at)
--- friendships表已有 idx_user_status (user_id, status)  
--- group_members表已有相应的索引
 
 -- 创建视图简化常用查询
 CREATE OR REPLACE VIEW active_users AS
@@ -374,19 +337,6 @@ JOIN users r ON m.receiver_id = r.id
 WHERE m.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
 ORDER BY m.created_at DESC;
 
--- This view is problematic as it cannot be parameterized. 
--- It's better to implement this logic in the application code.
--- For demonstration, here is a corrected but still limited version.
-CREATE OR REPLACE VIEW user_friends_example AS
-SELECT 
-    f.user_id as user_id,
-    u.id as friend_id, u.username, u.display_name, u.avatar_url, u.last_online,
-    f.status, f.requested_at, f.accepted_at
-FROM friendships f
-JOIN users u ON (f.friend_id = u.id)
-WHERE f.status = 'accepted'
-ORDER BY u.last_online DESC;
-
 CREATE OR REPLACE VIEW group_info AS
 SELECT 
     g.id, g.group_name, g.description, g.avatar_url, g.current_members, g.max_members,
@@ -394,73 +344,6 @@ SELECT
     u.username as owner_username, u.display_name as owner_name
 FROM chat_groups g
 JOIN users u ON g.owner_id = u.id;
-
--- 存储过程：清理过期会话
-DELIMITER //
-CREATE PROCEDURE CleanExpiredSessions()
-BEGIN
-    DECLARE deleted_count INT DEFAULT 0;
-    DELETE FROM user_sessions WHERE expires_at < NOW();
-    SET deleted_count = ROW_COUNT();
-    SELECT deleted_count as deleted_sessions;
-END //
-DELIMITER ;
-
--- 存储过程：获取用户聊天统计
-DELIMITER //
-CREATE PROCEDURE GetUserChatStats(IN user_id BIGINT)
-BEGIN
-    SELECT 
-        COUNT(*) as total_messages,
-        COUNT(CASE WHEN delivery_status = 'read' THEN 1 END) as read_messages,
-        COUNT(DISTINCT receiver_id) as chat_partners,
-        MAX(created_at) as last_message_time,
-        COUNT(CASE WHEN created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR) THEN 1 END) as messages_today
-    FROM messages 
-    WHERE sender_id = user_id;
-END //
-DELIMITER ;
-
--- 存储过程：更新群组成员数
-DELIMITER //
-CREATE PROCEDURE UpdateGroupMemberCount(IN p_group_id BIGINT)
-BEGIN
-    UPDATE chat_groups 
-    SET current_members = (
-        SELECT COUNT(*) 
-        FROM group_members 
-        WHERE group_id = p_group_id
-    )
-    WHERE id = p_group_id;
-END //
-DELIMITER ;
-
--- 存储过程：清理过期数据
-DELIMITER //
-CREATE PROCEDURE CleanupExpiredData()
-BEGIN
-    -- 清理过期会话
-    DELETE FROM user_sessions WHERE expires_at < NOW();
-    
-    -- 清理过期密钥
-    DELETE FROM encryption_keys WHERE expires_at < NOW() AND expires_at IS NOT NULL;
-    
-    -- 清理30天前的系统日志
-    DELETE FROM system_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 30 DAY);
-    
-    -- 清理1年前的统计数据
-    DELETE FROM server_stats WHERE stat_date < DATE_SUB(NOW(), INTERVAL 1 YEAR);
-    
-    SELECT 'Cleanup completed' as status;
-END //
-DELIMITER ;
-
--- 触发器功能可以在后续手动配置
--- 注意：触发器需要手动创建以确保数据一致性
-
--- 注意：事件调度器需要手动启用
--- SET GLOBAL event_scheduler = ON;
--- 事件调度器功能可以在后续手动配置
 
 -- 数据库初始化完成
 SELECT 'QK Chat Database Schema Optimized v1.1 Initialized Successfully' as Status;

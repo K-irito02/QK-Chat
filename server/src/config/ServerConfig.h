@@ -76,8 +76,8 @@ public:
     int getSmtpPort() const;
     QString getSmtpUsername() const;
     QString getSmtpPassword() const;
-    QString getSmtpFromEmail() const;
-    QString getSmtpFromName() const;
+    QString getFromEmail() const;
+    QString getFromName() const;
     
     // 日志配置
     QString getLogLevel() const;

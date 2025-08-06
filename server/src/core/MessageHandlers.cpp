@@ -7,7 +7,114 @@
 #include <QSslSocket>
 #include <QtConcurrent/QtConcurrent>
 #include "../core/ConnectionManager.h"
+#include "../services/EmailVerificationService.h"
 #include <memory>
+
+// ============================================================================
+// EmailVerificationMessageHandler Implementation
+// ============================================================================
+
+EmailVerificationMessageHandler::EmailVerificationMessageHandler(EmailVerificationService* emailService)
+    : m_emailService(emailService)
+{
+}
+
+bool EmailVerificationMessageHandler::canHandle(MessageType type) const
+{
+    return type == MessageType::EmailVerification;
+}
+
+bool EmailVerificationMessageHandler::handleMessage(const Message& message)
+{
+    qCDebug(messageHandlers) << "Handling email verification message from" << message.fromUserId;
+
+    QJsonObject data = message.data;
+    QString email = data["email"].toString();
+    QString action = data["action"].toString();
+
+    if (email.isEmpty()) {
+        sendVerificationResponse(message.sourceSocket, false, "Email is required");
+        return false;
+    }
+
+    if (!m_emailService) {
+        sendVerificationResponse(message.sourceSocket, false, "Email service is not available");
+        return false;
+    }
+
+    QSslSocket* socket = message.sourceSocket;
+    
+    if (action == "sendCode" || action.isEmpty()) {
+        // 异步发送验证码
+        QtConcurrent::run([this, email, socket]() {
+            bool success = m_emailService->sendVerificationCode(email);
+            // 发送响应
+            if (success) {
+                sendCodeSentResponse(socket, true, "Verification code sent successfully");
+            } else {
+                sendVerificationResponse(socket, false, "Failed to send verification code");
+            }
+        });
+    } else if (action == "verifyCode") {
+        // 验证验证码
+        QString code = data["code"].toString();
+        if (code.isEmpty()) {
+            sendVerificationResponse(socket, false, "Verification code is required");
+            return false;
+        }
+        
+        QtConcurrent::run([this, email, code, socket]() {
+            bool success = m_emailService->verifyCode(email, code);
+            // 发送响应
+            if (success) {
+                sendVerificationResponse(socket, true, "Email verified successfully");
+            } else {
+                sendVerificationResponse(socket, false, "Invalid verification code");
+            }
+        });
+    } else {
+        sendVerificationResponse(socket, false, "Invalid action. Use 'sendCode' or 'verifyCode'");
+        return false;
+    }
+
+    return true;
+}
+
+QString EmailVerificationMessageHandler::handlerName() const
+{
+    return "EmailVerificationMessageHandler";
+}
+
+void EmailVerificationMessageHandler::sendVerificationResponse(QSslSocket* socket, bool success, const QString& message)
+{
+    if (!socket || !socket->isOpen()) {
+        return;
+    }
+
+    QJsonObject response;
+    response["type"] = "emailVerification";
+    response["success"] = success;
+    response["message"] = message;
+
+    QJsonDocument doc(response);
+    socket->write(doc.toJson(QJsonDocument::Compact));
+}
+
+void EmailVerificationMessageHandler::sendCodeSentResponse(QSslSocket* socket, bool success, const QString& message)
+{
+    if (!socket || !socket->isOpen()) {
+        return;
+    }
+
+    QJsonObject response;
+    response["type"] = "emailCodeSent";
+    response["success"] = success;
+    response["message"] = message;
+
+    QJsonDocument doc(response);
+    socket->write(doc.toJson(QJsonDocument::Compact));
+}
+
 
 Q_LOGGING_CATEGORY(messageHandlers, "qkchat.server.messagehandlers")
 
@@ -424,11 +531,13 @@ void HeartbeatMessageHandler::sendHeartbeatResponse(QSslSocket* socket)
 // ============================================================================
 
 RegisterMessageHandler::RegisterMessageHandler(ConnectionManager* connectionManager,
-                                              DatabasePool* databasePool,
-                                              CacheManagerV2* cacheManager)
+                                             DatabasePool* databasePool,
+                                             CacheManagerV2* cacheManager,
+                                             EmailVerificationService* emailService)
     : m_connectionManager(connectionManager)
     , m_databasePool(databasePool)
     , m_cacheManager(cacheManager)
+    , m_emailService(emailService)
 {
 }
 
@@ -450,9 +559,21 @@ bool RegisterMessageHandler::handleMessage(const Message& message)
     
     QString username = data["username"].toString();
     QString email = data["email"].toString();
+    QString verificationCode = data["verificationCode"].toString();
     
-    if (checkUserExists(username, email)) {
-        sendRegistrationResponse(message.sourceSocket, false, "Username or email already exists");
+    if (checkUserExists(username)) {
+        sendRegistrationResponse(message.sourceSocket, false, "Username already exists");
+        return false;
+    }
+    
+    if (checkEmailExists(email)) {
+        sendRegistrationResponse(message.sourceSocket, false, "Email already exists");
+        return false;
+    }
+    
+    // 验证邮箱验证码
+    if (m_emailService && !m_emailService->verifyCode(email, verificationCode)) {
+        sendRegistrationResponse(message.sourceSocket, false, "Invalid verification code");
         return false;
     }
     
@@ -478,6 +599,7 @@ bool RegisterMessageHandler::validateRegistrationData(const QJsonObject& data)
     QString username = data["username"].toString();
     QString email = data["email"].toString();
     QString password = data["password"].toString();
+    QString verificationCode = data["verificationCode"].toString();
     
     if (username.isEmpty() || username.length() < 3 || username.length() > 20) {
         return false;
@@ -491,21 +613,48 @@ bool RegisterMessageHandler::validateRegistrationData(const QJsonObject& data)
         return false;
     }
     
+    if (verificationCode.isEmpty() || verificationCode.length() != 6) {
+        return false;
+    }
+    
     return true;
 }
 
-bool RegisterMessageHandler::checkUserExists(const QString& username, const QString& email)
+bool RegisterMessageHandler::checkUserExists(const QString& username)
 {
     if (!m_databasePool) {
         return true; // 保守处理，假设用户存在
     }
     
-    QString sql = "SELECT COUNT(*) as count FROM users WHERE username = ? OR email = ?";
-    QVariantList params = {username, email};
+    QString sql = "SELECT COUNT(*) as count FROM users WHERE username = ?";
+    QVariantList params = {username};
     
     auto result = m_databasePool->executeQuery(sql, params, DatabaseOperationType::Read);
     if (!result.success) {
         qCWarning(messageHandlers) << "Failed to check user existence:" << result.error;
+        return true; // 保守处理
+    }
+    
+    if (result.data.next()) {
+        int count = result.data.value("count").toInt();
+        return count > 0;
+    }
+    
+    return false;
+}
+
+bool RegisterMessageHandler::checkEmailExists(const QString& email)
+{
+    if (!m_databasePool) {
+        return true; // 保守处理，假设邮箱存在
+    }
+    
+    QString sql = "SELECT COUNT(*) as count FROM users WHERE email = ?";
+    QVariantList params = {email};
+    
+    auto result = m_databasePool->executeQuery(sql, params, DatabaseOperationType::Read);
+    if (!result.success) {
+        qCWarning(messageHandlers) << "Failed to check email existence:" << result.error;
         return true; // 保守处理
     }
     
@@ -535,8 +684,8 @@ bool RegisterMessageHandler::createUser(const QJsonObject& data, qint64& userId)
     // 哈希密码
     QByteArray passwordHash = QCryptographicHash::hash(password.toUtf8(), QCryptographicHash::Sha256);
     
-    QString sql = "INSERT INTO users (username, email, password_hash, nickname, created_at, active) "
-                  "VALUES (?, ?, ?, ?, NOW(), 1)";
+    QString sql = "INSERT INTO users (username, email, password_hash, display_name, status, created_at, updated_at) "
+                  "VALUES (?, ?, ?, ?, 'active', NOW(), NOW())";
     
     QVariantList params = {username, email, passwordHash.toHex(), nickname};
     
@@ -568,6 +717,747 @@ void RegisterMessageHandler::sendRegistrationResponse(QSslSocket* socket, bool s
     if (success && userId > 0) {
         response["user_id"] = userId;
     }
+    
+    QJsonDocument doc(response);
+    QByteArray data = doc.toJson(QJsonDocument::Compact);
+    
+    if (socket && socket->state() == QAbstractSocket::ConnectedState) {
+        socket->write(data);
+        socket->flush();
+    }
+}
+
+
+
+// ============================================================================
+// ValidationMessageHandler Implementation
+// ============================================================================
+
+ValidationMessageHandler::ValidationMessageHandler(DatabasePool* databasePool, EmailVerificationService* emailService)
+    : m_databasePool(databasePool)
+    , m_emailService(emailService)
+{
+}
+
+bool ValidationMessageHandler::canHandle(MessageType type) const
+{
+    return type == MessageType::UsernameValidation || type == MessageType::EmailAvailability;
+}
+
+bool ValidationMessageHandler::handleMessage(const Message& message)
+{
+    qCDebug(messageHandlers) << "Handling validation message";
+    
+    if (message.type == MessageType::UsernameValidation) {
+        handleUsernameValidation(message);
+    } else if (message.type == MessageType::EmailAvailability) {
+        handleEmailValidation(message);
+    }
+    
+    return true;
+}
+
+QString ValidationMessageHandler::handlerName() const
+{
+    return "ValidationMessageHandler";
+}
+
+void ValidationMessageHandler::handleUsernameValidation(const Message& message)
+{
+    QJsonObject data = message.data;
+    QString username = data["username"].toString();
+    
+    if (username.isEmpty()) {
+        sendValidationResponse(message.sourceSocket, "username", false, "Username is required");
+        return;
+    }
+    
+    // 检查用户名是否可用
+    QString sql = "SELECT COUNT(*) as count FROM users WHERE username = ?";
+    QVariantList params = {username};
+    
+    auto result = m_databasePool->executeQuery(sql, params, DatabaseOperationType::Read);
+    bool available = true;
+    QString errorMessage = "";
+    
+    if (!result.success) {
+        qCWarning(messageHandlers) << "Failed to check username availability:" << result.error;
+        available = false;
+        errorMessage = "Database error";
+    } else if (result.data.next()) {
+        int count = result.data.value("count").toInt();
+        available = count == 0;
+        errorMessage = available ? "" : "Username already exists";
+    }
+    
+    sendValidationResponse(message.sourceSocket, "username", available, errorMessage);
+}
+
+void ValidationMessageHandler::handleEmailValidation(const Message& message)
+{
+    QJsonObject data = message.data;
+    QString email = data["email"].toString();
+    
+    if (email.isEmpty()) {
+        sendValidationResponse(message.sourceSocket, "email", false, "Email is required");
+        return;
+    }
+    
+    if (!email.contains("@")) {
+        sendValidationResponse(message.sourceSocket, "email", false, "Invalid email format");
+        return;
+    }
+    
+    // 检查邮箱是否可用
+    QString sql = "SELECT COUNT(*) as count FROM users WHERE email = ?";
+    QVariantList params = {email};
+    
+    auto result = m_databasePool->executeQuery(sql, params, DatabaseOperationType::Read);
+    if (!result.success) {
+        qCWarning(messageHandlers) << "Failed to check email availability:" << result.error;
+        sendValidationResponse(message.sourceSocket, "email", false, "Database error");
+        return;
+    }
+    
+    bool available = true;
+    QString errorMessage = "";
+    
+    if (result.data.next()) {
+        int count = result.data.value("count").toInt();
+        available = count == 0;
+        errorMessage = available ? "" : "Email already exists";
+    }
+    
+    sendValidationResponse(message.sourceSocket, "email", available, errorMessage);
+}
+
+void ValidationMessageHandler::sendValidationResponse(QSslSocket* socket, const QString& type, bool available, const QString& message)
+{
+    QJsonObject response;
+    response["type"] = "validation";
+    response["validationType"] = type;
+    response["available"] = available;
+    response["message"] = message;
+    
+    QJsonDocument doc(response);
+    socket->write(doc.toJson());
+}
+
+// ============================================================================
+// UserStatusMessageHandler Implementation
+// ============================================================================
+
+UserStatusMessageHandler::UserStatusMessageHandler(ConnectionManager* connectionManager,
+                                                 DatabasePool* databasePool,
+                                                 CacheManagerV2* cacheManager)
+    : m_connectionManager(connectionManager)
+    , m_databasePool(databasePool)
+    , m_cacheManager(cacheManager)
+{
+}
+
+bool UserStatusMessageHandler::canHandle(MessageType type) const
+{
+    return type == MessageType::UserStatus;
+}
+
+bool UserStatusMessageHandler::handleMessage(const Message& message)
+{
+    qCDebug(messageHandlers) << "Handling user status message from" << message.fromUserId;
+    
+    QJsonObject data = message.data;
+    QString status = data["status"].toString();
+    
+    if (status.isEmpty()) {
+        qCWarning(messageHandlers) << "Empty status in user status message";
+        return false;
+    }
+    
+    if (!updateUserStatus(message.fromUserId, status)) {
+        qCWarning(messageHandlers) << "Failed to update user status";
+        return false;
+    }
+    
+    broadcastStatusChange(message.fromUserId, status);
+    
+    qCDebug(messageHandlers) << "User status updated successfully for user" << message.fromUserId;
+    return true;
+}
+
+QString UserStatusMessageHandler::handlerName() const
+{
+    return "UserStatusMessageHandler";
+}
+
+bool UserStatusMessageHandler::updateUserStatus(qint64 userId, const QString& status)
+{
+    if (!m_databasePool) {
+        return false;
+    }
+    
+    QString sql = "UPDATE users SET status = ?, last_online = NOW() WHERE user_id = ?";
+    QVariantList params = {status, userId};
+    
+    auto result = m_databasePool->executeQuery(sql, params, DatabaseOperationType::Write);
+    if (!result.success) {
+        qCWarning(messageHandlers) << "Failed to update user status:" << result.error;
+        return false;
+    }
+    
+    // 更新缓存
+    if (m_cacheManager) {
+        QString cacheKey = QString("user_status:%1").arg(userId);
+        m_cacheManager->set(cacheKey, status, 300); // 缓存5分钟
+    }
+    
+    return true;
+}
+
+void UserStatusMessageHandler::broadcastStatusChange(qint64 userId, const QString& status)
+{
+    if (!m_connectionManager) {
+        return;
+    }
+    
+    QJsonObject statusMessage;
+    statusMessage["type"] = "user_status_change";
+    statusMessage["user_id"] = userId;
+    statusMessage["status"] = status;
+    statusMessage["timestamp"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+    
+    QJsonDocument doc(statusMessage);
+    QByteArray data = doc.toJson(QJsonDocument::Compact);
+    
+    // 广播给所有在线用户
+    auto connections = m_connectionManager->getAllConnections();
+    for (const auto& connection : connections) {
+        if (connection && connection->getUserId() != userId) {
+            QSslSocket* socket = connection->getSocket();
+            if (socket && socket->state() == QAbstractSocket::ConnectedState) {
+                socket->write(data);
+                socket->flush();
+            }
+        }
+    }
+}
+
+// ============================================================================
+// GroupChatMessageHandler Implementation
+// ============================================================================
+
+GroupChatMessageHandler::GroupChatMessageHandler(ConnectionManager* connectionManager,
+                                               DatabasePool* databasePool,
+                                               CacheManagerV2* cacheManager)
+    : m_connectionManager(connectionManager)
+    , m_databasePool(databasePool)
+    , m_cacheManager(cacheManager)
+{
+}
+
+bool GroupChatMessageHandler::canHandle(MessageType type) const
+{
+    return type == MessageType::GroupChat;
+}
+
+bool GroupChatMessageHandler::handleMessage(const Message& message)
+{
+    qCDebug(messageHandlers) << "Handling group chat message from" << message.fromUserId;
+    
+    if (!validateGroupMessage(message)) {
+        return false;
+    }
+    
+    if (!saveGroupMessage(message)) {
+        qCWarning(messageHandlers) << "Failed to save group message";
+        return false;
+    }
+    
+    qint64 groupId = message.data["group_id"].toVariant().toLongLong();
+    QList<qint64> members = getGroupMembers(groupId);
+    
+    if (!deliverToGroupMembers(message, members)) {
+        qCWarning(messageHandlers) << "Failed to deliver group message";
+        return false;
+    }
+    
+    qCDebug(messageHandlers) << "Group message processed successfully";
+    return true;
+}
+
+QString GroupChatMessageHandler::handlerName() const
+{
+    return "GroupChatMessageHandler";
+}
+
+bool GroupChatMessageHandler::validateGroupMessage(const Message& message)
+{
+    if (message.fromUserId <= 0) {
+        qCWarning(messageHandlers) << "Invalid sender ID in group message";
+        return false;
+    }
+    
+    qint64 groupId = message.data["group_id"].toVariant().toLongLong();
+    if (groupId <= 0) {
+        qCWarning(messageHandlers) << "Invalid group ID in group message";
+        return false;
+    }
+    
+    if (message.data["content"].toString().isEmpty()) {
+        qCWarning(messageHandlers) << "Empty content in group message";
+        return false;
+    }
+    
+    return true;
+}
+
+QList<qint64> GroupChatMessageHandler::getGroupMembers(qint64 groupId)
+{
+    QList<qint64> members;
+    
+    if (!m_databasePool) {
+        return members;
+    }
+    
+    QString sql = "SELECT user_id FROM group_members WHERE group_id = ? AND status = 'active'";
+    QVariantList params = {groupId};
+    
+    auto result = m_databasePool->executeQuery(sql, params, DatabaseOperationType::Read);
+    if (!result.success) {
+        qCWarning(messageHandlers) << "Failed to get group members:" << result.error;
+        return members;
+    }
+    
+    while (result.data.next()) {
+        qint64 userId = result.data.value("user_id").toLongLong();
+        members.append(userId);
+    }
+    
+    return members;
+}
+
+bool GroupChatMessageHandler::saveGroupMessage(const Message& message)
+{
+    if (!m_databasePool) {
+        return false;
+    }
+    
+    qint64 groupId = message.data["group_id"].toVariant().toLongLong();
+    
+    QString sql = "INSERT INTO group_messages (message_id, group_id, sender_id, content, message_type, created_at) "
+                  "VALUES (?, ?, ?, ?, ?, NOW())";
+    
+    QVariantList params = {
+        message.id,
+        groupId,
+        message.fromUserId,
+        message.data["content"].toString(),
+        static_cast<int>(message.type)
+    };
+    
+    auto result = m_databasePool->executeQuery(sql, params, DatabaseOperationType::Write);
+    if (!result.success) {
+        qCWarning(messageHandlers) << "Failed to save group message:" << result.error;
+        return false;
+    }
+    
+    return true;
+}
+
+bool GroupChatMessageHandler::deliverToGroupMembers(const Message& message, const QList<qint64>& members)
+{
+    if (!m_connectionManager) {
+        return false;
+    }
+    
+    QJsonObject deliveryMessage;
+    deliveryMessage["type"] = "group_message";
+    deliveryMessage["id"] = message.id;
+    deliveryMessage["group_id"] = message.data["group_id"];
+    deliveryMessage["from_user_id"] = message.fromUserId;
+    deliveryMessage["content"] = message.data["content"];
+    deliveryMessage["timestamp"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+    
+    QJsonDocument doc(deliveryMessage);
+    QByteArray data = doc.toJson(QJsonDocument::Compact);
+    
+    int deliveredCount = 0;
+    
+    for (qint64 memberId : members) {
+        if (memberId == message.fromUserId) {
+            continue; // 跳过发送者
+        }
+        
+        auto connection = m_connectionManager->getConnectionByUserId(memberId);
+        if (connection) {
+            QSslSocket* socket = connection->getSocket();
+            if (socket && socket->state() == QAbstractSocket::ConnectedState) {
+                socket->write(data);
+                socket->flush();
+                deliveredCount++;
+            }
+        }
+    }
+    
+    qCDebug(messageHandlers) << "Group message delivered to" << deliveredCount << "members";
+    return deliveredCount > 0;
+}
+
+// ============================================================================
+// SystemNotificationHandler Implementation
+// ============================================================================
+
+SystemNotificationHandler::SystemNotificationHandler(ConnectionManager* connectionManager,
+                                                   CacheManagerV2* cacheManager)
+    : m_connectionManager(connectionManager)
+    , m_cacheManager(cacheManager)
+{
+}
+
+bool SystemNotificationHandler::canHandle(MessageType type) const
+{
+    return type == MessageType::SystemNotification;
+}
+
+bool SystemNotificationHandler::handleMessage(const Message& message)
+{
+    qCDebug(messageHandlers) << "Handling system notification message";
+    
+    if (!validateNotification(message)) {
+        return false;
+    }
+    
+    QJsonObject notification = message.data;
+    QString notificationType = notification["notification_type"].toString();
+    
+    if (notificationType == "broadcast") {
+        broadcastSystemNotification(notification);
+    } else if (notificationType == "targeted") {
+        QList<qint64> userIds;
+        QJsonArray usersArray = notification["user_ids"].toArray();
+        for (const auto& userValue : usersArray) {
+            userIds.append(userValue.toVariant().toLongLong());
+        }
+        sendTargetedNotification(userIds, notification);
+    }
+    
+    return true;
+}
+
+QString SystemNotificationHandler::handlerName() const
+{
+    return "SystemNotificationHandler";
+}
+
+bool SystemNotificationHandler::validateNotification(const Message& message)
+{
+    QJsonObject notification = message.data;
+    
+    if (notification["notification_type"].toString().isEmpty()) {
+        qCWarning(messageHandlers) << "Missing notification type";
+        return false;
+    }
+    
+    if (notification["title"].toString().isEmpty()) {
+        qCWarning(messageHandlers) << "Missing notification title";
+        return false;
+    }
+    
+    if (notification["content"].toString().isEmpty()) {
+        qCWarning(messageHandlers) << "Missing notification content";
+        return false;
+    }
+    
+    return true;
+}
+
+void SystemNotificationHandler::broadcastSystemNotification(const QJsonObject& notification)
+{
+    if (!m_connectionManager) {
+        return;
+    }
+    
+    QJsonObject systemMessage;
+    systemMessage["type"] = "system_notification";
+    systemMessage["title"] = notification["title"];
+    systemMessage["content"] = notification["content"];
+    systemMessage["timestamp"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+    
+    QJsonDocument doc(systemMessage);
+    QByteArray data = doc.toJson(QJsonDocument::Compact);
+    
+    auto connections = m_connectionManager->getAllConnections();
+    for (const auto& connection : connections) {
+        if (connection) {
+            QSslSocket* socket = connection->getSocket();
+            if (socket && socket->state() == QAbstractSocket::ConnectedState) {
+                socket->write(data);
+                socket->flush();
+            }
+        }
+    }
+    
+    qCInfo(messageHandlers) << "System notification broadcasted to" << connections.size() << "users";
+}
+
+void SystemNotificationHandler::sendTargetedNotification(const QList<qint64>& userIds, const QJsonObject& notification)
+{
+    if (!m_connectionManager) {
+        return;
+    }
+    
+    QJsonObject systemMessage;
+    systemMessage["type"] = "system_notification";
+    systemMessage["title"] = notification["title"];
+    systemMessage["content"] = notification["content"];
+    systemMessage["timestamp"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+    
+    QJsonDocument doc(systemMessage);
+    QByteArray data = doc.toJson(QJsonDocument::Compact);
+    
+    int deliveredCount = 0;
+    
+    for (qint64 userId : userIds) {
+        auto connection = m_connectionManager->getConnectionByUserId(userId);
+        if (connection) {
+            QSslSocket* socket = connection->getSocket();
+            if (socket && socket->state() == QAbstractSocket::ConnectedState) {
+                socket->write(data);
+                socket->flush();
+                deliveredCount++;
+            }
+        }
+    }
+    
+    qCInfo(messageHandlers) << "Targeted notification sent to" << deliveredCount << "users";
+}
+
+// ============================================================================
+// FileTransferMessageHandler Implementation
+// ============================================================================
+
+FileTransferMessageHandler::FileTransferMessageHandler(ConnectionManager* connectionManager,
+                                                     DatabasePool* databasePool,
+                                                     CacheManagerV2* cacheManager)
+    : m_connectionManager(connectionManager)
+    , m_databasePool(databasePool)
+    , m_cacheManager(cacheManager)
+{
+}
+
+bool FileTransferMessageHandler::canHandle(MessageType type) const
+{
+    return type == MessageType::FileTransfer;
+}
+
+bool FileTransferMessageHandler::handleMessage(const Message& message)
+{
+    qCDebug(messageHandlers) << "Handling file transfer message from" << message.fromUserId;
+    
+    if (!validateFileTransfer(message)) {
+        return false;
+    }
+    
+    if (!saveFileMetadata(message)) {
+        qCWarning(messageHandlers) << "Failed to save file metadata";
+        return false;
+    }
+    
+    qint64 toUserId = message.toUserId;
+    QJsonObject fileInfo;
+    fileInfo["file_id"] = message.data["file_id"];
+    fileInfo["file_name"] = message.data["file_name"];
+    fileInfo["file_size"] = message.data["file_size"];
+    fileInfo["file_type"] = message.data["file_type"];
+    fileInfo["from_user_id"] = message.fromUserId;
+    
+    notifyFileTransfer(toUserId, fileInfo);
+    
+    qCDebug(messageHandlers) << "File transfer message processed successfully";
+    return true;
+}
+
+QString FileTransferMessageHandler::handlerName() const
+{
+    return "FileTransferMessageHandler";
+}
+
+bool FileTransferMessageHandler::validateFileTransfer(const Message& message)
+{
+    if (message.fromUserId <= 0 || message.toUserId <= 0) {
+        qCWarning(messageHandlers) << "Invalid user IDs in file transfer message";
+        return false;
+    }
+    
+    QJsonObject data = message.data;
+    if (data["file_id"].toString().isEmpty()) {
+        qCWarning(messageHandlers) << "Missing file ID in file transfer message";
+        return false;
+    }
+    
+    if (data["file_name"].toString().isEmpty()) {
+        qCWarning(messageHandlers) << "Missing file name in file transfer message";
+        return false;
+    }
+    
+    if (data["file_size"].toVariant().toLongLong() <= 0) {
+        qCWarning(messageHandlers) << "Invalid file size in file transfer message";
+        return false;
+    }
+    
+    return true;
+}
+
+bool FileTransferMessageHandler::saveFileMetadata(const Message& message)
+{
+    if (!m_databasePool) {
+        return false;
+    }
+    
+    QString sql = "INSERT INTO file_transfers (file_id, sender_id, receiver_id, file_name, file_size, file_type, status, created_at) "
+                  "VALUES (?, ?, ?, ?, ?, ?, 'pending', NOW())";
+    
+    QVariantList params = {
+        message.data["file_id"].toString(),
+        message.fromUserId,
+        message.toUserId,
+        message.data["file_name"].toString(),
+        message.data["file_size"].toVariant().toLongLong(),
+        message.data["file_type"].toString()
+    };
+    
+    auto result = m_databasePool->executeQuery(sql, params, DatabaseOperationType::Write);
+    if (!result.success) {
+        qCWarning(messageHandlers) << "Failed to save file metadata:" << result.error;
+        return false;
+    }
+    
+    return true;
+}
+
+void FileTransferMessageHandler::notifyFileTransfer(qint64 toUserId, const QJsonObject& fileInfo)
+{
+    if (!m_connectionManager) {
+        return;
+    }
+    
+    auto connection = m_connectionManager->getConnectionByUserId(toUserId);
+    if (!connection) {
+        qCDebug(messageHandlers) << "Target user" << toUserId << "is not online for file transfer";
+        return;
+    }
+    
+    QSslSocket* socket = connection->getSocket();
+    if (!socket || socket->state() != QAbstractSocket::ConnectedState) {
+        return;
+    }
+    
+    QJsonObject notification;
+    notification["type"] = "file_transfer_notification";
+    notification["file_info"] = fileInfo;
+    notification["timestamp"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+    
+    QJsonDocument doc(notification);
+    QByteArray data = doc.toJson(QJsonDocument::Compact);
+    
+    socket->write(data);
+    socket->flush();
+}
+
+// ============================================================================
+// LogoutMessageHandler Implementation
+// ============================================================================
+
+LogoutMessageHandler::LogoutMessageHandler(ConnectionManager* connectionManager,
+                                         SessionManager* sessionManager,
+                                         DatabasePool* databasePool)
+    : m_connectionManager(connectionManager)
+    , m_sessionManager(sessionManager)
+    , m_databasePool(databasePool)
+{
+}
+
+bool LogoutMessageHandler::canHandle(MessageType type) const
+{
+    return type == MessageType::Logout;
+}
+
+bool LogoutMessageHandler::handleMessage(const Message& message)
+{
+    qCDebug(messageHandlers) << "Handling logout message from" << message.fromUserId;
+    
+    QJsonObject data = message.data;
+    QString sessionToken = data["session_token"].toString();
+    
+    if (sessionToken.isEmpty()) {
+        qCWarning(messageHandlers) << "Missing session token in logout message";
+        sendLogoutResponse(message.sourceSocket, false);
+        return false;
+    }
+    
+    if (!invalidateSession(sessionToken)) {
+        qCWarning(messageHandlers) << "Failed to invalidate session";
+        sendLogoutResponse(message.sourceSocket, false);
+        return false;
+    }
+    
+    updateUserLastOnline(message.fromUserId);
+    
+    sendLogoutResponse(message.sourceSocket, true);
+    
+    qCInfo(messageHandlers) << "User" << message.fromUserId << "logged out successfully";
+    return true;
+}
+
+QString LogoutMessageHandler::handlerName() const
+{
+    return "LogoutMessageHandler";
+}
+
+bool LogoutMessageHandler::invalidateSession(const QString& sessionToken)
+{
+    if (!m_sessionManager) {
+        return false;
+    }
+    
+    // 从会话管理器移除会话
+    if (!m_sessionManager->removeSession(sessionToken)) {
+        qCWarning(messageHandlers) << "Failed to remove session from session manager";
+        return false;
+    }
+    
+    // 从连接管理器移除连接
+    if (m_connectionManager) {
+        auto connection = m_connectionManager->getConnectionBySessionToken(sessionToken);
+        if (connection) {
+            m_connectionManager->removeConnection(connection->getSocket());
+        }
+    }
+    
+    return true;
+}
+
+void LogoutMessageHandler::updateUserLastOnline(qint64 userId)
+{
+    if (!m_databasePool) {
+        return;
+    }
+    
+    QString sql = "UPDATE users SET last_online = NOW(), status = 'offline' WHERE user_id = ?";
+    QVariantList params = {userId};
+    
+    auto result = m_databasePool->executeQuery(sql, params, DatabaseOperationType::Write);
+    if (!result.success) {
+        qCWarning(messageHandlers) << "Failed to update user last online:" << result.error;
+    }
+}
+
+void LogoutMessageHandler::sendLogoutResponse(QSslSocket* socket, bool success)
+{
+    QJsonObject response;
+    response["type"] = "logout_response";
+    response["success"] = success;
+    response["message"] = success ? "Logout successful" : "Logout failed";
+    response["timestamp"] = QDateTime::currentDateTime().toString(Qt::ISODate);
     
     QJsonDocument doc(response);
     QByteArray data = doc.toJson(QJsonDocument::Compact);
